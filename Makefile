@@ -118,6 +118,7 @@ simenv-cocotb:
 
 .PHONY: setup
 setup: check_dependencies install check-env install_mcw openlane pdk-with-volare setup-timing-scripts setup-cocotb precheck
+	mkdir -p ~/.ipm
 
 # Openlane
 blocks=$(shell cd openlane && find * -maxdepth 0 -type d)
@@ -436,4 +437,4 @@ caravel-sta: ./env/spef-mapping.tcl
 	@echo "Check summary.log of a specific corner to point to reports with reg2reg violations" 
 	@echo "Cap and slew violations are inside summary.log file itself"
 
-include library/user_project_appends.makefile
+include library/user_project_appends.mk

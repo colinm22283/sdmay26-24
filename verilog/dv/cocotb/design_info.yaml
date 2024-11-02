@@ -1,9 +1,8 @@
-CARAVEL_ROOT: /usr/caravel_user_project/caravel
-MCW_ROOT: /usr/caravel_user_project/mgmt_core_wrapper
+CARAVEL_ROOT: /home/gling/Caravel/cup/caravel
+MCW_ROOT: /home/gling/Caravel/cup/mgmt_core_wrapper
 PDK: sky130A
-PDK_ROOT: /usr/pdk
-USER_PROJECT_ROOT: /usr/caravel_user_project
+PDK_ROOT: /home/gling/Caravel/cup/dependencies/pdks
+USER_PROJECT_ROOT: /home/gling/Caravel/cup
 caravan: false
 clk: 25
-emailto:
-- null
+emailto: [null]

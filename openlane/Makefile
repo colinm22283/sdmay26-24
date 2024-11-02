@@ -30,7 +30,7 @@ endif
 openlane_cmd = \
 	"flow.tcl \
 	-design $$(realpath ./$*) \
-	-save_path $$(realpath ..) \
+	-save_path $$(realpath ./$*/../..) \
 	-save \
 	-tag $(OPENLANE_RUN_TAG) \
 	-overwrite \
@@ -76,7 +76,7 @@ else
 	# $(current_design)
 	mkdir -p ./$*/runs/$(OPENLANE_RUN_TAG) 
 	rm -rf ./$*/runs/$*
-	ln -s $$(realpath ./$*/runs/$(OPENLANE_RUN_TAG)) ./$*/runs/$*
+	ln -s $$(realpath ./$*/runs/$(OPENLANE_RUN_TAG)) ./$*/runs/$(notdir $*)
 	$(docker_run) \
 		$(OPENLANE_IMAGE_NAME) sh -c $(openlane_cmd)
 endif

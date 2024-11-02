@@ -1,0 +1,3 @@
+[submodule "library"]
+	path = library
+	url = git@git.ece.iastate.edu:isu-chip-fab/library

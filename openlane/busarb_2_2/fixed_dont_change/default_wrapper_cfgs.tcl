@@ -11,31 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 # SPDX-License-Identifier: Apache-2.0
 
-# ---- Test patterns for project striVe ----
+# THE FOLLOWING SECTIONS CAN BE CHANGED IF NEEDED
 
-.SUFFIXES:
-.SILENT: clean all
+# PDN Pitch
+set ::env(FP_PDN_VPITCH) 180
+set ::env(FP_PDN_HPITCH) $::env(FP_PDN_VPITCH)
 
-
-PATTERNS = io_ports la_test1 la_test2 wb_port mprj_stimulus spi_mem bus
-
-all:  ${PATTERNS}
-
-	for i in ${PATTERNS}; do \
-		( cd $$i && make -f Makefile $${i}.vcd &> verify.log && grep Monitor verify.log) ; \
-	done
-
-DV_PATTERNS = $(foreach dv, $(PATTERNS), verify-$(dv))
-$(DV_PATTERNS): verify-% : 
-	cd $* && make
-
-clean:  ${PATTERNS}
-	for i in ${PATTERNS}; do \
-		( cd $$i && \rm  -f *.elf *.hex *.bin *.vvp *.log *.vcd *.lst *.hexe ) ; \
-	done
-	rm -rf *.log
-	
-.PHONY: clean all
+# PDN Offset 
+set ::env(FP_PDN_VOFFSET) 5
+set ::env(FP_PDN_HOFFSET) $::env(FP_PDN_VOFFSET)

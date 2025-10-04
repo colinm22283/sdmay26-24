@@ -27,8 +27,7 @@ module vga_tb();
 
         for (i = 0; i < 240; i = i + 1) begin
             for (j = 0; j < 320; j = j + 1) begin
-                if (i % 2 == 0) buffer[i * 320 + j] = 8'hFF;
-                else buffer[i * 320 + j] = 0;
+                buffer[i * 320 + j] = i * j;
             end
         end
 

@@ -106,6 +106,8 @@ module virtual_vga_m();
                 end
             end
         end
+
+        $fclose(fd);
     end
     endtask
 endmodule

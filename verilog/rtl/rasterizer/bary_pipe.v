@@ -10,11 +10,9 @@ module bary_pipe_m #(
     input wire clk_i,
     input wire nrst_i,
 
-    input  wire [`BUS_MIPORT] mport_i,
-    output reg  [`BUS_MOPORT] mport_o,
-
     input wire run_i,
 
+    input wire continue_i,
     output wire ready_o,
 
     input wire [SC_WIDTH - 1:0] posx,
@@ -35,81 +33,49 @@ module bary_pipe_m #(
     output reg signed [WORD_WIDTH - 1:0] l2
 );
 
-    localparam STATE_READY  = 3'b000;
-    localparam STATE_SETUP1 = 3'b001;
-    localparam STATE_SETUP2 = 3'b010;
-    localparam STATE_SETUP3 = 3'b011;
-    localparam STATE_RUN    = 3'b100;
+    localparam STATE_READY     = 5'b00000;
+    localparam STATE_SETUP1    = 5'b00001;
+    localparam STATE_SETUP2    = 5'b00010;
+    localparam STATE_SETUP3    = 5'b00011;
+    localparam STATE_SETUP4    = 5'b00100;
+    localparam STATE_SETUP5    = 5'b00101;
+    localparam STATE_SETUP6    = 5'b00110;
+    localparam STATE_SETUP7    = 5'b00111;
+    localparam STATE_SETUP8    = 5'b01000;
+    localparam STATE_AWAIT_POS = 5'b01001;
+    localparam STATE_RUN1      = 5'b01010;
+    localparam STATE_RUN2      = 5'b01011;
+    localparam STATE_RUN3      = 5'b01100;
+    localparam STATE_RUN4      = 5'b01101;
+    localparam STATE_RUN5      = 5'b01110;
+    localparam STATE_RUN6      = 5'b01111;
+    localparam STATE_RUN7      = 5'b10000;
+    localparam STATE_RUN8      = 5'b10001;
+    localparam STATE_RUN9      = 5'b10010;
 
-    reg [2:0] state;
+    reg [4:0] state;
 
-    reg source_swap;
-    always @(*) begin
-        case (state)
-            STATE_READY, STATE_SETUP1, STATE_SETUP2, STATE_SETUP3: source_swap <= 1;
-            default: source_swap <= 0;
-        endcase
-    end
-
-    wire signed [WORD_WIDTH - 1:0] s1a; wire signed [WORD_WIDTH - 1:0] s1b;
-    reg  signed [WORD_WIDTH - 1:0] as1a; reg  signed [WORD_WIDTH - 1:0] as1b;
-    wire signed [WORD_WIDTH - 1:0] _s1a; wire signed [WORD_WIDTH - 1:0] _s1b;
-    assign _s1a = source_swap ? as1a : s1a; assign _s1b = source_swap ? as1b : s1b;
-    wire signed [WORD_WIDTH - 1:0] s1y;
-    sub_m #(WORD_WIDTH) sub1( .a_i(_s1a), .b_i(_s1b), .y_o(s1y) );
-
-    wire signed [WORD_WIDTH - 1:0] s2a; wire signed [WORD_WIDTH - 1:0] s2b;
-    reg  signed [WORD_WIDTH - 1:0] as2a; reg  signed [WORD_WIDTH - 1:0] as2b;
-    wire signed [WORD_WIDTH - 1:0] _s2a; wire signed [WORD_WIDTH - 1:0] _s2b;
-    assign _s2a = source_swap ? as2a : s2a; assign _s2b = source_swap ? as2b : s2b;
-    wire signed [WORD_WIDTH - 1:0] s2y;
-    sub_m #(WORD_WIDTH) sub2( .a_i(_s2a), .b_i(_s2b), .y_o(s2y) );
-
-    reg signed [WORD_WIDTH - 1:0] y1my2, x2mx1, x0mx2, y0my2;
-
-    wire signed [WORD_WIDTH - 1:0] m1a; wire signed [WORD_WIDTH - 1:0] m1b;
-    wire signed [WORD_WIDTH - 1:0] _m1a; wire signed [WORD_WIDTH - 1:0] _m1b;
-    assign _m1a = source_swap ? y1my2 : m1a; assign _m1b = source_swap ? s1y : m1b;
-    wire signed [WORD_WIDTH - 1:0] m1y;
-    mul_m #(WORD_WIDTH) mul1( .a_i(_m1a), .b_i(_m1b), .y_o(m1y) );
-
-    wire signed [WORD_WIDTH - 1:0] m2a; wire signed [WORD_WIDTH - 1:0] m2b;
-    wire signed [WORD_WIDTH - 1:0] _m2a; wire signed [WORD_WIDTH - 1:0] _m2b;
-    assign _m2a = source_swap ? x2mx1 : m2a; assign _m2b = source_swap ? s2y : m2b;
-    wire signed [WORD_WIDTH - 1:0] m2y;
-    mul_m #(WORD_WIDTH) mul2( .a_i(_m2a), .b_i(_m2b), .y_o(m2y) );
-
-    wire signed [WORD_WIDTH - 1:0] a1a; wire signed [WORD_WIDTH - 1:0] a1b;
-    wire signed [WORD_WIDTH - 1:0] _a1a; wire signed [WORD_WIDTH - 1:0] _a1b;
-    assign _a1a = source_swap ? m1y : a1a; assign _a1b = source_swap ? m2y : a1b;
+    reg  signed [WORD_WIDTH - 1:0] a1a; reg  signed [WORD_WIDTH - 1:0] a1b;
     wire signed [WORD_WIDTH - 1:0] a1y;
-    add_m #(WORD_WIDTH) add1( .a_i(_a1a), .b_i(_a1b), .y_o(a1y) );
+    add_m #(WORD_WIDTH) add1( .a_i(a1a), .b_i(a1b), .y_o(a1y) );
+
+    reg  signed [WORD_WIDTH - 1:0] s1a; reg  signed [WORD_WIDTH - 1:0] s1b;
+    wire signed [WORD_WIDTH - 1:0] s1y;
+    sub_m #(WORD_WIDTH) sub1( .a_i(s1a), .b_i(s1b), .y_o(s1y) );
+
+    reg  signed [WORD_WIDTH - 1:0] m1a; reg  signed [WORD_WIDTH - 1:0] m1b;
+    wire signed [WORD_WIDTH - 1:0] m1y;
+    mul_m #(WORD_WIDTH) mul1( .a_i(m1a), .b_i(m1b), .y_o(m1y) );
 
     wire signed [WORD_WIDTH - 1:0] i1a;
     wire signed [WORD_WIDTH - 1:0] i1y;
     inv_m #(WORD_WIDTH) inv1( .a_i(i1a), .y_o(i1y) );
 
-    wire signed [WORD_WIDTH - 1:0] m3a; wire signed [WORD_WIDTH - 1:0] m3b;
-    wire signed [WORD_WIDTH - 1:0] m3y;
-    mul_m #(WORD_WIDTH) mul3( .a_i(m3a), .b_i(m3b), .y_o(m3y) );
+    reg signed [WORD_WIDTH - 1:0] y1my2, x2mx1, x0mx2, y0my2, x2mx0, y2my0, x1mx0;
+    reg signed [WORD_WIDTH - 1:0] y1py0, y2py1, y0py2;
 
-    wire signed [WORD_WIDTH - 1:0] m4a; wire signed [WORD_WIDTH - 1:0] m4b;
-    wire signed [WORD_WIDTH - 1:0] m4y;
-    mul_m #(WORD_WIDTH) mul4( .a_i(m4a), .b_i(m4b), .y_o(m4y) );
-    
-    wire signed [WORD_WIDTH - 1:0] a2a; wire signed [WORD_WIDTH - 1:0] a2b;
-    wire signed [WORD_WIDTH - 1:0] a2y;
-    add_m #(WORD_WIDTH) add2( .a_i(a2a), .b_i(a2b), .y_o(a2y) );
-
-    wire signed [WORD_WIDTH - 1:0] m5a; wire signed [WORD_WIDTH - 1:0] m5b;
-    wire signed [WORD_WIDTH - 1:0] m5y;
-    mul_m #(WORD_WIDTH) mul5( .a_i(m5a), .b_i(m5b), .y_o(m5y) );
-
-    wire signed [WORD_WIDTH - 1:0] m6a; wire signed [WORD_WIDTH - 1:0] m6b;
-    wire signed [WORD_WIDTH - 1:0] m6y;
-    mul_m #(WORD_WIDTH) mul6( .a_i(m6a), .b_i(m6b), .y_o(m6y) );
-
-    reg signed [WORD_WIDTH - 1:0] x2mx0, y2my0;
+    reg signed [WORD_WIDTH - 1:0] temp1;
+    reg signed [WORD_WIDTH - 1:0] temp2;
 
     reg signed [WORD_WIDTH - 1:0] det_t;
 
@@ -117,49 +83,9 @@ module bary_pipe_m #(
 
     assign i1a = det_t;
 
-    assign s1a = posx;
-    assign s1b = v2x;
-
-    assign s2a = posy;
-    assign s2b = v2y;
-
-    assign m1a = y1my2;
-    assign m1b = s1y;
-
-    assign m2a = x2mx1;
-    assign m2b = s2y;
-
-    assign m3a = y2my0;
-    assign m3b = s1y;
-
-    assign m4a = x0mx2;
-    assign m4b = s2y;
-
-    reg                           prods_ready;
-    reg signed [WORD_WIDTH - 1:0] l0_prods0;
-    reg signed [WORD_WIDTH - 1:0] l0_prods1;
-    reg signed [WORD_WIDTH - 1:0] l1_prods0;
-    reg signed [WORD_WIDTH - 1:0] l1_prods1;
-
-    assign a1a = l0_prods0;
-    assign a1b = l0_prods1;
-
-    assign a2a = l1_prods0;
-    assign a2b = l1_prods1;
-
-    assign m5a = a1y;
-    assign m5b = inv_det_t;
-
-    assign m6a = a2y;
-    assign m6b = inv_det_t;
-
-    reg lambdas_ready;
-
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
             state <= STATE_READY;
-
-            mport_o <= 0;
 
             y1my2 <= 0;
             x2mx1 <= 0;
@@ -167,18 +93,18 @@ module bary_pipe_m #(
             x2mx0 <= 0;
             y2my0 <= 0;
             x0mx2 <= 0;
+            x1mx0 <= 0;
+            y1py0 <= 0;
+            y2py1 <= 0;
+            y0py2 <= 0;
+
+            temp1 <= 0;
+            temp2 <= 0;
 
             det_t <= 0;
 
             inv_det_t <= 0;
 
-            prods_ready  <= 0;
-            l0_prods0 <= 0;
-            l0_prods1 <= 0;
-            l1_prods0 <= 0;
-            l1_prods1 <= 0;
-
-            lambdas_ready <= 0;
             l0 <= 0;
             l1 <= 0;
             l2 <= 0;
@@ -189,60 +115,215 @@ module bary_pipe_m #(
                     if (run_i) begin
                         state <= STATE_SETUP1;
 
-                        as1a <= v1y;
-                        as1b <= v2y;
-                        as2a <= v2x;
-                        as2b <= v1x;
-                    end
+                        s1a <= v1y;
+                        s1b <= v2y;
 
-                    prods_ready <= 0;
+                        a1a <= v1y;
+                        a1b <= v0y;
+                    end
                 end
 
                 STATE_SETUP1: begin
                     state <= STATE_SETUP2;
 
                     y1my2 <= s1y;
-                    x2mx1 <= s2y;
 
-                    as1a <= v0x;
-                    as1b <= v2x;
-                    as2a <= v0y;
-                    as2b <= v2y;
+                    s1a <= v0x;
+                    s1b <= v2x;
+
+                    y1py0 <= a1y;
+
+                    a1a <= v2y;
+                    a1b <= v1y;
                 end
 
                 STATE_SETUP2: begin
                     state <= STATE_SETUP3;
 
                     x0mx2 <= s1y;
-                    y0my2 <= s2y;
 
-                    det_t <= a1y;
+                    s1a <= v2x;
+                    s1b <= v1x;
 
-                    as1a <= v2x;
-                    as1b <= v0x;
-                    as2a <= v2y;
-                    as2b <= v0y;
+                    m1a <= y1my2;
+                    m1b <= s1y;
+
+                    y2py1 <= a1y;
+
+                    a1a <= v0y;
+                    a1b <= v2y;
                 end
 
                 STATE_SETUP3: begin
-                    state <= STATE_RUN;
+                    state <= STATE_SETUP4;
+
+                    x2mx1 <= s1y;
+
+                    s1a <= v0y;
+                    s1b <= v2y;
+
+                    temp1 <= m1y;
+
+                    m1a <= x0mx2;
+                    m1b <= a1y;
+
+                    y0py2 <= a1y;
+                end
+
+                STATE_SETUP4: begin
+                    state <= STATE_SETUP5;
+
+                    y0my2 <= s1y;
+
+                    s1a <= v1x;
+                    s1b <= v0x;
+
+                    temp2 <= m1y; // 0-2
+
+                    m1a <= x2mx1;
+                    m1b <= s1y;
+                end
+
+                STATE_SETUP5: begin
+                    state <= STATE_SETUP6;
+
+                    x1mx0 <= s1y;
+
+                    s1a <= v2x;
+                    s1b <= v0x;
+
+                    a1a <= temp1;
+                    a1b <= m1y;
+
+                    m1a <= s1y;
+                    m1b <= y1py0;
+                end
+
+                STATE_SETUP6: begin
+                    state <= STATE_SETUP7;
 
                     x2mx0 <= s1y;
-                    y2my0 <= s2y;
 
+                    s1a <= v2y;
+                    s1b <= v0y;
+                    
+                    det_t <= a1y;
+
+                    a1a <= temp2;
+                    a1b <= m1y; // 1-0
+
+                    m1a <= x2mx1;
+                    m1b <= y2py1;
+                end
+
+                STATE_SETUP7: begin
+                    state <= STATE_SETUP8;
+
+                    y2my0 <= s1y;
+
+                    a1a <= a1y;
+                    a1b <= m1y; // 2-1
+                    
                     inv_det_t <= i1y;
                 end
 
-                STATE_AWAIT_LOC: begin
-                    prods_ready  <= 1;
-                    
-                    
+                STATE_SETUP8: begin
+                    if (a1y < 0) state <= STATE_AWAIT_POS;
+                    else state <= STATE_READY;
+                end
+
+                STATE_AWAIT_POS: begin
+                    if (continue_i) state <= STATE_RUN1;
+
+                    s1a <= posx;
+                    s1b <= v2x;
+
+                    temp1 <= posy;
+                end
+
+                STATE_RUN1: begin
+                    state <= STATE_RUN2;
+
+                    temp1 <= s1y;
+
+                    s1a <= temp1;
+                    s1b <= v2y;
+
+                    m1a <= y1my2;
+                    m1b <= s1y;
+                end
+
+                STATE_RUN2: begin
+                    state <= STATE_RUN3;
+
+                    a1a <= m1y;
+
+                    m1a <= x2mx1;
+                    m1b <= s1y;
+                end
+
+                STATE_RUN3: begin
+                    state <= STATE_RUN4;
+
+                    a1b <= m1y;
+
+                    m1a <= y2my0;
+                    m1b <= temp1;
+                end
+
+                STATE_RUN4: begin
+                    state <= STATE_RUN5;
+
+                    a1a <= m1y;
+
+                    m1a <= a1y;
+                    m1b <= inv_det_t;
+                end
+
+                STATE_RUN5: begin
+                    state <= STATE_RUN6;
+
+                    l0 <= m1y;
+
+                    m1a <= x0mx2;
+                    m1b <= s1y;
+                end
+
+                STATE_RUN6: begin
+                    state <= STATE_RUN7;
+
+                    s1a <= 1;
+                    s1b <= l0;
+
+                    a1b <= m1y;
+                end
+
+                STATE_RUN7: begin
+                    state <= STATE_RUN8;
+
+                    m1a <= a1y;
+                    m1b <= inv_det_t;
+                end
+
+                STATE_RUN8: begin
+                    state <= STATE_RUN9;
+
+                    l1 <= m1y;
+
+                    s1a <= s1y;
+                    s1b <= m1y;
+                end
+
+                STATE_RUN9: begin
+                    state <= STATE_AWAIT_POS;
+
+                    l2 <= s1y;
                 end
 
             endcase
         end
     end
 
-    assign ready_o = (state == STATE_RUN);
+    assign ready_o = (state == STATE_AWAIT_POS);
 
 endmodule

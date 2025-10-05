@@ -11,23 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 # SPDX-License-Identifier: Apache-2.0
 
+# THE FOLLOWING SECTIONS CAN BE CHANGED IF NEEDED
 
- 
-PWDD := $(shell pwd)
-BLOCKS := $(shell basename $(PWDD))
+# PDN Pitch
+set ::env(FP_PDN_VPITCH) 180
+set ::env(FP_PDN_HPITCH) $::env(FP_PDN_VPITCH)
 
-# ---- Include Partitioned Makefiles ----
-
-VERILOG_FILES+=virtual_vga.v
-
-CONFIG = caravel_user_project
-
-include $(MCW_ROOT)/verilog/dv/make/env.makefile
-include $(MCW_ROOT)/verilog/dv/make/var.makefile
-include $(MCW_ROOT)/verilog/dv/make/cpu.makefile
-include $(MCW_ROOT)/verilog/dv/make/sim.makefile
-
-
+# PDN Offset 
+set ::env(FP_PDN_VOFFSET) 5
+set ::env(FP_PDN_HOFFSET) $::env(FP_PDN_VOFFSET)

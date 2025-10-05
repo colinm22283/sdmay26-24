@@ -91,10 +91,12 @@
 
 `endif // __USER_DEFINES_H
 
-`define BUS_ADDR_SIZE 20
+`define DECIMAL_POS (16)
+
+`define BUS_ADDR_SIZE (20)
 `define BUS_ADDR_PORT (`BUS_ADDR_SIZE - 1):0
 
-`define BUS_DATA_SIZE 32
+`define BUS_DATA_SIZE (32)
 `define BUS_DATA_PORT (`BUS_DATA_SIZE - 1):0
 
 // master in

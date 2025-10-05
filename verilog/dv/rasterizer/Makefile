@@ -22,6 +22,7 @@ BLOCKS := $(shell basename $(PWDD))
 # ---- Include Partitioned Makefiles ----
 
 VERILOG_FILES+=virtual_vga.v
+VERILOG_FILES+=spi_chip.v
 
 CONFIG = caravel_user_project
 

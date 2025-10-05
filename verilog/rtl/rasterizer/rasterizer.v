@@ -7,11 +7,11 @@ module rasterizer_m #(
     input wire nrst_i,
 
     input  wire [`BUS_MIPORT] mport_i,
-    output reg  [`BUS_MOPORT] mport_o,
+    output wire [`BUS_MOPORT] mport_o,
 
     input  wire run_i,
-    output wire busy_0,
-    output wire output_ready_0,
+    output wire busy_o,
+    output wire output_ready_o,
 
     input wire [WORD_WIDTH - 1:0] t0x,
     input wire [WORD_WIDTH - 1:0] t0y,
@@ -30,6 +30,10 @@ module rasterizer_m #(
     input wire signed [WORD_WIDTH - 1:0] v2y,
     input wire signed [WORD_WIDTH - 1:0] v2z
 );
+
+    assign mport_o = 0;
+    assign busy_o = 0;
+    assign output_ready_o = 0;
 
     localparam WORD_SMAX = 1 << (WORD_WIDTH - 1);
 
@@ -68,9 +72,9 @@ module rasterizer_m #(
         if (bby1 >= HEIGHT) bby1 = HEIGHT - 1;
     end
 
-    localparam STATE_READY = 4'b0000;
-    localparam STATE_RUN   = 4'b0001;
-    localparam STATE_DONE  = 4'b0010;
+    localparam STATE_READY    = 4'b0000;
+    localparam STATE_RUN_BARY = 4'b0001;
+    localparam STATE_DONE     = 4'b0010;
 
     reg [3:0] state;
 
@@ -80,7 +84,12 @@ module rasterizer_m #(
     reg running;
     assign busy = !running;
 
-    wire pipeline_ready;
+    wire bary_continue;
+    wire bary_ready;
+
+    wire signed [WORD_WIDTH - 1:0] l0;
+    wire signed [WORD_WIDTH - 1:0] l1;
+    wire signed [WORD_WIDTH - 1:0] l2;
 
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
@@ -95,7 +104,7 @@ module rasterizer_m #(
             case (state)
                 STATE_READY: begin
                     if (run_i) begin
-                        state <= STATE_RUN;
+                        state <= STATE_RUN_BARY;
 
                         // TODO: handle edge cases here
                         posx  <= bbx0;
@@ -105,8 +114,10 @@ module rasterizer_m #(
                     end
                 end
 
-                STATE_RUN: begin
-                    if (pipeline_ready) begin
+                STATE_RUN_BARY: begin
+                    if (bary_ready) begin
+                        l0 <= 
+
                         if (posx == WIDTH - 1) begin
                             posx <= 0;
                             posy <= posy + 1;
@@ -124,13 +135,15 @@ module rasterizer_m #(
         end
     end
 
+    assign bary_continue = state == STATE_RUN_BARY;
+
     bary_pipe_m #(WORD_WIDTH, WIDTH, HEIGHT) bary_pipe (
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 
         .run_i(run_i),
 
-        .ready_o(pipeline_ready),
+        .ready_o(bary_ready),
 
         .posx(posx),
         .posy(posy),
@@ -143,7 +156,11 @@ module rasterizer_m #(
         .v1z(v1z),
         .v2x(v2x),
         .v2y(v2y),
-        .v2z(v2z)
+        .v2z(v2z),
+
+        .l0(l0),
+        .l1(l1),
+        .l2(l2)
     );
 
 endmodule

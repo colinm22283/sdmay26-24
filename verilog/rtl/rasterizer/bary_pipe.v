@@ -232,13 +232,18 @@ module bary_pipe_m #(
                     else state <= STATE_READY;
                 end
 
-                STATE_AWAIT_POS: begin
+                STATE_AWAIT_POS: begin : AWAIT_POS
+                    reg [WORD_WIDTH - 1:0] posx_extended, posy_extended;
+
+                    posx_extended = posx;
+                    posy_extended = posy;
+                
                     if (continue_i) state <= STATE_RUN1;
 
-                    s1a <= posx;
+                    s1a <= posx_extended << `DECIMAL_POS;
                     s1b <= v2x;
 
-                    temp1 <= posy;
+                    temp1 <= posy_extended << `DECIMAL_POS;
                 end
 
                 STATE_RUN1: begin
@@ -267,7 +272,7 @@ module bary_pipe_m #(
 
                     a1b <= m1y;
 
-                    m1a <= y2my0;
+                    m1a <= x2mx0;
                     m1b <= temp1;
                 end
 

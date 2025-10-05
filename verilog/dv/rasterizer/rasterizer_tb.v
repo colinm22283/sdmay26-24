@@ -3,6 +3,9 @@
 
 module rasterizer_tb();
 
+    integer current_cycle;
+    initial current_cycle = 0;
+
     reg clk;
     reg nrst;
 
@@ -11,6 +14,8 @@ module rasterizer_tb();
         #10;
         clk <= 0;
         #10;
+
+        current_cycle = current_cycle + 1;
     end
 
     wire [`BUS_MIPORT] mportai;
@@ -37,7 +42,7 @@ module rasterizer_tb();
     wire spi_dqsmi;
     wire spi_dqsmo;
 
-    spi_mem_m #(0, 1024) spi_mem(
+    spi_mem_m #(0, 320 * 240) spi_mem(
         .clk_i(clk),
         .nrst_i(nrst),
 
@@ -52,7 +57,7 @@ module rasterizer_tb();
         .spi_dqsm_o(spi_dqsmo)
     );
 
-    spi_chip_m spi_chip(
+    spi_chip_m #(7, 3, 320 * 240) spi_chip(
         .clk_i(spi_clk),
         .cs_i(spi_cs),
         .mosi_i(spi_mosi),
@@ -113,6 +118,7 @@ module rasterizer_tb();
 
     initial begin : MAIN
         integer i, j;
+        integer x, y;
 
 		$dumpfile("rasterizer.vcd");
 		$dumpvars(0, rasterizer_tb);
@@ -124,8 +130,21 @@ module rasterizer_tb();
         nrst = 1;
         #30;
 
-        for (i = 0; i < 320 * 240; i = i + 1) begin
-            spi_chip.mem[i] = 0;
+        for (x = 0; x < 320; x = x + 1) begin
+            for (y = 0; y < 240; y = y + 1) begin
+                if (x % 10 == 9 && y % 10 == 9) begin
+                    spi_chip.mem[y * 320 + x] = 8'b00011100;
+                end
+                else if (x % 10 == 9) begin
+                    spi_chip.mem[y * 320 + x] = 8'b11111100;
+                end
+                else if (y % 10 == 9) begin
+                    spi_chip.mem[y * 320 + x] = 8'b00000011;
+                end
+                else begin
+                    spi_chip.mem[y * 320 + x] = 8'b11100000;
+                end
+            end
         end
 
         run = 0;
@@ -152,9 +171,14 @@ module rasterizer_tb();
         run = 1;
         wait(clk);
         wait(!clk);
+        run = 0;
 
         wait(busy);
         wait(!busy);
+
+        $display("Elapsed %d clock cycles", current_cycle);
+
+        $display("Dumping image...");
 
         `VGA_WRITE("output.bmp", spi_chip.mem, 0, 320, 240, `COLOR_TYPE_RGB332);
 
@@ -162,7 +186,7 @@ module rasterizer_tb();
     end
 
     initial begin
-        #1000000;
+        #10000000;
         $finish;
     end
 

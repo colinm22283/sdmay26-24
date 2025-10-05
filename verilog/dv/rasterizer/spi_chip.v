@@ -28,8 +28,8 @@ module spi_chip_m #(
     reg [31:0] full_address;
     wire [25:0] address;
     assign address = {
-        full_address[26:17],
-        full_address[15:3]
+        full_address[28:16],
+        full_address[14:5]
     };
 
     initial begin
@@ -62,10 +62,11 @@ module spi_chip_m #(
 
             for (i = 0; i < 4; i = i + 1) begin
                 wait(clk_i);
-                full_address[i * 8 +: 4] = mosi_i;
+                full_address[28 - (i * 8) +: 4] = mosi_i;
                 wait(!clk_i);
-                full_address[i * 8 + 4 +: 4] = mosi_i;
+                full_address[24 - (i * 8) +: 4] = mosi_i;
             end
+            #1;
 
             $display("Got address 0x%h", address);
 

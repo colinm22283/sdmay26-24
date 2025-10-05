@@ -31,11 +31,11 @@ module spi_mem_m #(
     assign ext_addr = rel_addr;
 
     wire [31:0] cmd_addr = {
-        5'b0000,
-        ext_addr[25:11],
+        3'b000,
+        ext_addr[22:10],
         1'b0,
-        ext_addr[10:0],
-        3'b000
+        ext_addr[9:0],
+        5'b00000
     };
 
     localparam STATE_READY       = 4'b0000;
@@ -159,7 +159,7 @@ module spi_mem_m #(
                 end
 
                 STATE_ADDR: begin
-                    spi_mosi_o <= cmd_addr[current_nibble * 4 +: 4];
+                    spi_mosi_o <= cmd_addr[28 - (current_nibble * 4) +: 4];
 
                     if (current_nibble == 7) begin
                         state <= STATE_LATENCY;

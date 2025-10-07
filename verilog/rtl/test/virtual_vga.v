@@ -1,20 +1,30 @@
-`define VIRTUAL_VGA_MAX_BUFFER_SIZE (1048576)
-`define VIRTUAL_VGA_MAX_COLOR_SIZE (32)
+`define VIRTUAL_VGA_MAX_BUFFER_SIZE (3000000)
+`define VIRTUAL_VGA_MAX_COLOR_SIZE (64)
 
 `define COLOR_TYPE_RGB332 (1)
+`define COLOR_TYPE_GSW (2)
 
-`define COLOR_SIZE(color) (((color) == `COLOR_TYPE_RGB332) ? 8 : 1)
+`define COLOR_SIZE(color) (((color) == `COLOR_TYPE_RGB332) ? 8 : (((color) == `COLOR_TYPE_GSW) ? 32 : 1))
 
 `define VGA_WRITE(path, buffer, offset, width, height, color_type) \
     begin : VGA_WRITE_PROC_`__LINE__ \
         integer i; \
-        reg [((width) * (height) * `COLOR_SIZE((color_type))) - 1:0] flat_buffer; \
+        reg [`VIRTUAL_VGA_MAX_BUFFER_SIZE - 1:0] flat_buffer; \
         \
-        for (i = 0; i < (width) * (height); i = i + 1) begin \
-            flat_buffer[i * 8+:8] = buffer[i]; \
+        for (i = 0; i < (width) * (height) * `COLOR_SIZE((color_type)) / 8; i = i + 1) begin \
+            flat_buffer[i * 8+:8] = { \
+                buffer[offset + i][0], \
+                buffer[offset + i][1], \
+                buffer[offset + i][2], \
+                buffer[offset + i][3], \
+                buffer[offset + i][4], \
+                buffer[offset + i][5], \
+                buffer[offset + i][6], \
+                buffer[offset + i][7] \
+            }; \
         end \
         \
-        virtual_vga_m._VGA_WRITE ($fopen((path), "wb"), (width), (height), (color_type), flat_buffer); \
+        virtual_vga_m._VGA_WRITE($fopen((path), "wb"), (width), (height), (color_type), flat_buffer); \
     end
 
 module virtual_vga_m();
@@ -70,12 +80,14 @@ module virtual_vga_m();
 
             for (y = 0; y < HEIGHT; y = y + 1) begin
                 for (x = 0; x < WIDTH; x = x + 1) begin : INNER
-                    integer i;
+                    integer i, j;
                     reg [`VIRTUAL_VGA_MAX_COLOR_SIZE - 1:0] color;
-                    real r, g, b;
+                    reg [7:0] r, g, b;
 
-                    for (i = 0; i < `COLOR_SIZE(COLOR_TYPE); i = i + 1) begin
-                        color[i] = buffer[(y * WIDTH + x) * `COLOR_SIZE(COLOR_TYPE) + i];
+                    for (i = 0; i < `COLOR_SIZE(COLOR_TYPE) / 8; i = i + 1) begin
+                        for (j = 0; j < 8; j = j + 1) begin
+                            color[7 - j + i * 8] = buffer[(y * WIDTH + x) * `COLOR_SIZE(COLOR_TYPE) + i * 8 + j];
+                        end
                     end
 
                     case (COLOR_TYPE)
@@ -84,23 +96,21 @@ module virtual_vga_m();
                             g = color[5:3] * 255.0 / 7.0;
                             b = color[7:6] * 255.0 / 3.0;
                         end
+
+                        `COLOR_TYPE_GSW: begin
+                            r = color[31:24];
+                            g = r;
+                            b = r;
+                        end
                     endcase
 
                     begin : WRITE
-                        reg [7:0] red;
-                        reg [7:0] green;
-                        reg [7:0] blue;
-
-                        red = r;
-                        green = g;
-                        blue = b;
-
                         $fwrite(
                             fd,
                             "%c%c%c",
-                            red,
-                            green,
-                            blue
+                            b,
+                            g,
+                            r
                         );
                     end
                 end

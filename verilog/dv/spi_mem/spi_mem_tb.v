@@ -1,5 +1,3 @@
-`include "spi_chip.v"
-
 module spi_mem_tb();
 
     reg clk;

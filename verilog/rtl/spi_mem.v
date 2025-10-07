@@ -86,7 +86,7 @@ module spi_mem_m #(
     reg       word_ready;
 
     reg [2:0] write_byte;
-    reg [2:0] write_word;
+    reg [7:0] write_word;
 
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
@@ -309,6 +309,41 @@ module spi_mem_m #(
                             if (current_nibble[0]) begin
                                 if (write_byte == 3) begin
                                     if (write_word == 2) state <= STATE_WRITE_DELAY;
+                                    else begin
+                                        state <= STATE_WRITE;
+
+                                        write_byte <= 0;
+                                        write_word <= write_word + 1;
+                                    end
+                                        
+                                    write_buf <= in_data;
+                                end
+                                else if (write_byte == 1) begin
+                                    sport_o[`BUS_SO_SEQSLV] <= 1;
+
+                                    write_byte <= write_byte + 1;
+                                end
+                                else begin
+                                    sport_o[`BUS_SO_SEQSLV] <= 0;
+
+                                    write_byte <= write_byte + 1;
+                                end
+
+                                spi_mosi_o <= write_buf[write_byte * 8 + 4+:4];
+
+                                current_nibble[0] <= 0;
+                            end
+                            else begin
+                                spi_mosi_o <= write_buf[write_byte * 8+:4];
+
+                                current_nibble[0] <= 1;
+                            end
+                        end
+
+                        `BUS_SIZE_STREAM: begin
+                            if (current_nibble[0]) begin
+                                if (write_byte == 3) begin
+                                    if (!sport_i[`BUS_SI_REQ]) state <= STATE_WRITE_DELAY;
                                     else begin
                                         state <= STATE_WRITE;
 

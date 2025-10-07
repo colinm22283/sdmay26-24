@@ -26,7 +26,7 @@ module rasterizer_tb();
     wire [`BUS_SIPORT] sportai;
     wire [`BUS_SOPORT] sportao;
 
-    word_stripe_cache_m #(8) cache(
+    word_stripe_cache_m #(50) cache(
         .clk_i(clk),
         .nrst_i(nrst),
 
@@ -251,9 +251,9 @@ module rasterizer_tb();
 
         $display("Dumping image...");
 
-        `VGA_WRITE("output.bmp", spi_chip.mem, 0, 320, 240, `COLOR_TYPE_RGB332);
+        // `VGA_WRITE("output.bmp", spi_chip.mem, 0, 320, 240, `COLOR_TYPE_RGB332);
 
-        `VGA_WRITE("depth2.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
+        // `VGA_WRITE("depth2.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
 
         $finish;
     end

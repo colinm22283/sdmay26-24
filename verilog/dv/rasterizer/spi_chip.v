@@ -72,6 +72,9 @@ module spi_chip_m #(
 
             begin : LATENCY
                 integer latency;
+                reg collision;
+                
+                collision = {$random} % 2;
 
                 latency = LATENCY_COUNT - 3;
 
@@ -89,12 +92,13 @@ module spi_chip_m #(
                     end
 
                     if (command == CMD_READ) begin
-                        if ({$random} % 2 == 0) begin
+                        if (!collision) begin
                             latency = 0;
                         end
                         else begin
-                            $display("Refresh collision!");
+                            $display("Refresh collision");
                             latency = LATENCY_COUNT;
+                            collision = 0;
                         end
                     end
                     else begin

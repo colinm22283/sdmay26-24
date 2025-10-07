@@ -141,10 +141,10 @@
 `define BUS_READ  (1'b0)
 `define BUS_WRITE (1'b1)
 
-`define BUS_SIZE_BYTE  (2'b00)
-`define BUS_SIZE_WORD  (2'b01)
-`define BUS_SIZE_TWORD (2'b10)
-// `define BUS_SIZE_QWORD (2'b11)
+`define BUS_SIZE_BYTE   (2'b00)
+`define BUS_SIZE_WORD   (2'b01)
+`define BUS_SIZE_TWORD  (2'b10)
+`define BUS_SIZE_STREAM (2'b11)
 
 `define ADDR_DEPTH_BUFFER (100000)
 

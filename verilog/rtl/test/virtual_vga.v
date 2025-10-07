@@ -24,100 +24,64 @@
             }; \
         end \
         \
-        virtual_vga_m._VGA_WRITE($fopen((path), "wb"), (width), (height), (color_type), flat_buffer); \
+        begin : MAIN \
+            integer fd; \
+            integer WIDTH; \
+            integer HEIGHT; \
+            integer COLOR_TYPE; \
+            reg [`VIRTUAL_VGA_MAX_BUFFER_SIZE - 1:0] buffer; \
+            reg [31:0] size_bytes; \
+            reg [31:0] image_offset; \
+ \
+            fd = $fopen((path), "wb"); \
+            WIDTH = (width); \
+            HEIGHT = (height); \
+            COLOR_TYPE = (color_type); \
+            buffer = flat_buffer; \
+ \
+            size_bytes = 14 + 12 + WIDTH * HEIGHT * 3; \
+            image_offset = 14 + 12; \
+ \
+            $fwrite(fd, "BM%c%c%c%c%c%c%c%c%c%c%c%c", size_bytes[7:0], size_bytes[15:8], size_bytes[23:16], size_bytes[31:24], 0, 0, 0, 0, image_offset[7:0], image_offset[15:8], image_offset[23:16], image_offset[31:24]); \
+ \
+            $fwrite(fd, "%c%c%c%c%c%c%c%c%c%c%c%c", 8'h0C, 0, 0, 0, WIDTH[7:0], WIDTH[15:8], HEIGHT[7:0], HEIGHT[15:8], 1, 0, 24, 0); \
+ \
+            begin : DRAW_IMAGE \
+                integer x, y; \
+ \
+                for (y = 0; y < HEIGHT; y = y + 1) begin \
+                    for (x = 0; x < WIDTH; x = x + 1) begin : INNER \
+                        integer i, j; \
+                        reg [`VIRTUAL_VGA_MAX_COLOR_SIZE - 1:0] color; \
+                        reg [7:0] r, g, b; \
+ \
+                        for (i = 0; i < `COLOR_SIZE(COLOR_TYPE) / 8; i = i + 1) begin \
+                            for (j = 0; j < 8; j = j + 1) begin \
+                                color[7 - j + i * 8] = buffer[(y * WIDTH + x) * `COLOR_SIZE(COLOR_TYPE) + i * 8 + j]; \
+                            end \
+                        end \
+ \
+                        case (COLOR_TYPE) \
+                            `COLOR_TYPE_RGB332: begin \
+                                r = color[2:0] * 255.0 / 7.0; \
+                                g = color[5:3] * 255.0 / 7.0; \
+                                b = color[7:6] * 255.0 / 3.0; \
+                            end \
+ \
+                            `COLOR_TYPE_GSW: begin \
+                                r = color[31:24]; \
+                                g = r; \
+                                b = r; \
+                            end \
+                        endcase \
+ \
+                        begin : WRITE \
+                            $fwrite(fd, "%c%c%c", b, g, r); \
+                        end \
+                    end \
+                end \
+            end \
+ \
+            $fclose(fd); \
+        end \
     end
-
-module virtual_vga_m();
-    task _VGA_WRITE;
-        input integer fd;
-        input integer WIDTH;
-        input integer HEIGHT;
-        input integer COLOR_TYPE;
-        input [`VIRTUAL_VGA_MAX_BUFFER_SIZE - 1:0] buffer;
-
-        reg [31:0] size_bytes;
-        reg [31:0] image_offset;
-    begin
-        size_bytes = 14 + 12 + WIDTH * HEIGHT * 3;
-        image_offset = 14 + 12;
-
-        $fwrite(
-            fd,
-            "BM%c%c%c%c%c%c%c%c%c%c%c%c",
-            size_bytes[7:0],
-            size_bytes[15:8],
-            size_bytes[23:16],
-            size_bytes[31:24],
-            0,
-            0,
-            0,
-            0,
-            image_offset[7:0],
-            image_offset[15:8],
-            image_offset[23:16],
-            image_offset[31:24]
-        );
-
-        $fwrite(
-            fd,
-            "%c%c%c%c%c%c%c%c%c%c%c%c",
-            8'h0C,
-            0,
-            0,
-            0,
-            WIDTH[7:0],
-            WIDTH[15:8],
-            HEIGHT[7:0],
-            HEIGHT[15:8],
-            1,
-            0,
-            24,
-            0
-        );
-
-        begin : DRAW_IMAGE
-            integer x, y;
-
-            for (y = 0; y < HEIGHT; y = y + 1) begin
-                for (x = 0; x < WIDTH; x = x + 1) begin : INNER
-                    integer i, j;
-                    reg [`VIRTUAL_VGA_MAX_COLOR_SIZE - 1:0] color;
-                    reg [7:0] r, g, b;
-
-                    for (i = 0; i < `COLOR_SIZE(COLOR_TYPE) / 8; i = i + 1) begin
-                        for (j = 0; j < 8; j = j + 1) begin
-                            color[7 - j + i * 8] = buffer[(y * WIDTH + x) * `COLOR_SIZE(COLOR_TYPE) + i * 8 + j];
-                        end
-                    end
-
-                    case (COLOR_TYPE)
-                        `COLOR_TYPE_RGB332: begin
-                            r = color[2:0] * 255.0 / 7.0;
-                            g = color[5:3] * 255.0 / 7.0;
-                            b = color[7:6] * 255.0 / 3.0;
-                        end
-
-                        `COLOR_TYPE_GSW: begin
-                            r = color[31:24];
-                            g = r;
-                            b = r;
-                        end
-                    endcase
-
-                    begin : WRITE
-                        $fwrite(
-                            fd,
-                            "%c%c%c",
-                            b,
-                            g,
-                            r
-                        );
-                    end
-                end
-            end
-        end
-
-        $fclose(fd);
-    end
-    endtask
-endmodule

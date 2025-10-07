@@ -142,6 +142,8 @@ module spi_chip_m #(
                     dqsm_o = 1;
                     #quarter_clk;
 
+                    $display("Read 0x%h", mem[addr]);
+
                     addr = addr + 1;
 
                     miso_o = mem[addr][7:4];

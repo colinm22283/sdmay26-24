@@ -3,7 +3,7 @@ module bary_pipe_m #(
     parameter WIDTH = 320,
     parameter HEIGHT = 240,
 
-    parameter WORD_SMAX = 1 << (WORD_WIDTH - 1),
+    parameter WORD_SMAX = 1 << (WORD_WIDTH - 2),
 
     parameter SC_WIDTH = $clog2(WIDTH > HEIGHT ? WIDTH : HEIGHT)
 ) (
@@ -11,6 +11,8 @@ module bary_pipe_m #(
     input wire nrst_i,
 
     input wire run_i,
+
+    input wire last_i,
 
     input wire continue_i,
     output wire ready_o,
@@ -55,6 +57,8 @@ module bary_pipe_m #(
 
     reg [4:0] state;
 
+    reg last;
+
     reg  signed [WORD_WIDTH - 1:0] a1a; reg  signed [WORD_WIDTH - 1:0] a1b;
     wire signed [WORD_WIDTH - 1:0] a1y;
     add_m #(WORD_WIDTH) add1( .a_i(a1a), .b_i(a1b), .y_o(a1y) );
@@ -87,6 +91,8 @@ module bary_pipe_m #(
         if (!nrst_i) begin
             state <= STATE_READY;
 
+            last <= 0;
+
             y1my2 <= 0;
             x2mx1 <= 0;
             y0my2 <= 0;
@@ -105,9 +111,9 @@ module bary_pipe_m #(
 
             inv_det_t <= 0;
 
-            l0 <= 0;
-            l1 <= 0;
-            l2 <= 0;
+            l0 <= WORD_SMAX;
+            l1 <= WORD_SMAX;
+            l2 <= WORD_SMAX;
         end
         else if (clk_i) begin
             case (state)
@@ -238,7 +244,11 @@ module bary_pipe_m #(
                     posx_extended = posx;
                     posy_extended = posy;
                 
-                    if (continue_i) state <= STATE_RUN1;
+                    if (continue_i) begin
+                        state <= STATE_RUN1;
+
+                        last <= last_i;
+                    end
 
                     s1a <= posx_extended << `DECIMAL_POS;
                     s1b <= v2x;
@@ -272,7 +282,7 @@ module bary_pipe_m #(
 
                     a1b <= m1y;
 
-                    m1a <= x2mx0;
+                    m1a <= y2my0;
                     m1b <= temp1;
                 end
 
@@ -297,7 +307,7 @@ module bary_pipe_m #(
                 STATE_RUN6: begin
                     state <= STATE_RUN7;
 
-                    s1a <= 1;
+                    s1a <= 1 << `DECIMAL_POS;
                     s1b <= l0;
 
                     a1b <= m1y;
@@ -320,7 +330,8 @@ module bary_pipe_m #(
                 end
 
                 STATE_RUN9: begin
-                    state <= STATE_AWAIT_POS;
+                    if (last) state <= STATE_READY;
+                    else state <= STATE_AWAIT_POS;
 
                     l2 <= s1y;
                 end

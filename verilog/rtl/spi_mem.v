@@ -229,10 +229,10 @@ module spi_mem_m #(
                                 state <= STATE_DONE;
 
                                 sport_o[`BUS_SO_DATA] <= {
-                                    read_buf[0 * 8 +: 8],
-                                    read_buf[1 * 8 +: 8],
+                                    read_buf[3 * 8 +: 8],
                                     read_buf[2 * 8 +: 8],
-                                    read_buf[3 * 8 +: 8]
+                                    read_buf[1 * 8 +: 8],
+                                    read_buf[0 * 8 +: 8]
                                 };
                             end
                         end

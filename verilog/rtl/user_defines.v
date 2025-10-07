@@ -91,6 +91,7 @@
 
 `endif // __USER_DEFINES_H
 
+`define WORD_WIDTH (32)
 `define DECIMAL_POS (16)
 
 `define BUS_ADDR_SIZE (20)
@@ -144,4 +145,6 @@
 `define BUS_SIZE_WORD  (2'b01)
 `define BUS_SIZE_TWORD (2'b10)
 // `define BUS_SIZE_QWORD (2'b11)
+
+`define ADDR_DEPTH_BUFFER (100000)
 

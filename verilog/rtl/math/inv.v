@@ -7,6 +7,6 @@ module inv_m #(parameter WIDTH = 32) (
 
     assign a = a_i;
 
-    assign y_o = (64'd1 << (2 * `DECIMAL_POS)) / a;
+    assign y_o = ((64'd1 << `DECIMAL_POS) << `DECIMAL_POS) / a;
 
 endmodule

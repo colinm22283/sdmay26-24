@@ -13,6 +13,8 @@ module rasterizer_m #(
     output wire busy_o,
     output wire output_ready_o,
 
+    input wire [7:0] color_i,
+
     input wire [WORD_WIDTH - 1:0] t0x,
     input wire [WORD_WIDTH - 1:0] t0y,
     input wire [WORD_WIDTH - 1:0] t1x,
@@ -74,12 +76,17 @@ module rasterizer_m #(
         if (bby1 >= HEIGHT) bby1 = HEIGHT - 1;
     end
 
-    localparam STATE_READY    = 4'b0000;
-    localparam STATE_RUN_BARY = 4'b0001;
-    localparam STATE_REQ_DRAW = 4'b0010;
-    localparam STATE_ACK_DRAW = 4'b0011;
-    localparam STATE_NEXT     = 4'b0100;
-    localparam STATE_DONE     = 4'b0101;
+    localparam STATE_READY     = 4'b0000;
+    localparam STATE_RUN_BARY  = 4'b0001;
+    localparam STATE_WAIT_BARY = 4'b0010;
+    localparam STATE_REQ_CHECK = 4'b0011;
+    localparam STATE_ACK_CHECK = 4'b0100;
+    localparam STATE_REQ_DEPTH = 4'b0101;
+    localparam STATE_ACK_DEPTH = 4'b0110;
+    localparam STATE_REQ_DRAW  = 4'b0111;
+    localparam STATE_ACK_DRAW  = 4'b1000;
+    localparam STATE_NEXT      = 4'b1001;
+    localparam STATE_DONE      = 4'b1010;
 
     reg [3:0] state;
 
@@ -88,6 +95,7 @@ module rasterizer_m #(
 
     wire bary_continue;
     wire bary_ready;
+    reg  bary_last;
 
     reg  signed [WORD_WIDTH - 1:0] bary_l0;
     reg  signed [WORD_WIDTH - 1:0] bary_l1;
@@ -96,6 +104,8 @@ module rasterizer_m #(
     wire signed [WORD_WIDTH - 1:0] l0;
     wire signed [WORD_WIDTH - 1:0] l1;
     wire signed [WORD_WIDTH - 1:0] l2;
+
+    reg [WORD_WIDTH - 1:0] depth;
 
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
@@ -119,25 +129,91 @@ module rasterizer_m #(
                 end
 
                 STATE_RUN_BARY: begin
+                    state <= STATE_WAIT_BARY;
+                end
+
+                STATE_WAIT_BARY: begin
                     if (bary_ready) begin
-                        if (l0 >= 0 && l1 >= 0 && l2 >= 0) state <= STATE_REQ_DRAW;
-                        else state <= STATE_NEXT;
+                        if (l0 >= 0 && l1 >= 0 && l2 >= 0) begin
+                            state <= STATE_REQ_CHECK;
+                        end
+                        else begin
+                            state <= STATE_NEXT;
+                        end
+
+                        depth <=
+                            (({{32{l0[31]}}, l0} * v0z) >> `DECIMAL_POS) +
+                            (({{32{l1[31]}}, l1} * v1z) >> `DECIMAL_POS) +
+                            (({{32{l2[31]}}, l2} * v2z) >> `DECIMAL_POS);
 
                         bary_l0 <= l0;
                         bary_l1 <= l1;
                         bary_l2 <= l2;
+
+                        bary_last <= posx == bbx1 && posy == bby1;
+                    end
+                end
+
+                STATE_REQ_CHECK: begin
+
+                    if (mport_i[`BUS_MI_ACK]) begin
+                        state <= STATE_ACK_CHECK;
+
+                        $display("(%d, %d): 0x%h", posx, posy, 4 * (posy * WIDTH + posx));
+                    end
+
+                    mport_o[`BUS_MO_ADDR] <= `ADDR_DEPTH_BUFFER + 4 * (posy * WIDTH + posx);
+
+                    mport_o[`BUS_MO_RW]   <= `BUS_READ;
+                    mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_WORD;
+
+                    mport_o[`BUS_MO_REQ]  <= 1;
+                end
+
+                STATE_ACK_CHECK: begin
+                    if (!mport_i[`BUS_MI_ACK]) begin
+                        $display("0x%h, 0x%h", mport_i[`BUS_MO_DATA], depth);
+                        // if (mport_i[`BUS_MO_DATA] != 32'hFFFFFFFF) $finish;
+                        if (mport_i[`BUS_MO_DATA] > depth) state <= STATE_REQ_DEPTH;
+                        else begin
+                            state <= STATE_NEXT;
+                        end
+                    
+                        mport_o[`BUS_MO_REQ]  <= 0;
+                    end
+                end
+
+                STATE_REQ_DEPTH: begin
+                    if (mport_i[`BUS_MI_ACK]) begin
+                        state <= STATE_ACK_DEPTH;
+
+                        $display("(%d, %d): 0x%h", posx, posy, 4 * (posy * WIDTH + posx));
+                    end
+
+                    mport_o[`BUS_MO_ADDR] <= `ADDR_DEPTH_BUFFER + 4 * (posy * WIDTH + posx);
+                    mport_o[`BUS_MO_DATA] <= depth;
+
+                    mport_o[`BUS_MO_RW]   <= `BUS_WRITE;
+                    mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_WORD;
+
+                    mport_o[`BUS_MO_REQ]  <= 1;
+                end
+
+                STATE_ACK_DEPTH: begin
+                    if (!mport_i[`BUS_MI_ACK]) begin
+                        state <= STATE_REQ_DRAW;
+                    
+                        mport_o[`BUS_MO_REQ]  <= 0;
                     end
                 end
 
                 STATE_REQ_DRAW: begin
                     if (mport_i[`BUS_MI_ACK]) begin
                         state <= STATE_ACK_DRAW;
-
-                        $display("(%d, %d): 0x%h", posx, posy, posy * WIDTH + posx);
                     end
 
                     mport_o[`BUS_MO_ADDR] <= posy * WIDTH + posx;
-                    mport_o[`BUS_MO_DATA] <= 8'hFF;
+                    mport_o[`BUS_MO_DATA] <= color_i;
 
                     mport_o[`BUS_MO_RW]   <= `BUS_WRITE;
                     mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_BYTE;
@@ -177,7 +253,7 @@ module rasterizer_m #(
     end
 
     assign bary_continue = state == STATE_RUN_BARY;
-    assign busy_o = state != STATE_READY;
+    assign busy_o = state != STATE_READY && state != STATE_DONE;
 
     bary_pipe_m #(WORD_WIDTH, WIDTH, HEIGHT) bary_pipe (
         .clk_i(clk_i),
@@ -187,6 +263,7 @@ module rasterizer_m #(
 
         .ready_o(bary_ready),
         .continue_i(bary_continue),
+        .last_i(bary_last),
 
         .posx(posx),
         .posy(posy),

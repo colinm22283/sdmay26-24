@@ -26,7 +26,7 @@ module rasterizer_tb();
     wire [`BUS_SIPORT] sportai;
     wire [`BUS_SOPORT] sportao;
 
-    word_stripe_cache_m #(50) cache(
+    word_stripe_cache_m #(50, 8) cache(
         .clk_i(clk),
         .nrst_i(nrst),
 
@@ -184,82 +184,189 @@ module rasterizer_tb();
             end
         end
 
-        run = 0;
+        // run = 0;
 
-        color <= 8'b00000111;
+        // color <= 8'b00000111;
 
-        v0x = 20 << `DECIMAL_POS;
-        v0y = 20 << `DECIMAL_POS;
-        v0z = 3 * 64'h80000000 / 3;
-        t0x = 0;
-        t0y = 0;
+        // v0x = 20 << `DECIMAL_POS;
+        // v0y = 20 << `DECIMAL_POS;
+        // v0z = 3 * 64'h80000000 / 3;
+        // t0x = 0;
+        // t0y = 0;
 
-        v1x = 140 << `DECIMAL_POS;
-        v1y = 50 << `DECIMAL_POS;
-        v1z = 1 * 64'h80000000 / 3;
-        t1x = 10;
-        t1y = 0;
+        // v1x = 140 << `DECIMAL_POS;
+        // v1y = 50 << `DECIMAL_POS;
+        // v1z = 1 * 64'h80000000 / 3;
+        // t1x = 10;
+        // t1y = 0;
 
-        v2x = 50 << `DECIMAL_POS;
-        v2y = 140 << `DECIMAL_POS;
-        v2z = 1 * 64'h80000000 / 3;
-        t2x = 0;
-        t2y = 10;
+        // v2x = 50 << `DECIMAL_POS;
+        // v2y = 140 << `DECIMAL_POS;
+        // v2z = 1 * 64'h80000000 / 3;
+        // t2x = 0;
+        // t2y = 10;
 
-        wait(!clk);
-        run = 1;
+        // wait(!clk);
+        // run = 1;
 
-        wait(busy);
-        wait(!busy);
-        run = 0;
+        // wait(busy);
+        // wait(!busy);
+        // run = 0;
 
-        for (i = 0; i < 10; i = i + 1) begin
-            wait(clk);
+        // for (i = 0; i < 10; i = i + 1) begin
+        //     wait(clk);
+        //     wait(!clk);
+        // end
+
+        // // `VGA_WRITE("depth1.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
+
+        // color <= 8'b00111000;
+
+        // v0x = 10 << `DECIMAL_POS;
+        // v0y = 50 << `DECIMAL_POS;
+        // v0z = 1 * 64'h80000000 / 3;
+        // t0x = 0;
+        // t0y = 0;
+
+        // v1x = 50 << `DECIMAL_POS;
+        // v1y = 10 << `DECIMAL_POS;
+        // v1z = 1 * 64'h80000000 / 3;
+        // t1x = 10;
+        // t1y = 0;
+
+        // v2x = 140 << `DECIMAL_POS;
+        // v2y = 140 << `DECIMAL_POS;
+        // v2z = 3 * 64'h80000000 / 3;
+        // t2x = 0;
+        // t2y = 10;
+
+        // wait(!clk);
+        // run = 1;
+
+        // wait(busy);
+        // wait(!busy);
+        // run = 0;
+
+        // for (i = 0; i < 10; i = i + 1) begin
+        //     wait(clk);
+        //     wait(!clk);
+        // end
+
+        for (i = 0; i < 200; i = i + 1) begin
+            color <= 8'b11000000;
+
+            v0x = ((i % 20) * 15) << `DECIMAL_POS;
+            v0y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+            v0z = 0;
+            t0x = 0;
+            t0y = 0;
+
+            v1x = (10 + (i % 20) * 15) << `DECIMAL_POS;
+            v1y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+            v1z = 0;
+            t1x = 10;
+            t1y = 0;
+
+            v2x = ((i % 20) * 15) << `DECIMAL_POS;
+            v2y = (80 + (i / 20) * 15) << `DECIMAL_POS;
+            v2z = 0;
+            t2x = 0;
+            t2y = 10;
+
             wait(!clk);
+            run = 1;
+
+            wait(busy);
+            wait(!busy);
+            run = 0;
+
+            for (j = 0; j < 10; j = j + 1) begin
+                wait(clk);
+                wait(!clk);
+            end
         end
 
-        // `VGA_WRITE("depth1.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
+        for (i = 0; i < 200; i = i + 1) begin
+            color <= 8'b00111000;
 
-        color <= 8'b00111000;
+            v0x = (5 + (i % 20) * 15) << `DECIMAL_POS;
+            v0y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+            v0z = 32'h40000000;
+            t0x = 0;
+            t0y = 0;
 
-        v0x = 10 << `DECIMAL_POS;
-        v0y = 50 << `DECIMAL_POS;
-        v0z = 1 * 64'h80000000 / 3;
-        t0x = 0;
-        t0y = 0;
+            v1x = (5 + 10 + (i % 20) * 15) << `DECIMAL_POS;
+            v1y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+            v1z = 32'h40000000;
+            t1x = 10;
+            t1y = 0;
 
-        v1x = 50 << `DECIMAL_POS;
-        v1y = 10 << `DECIMAL_POS;
-        v1z = 1 * 64'h80000000 / 3;
-        t1x = 10;
-        t1y = 0;
+            v2x = (5 + (i % 20) * 15) << `DECIMAL_POS;
+            v2y = (80 + (i / 20) * 15) << `DECIMAL_POS;
+            v2z = 32'h40000000;
+            t2x = 0;
+            t2y = 10;
 
-        v2x = 140 << `DECIMAL_POS;
-        v2y = 140 << `DECIMAL_POS;
-        v2z = 3 * 64'h80000000 / 3;
-        t2x = 0;
-        t2y = 10;
+            wait(!clk);
+            run = 1;
 
-        wait(!clk);
-        run = 1;
+            wait(busy);
+            wait(!busy);
+            run = 0;
 
-        wait(busy);
-        wait(!busy);
-        run = 0;
+            for (j = 0; j < 10; j = j + 1) begin
+                wait(clk);
+                wait(!clk);
+            end
+        end
+
+        for (i = 0; i < 200; i = i + 1) begin
+            color <= 8'b00000111;
+
+            v0x = (10 + (i % 20) * 15) << `DECIMAL_POS;
+            v0y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+            v0z = 32'h80000000;
+            t0x = 0;
+            t0y = 0;
+
+            v1x = (10 + 10 + (i % 20) * 15) << `DECIMAL_POS;
+            v1y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+            v1z = 32'h80000000;
+            t1x = 10;
+            t1y = 0;
+
+            v2x = (10 + (i % 20) * 15) << `DECIMAL_POS;
+            v2y = (80 + (i / 20) * 15) << `DECIMAL_POS;
+            v2z = 32'h80000000;
+            t2x = 0;
+            t2y = 10;
+
+            wait(!clk);
+            run = 1;
+
+            wait(busy);
+            wait(!busy);
+            run = 0;
+
+            for (j = 0; j < 10; j = j + 1) begin
+                wait(clk);
+                wait(!clk);
+            end
+        end
 
         $display("Elapsed %d clock cycles", current_cycle);
 
         $display("Dumping image...");
 
-        // `VGA_WRITE("output.bmp", spi_chip.mem, 0, 320, 240, `COLOR_TYPE_RGB332);
+        `VGA_WRITE("output.bmp", spi_chip.mem, 0, 320, 240, `COLOR_TYPE_RGB332);
 
-        // `VGA_WRITE("depth2.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
+        `VGA_WRITE("depth2.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
 
         $finish;
     end
 
     initial begin
-        #100000000;
+        #1000000000;
         $finish;
     end
 

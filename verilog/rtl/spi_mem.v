@@ -253,18 +253,50 @@ module spi_mem_m #(
                                 sport_o[`BUS_SO_SEQSLV] <= 0;
                             end
                         end
+
+                        `BUS_SIZE_STREAM: begin
+                            if (word_ready) begin
+                                state <= STATE_READ_WAIT;
+
+                                sport_o[`BUS_SO_DATA] <= {
+                                    read_buf[3 * 8 +: 8],
+                                    read_buf[2 * 8 +: 8],
+                                    read_buf[1 * 8 +: 8],
+                                    read_buf[0 * 8 +: 8]
+                                };
+                                sport_o[`BUS_SO_SEQSLV] <= 1;
+                            end
+                            else begin
+                                sport_o[`BUS_SO_SEQSLV] <= 0;
+                            end
+                        end
                     endcase
                 end
 
                 STATE_READ_WAIT: begin
-                    if (read_word == 2) begin
-                        state <= STATE_DONE;
-                    end
-                    else begin
-                        state <= STATE_READ;
+                    case (sport_i[`BUS_SI_SIZE])
+                        default: begin
+                            if (read_word == 2) begin
+                                state <= STATE_DONE;
+                            end
+                            else begin
+                                state <= STATE_READ;
 
-                        read_word <= read_word + 1;
-                    end
+                                read_word <= read_word + 1;
+                            end
+                        end
+                        
+                        `BUS_SIZE_STREAM: begin
+                            if (!sport_i[`BUS_SI_REQ]) begin
+                                state <= STATE_DONE;
+                            end
+                            else begin
+                                state <= STATE_READ;
+
+                                read_word <= read_word + 1;
+                            end
+                        end
+                    endcase
                 end
 
                 STATE_WRITE: begin : WRITE

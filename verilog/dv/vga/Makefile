@@ -21,8 +21,6 @@ BLOCKS := $(shell basename $(PWDD))
 
 # ---- Include Partitioned Makefiles ----
 
-VERILOG_FILES+=virtual_vga.v
-
 CONFIG = caravel_user_project
 
 include $(MCW_ROOT)/verilog/dv/make/env.makefile

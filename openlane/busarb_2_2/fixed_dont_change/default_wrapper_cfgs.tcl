@@ -13,14 +13,12 @@
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
 
-# Caravel user project includes
--v $(USER_PROJECT_VERILOG)/rtl/user_defines.v
--v $(USER_PROJECT_VERILOG)/rtl/user_project_wrapper.v
+# THE FOLLOWING SECTIONS CAN BE CHANGED IF NEEDED
 
--v $(USER_PROJECT_VERILOG)/rtl/bus/busarb.v
--v $(USER_PROJECT_VERILOG)/rtl/bus/busslave.v
--v $(USER_PROJECT_VERILOG)/rtl/bus/ram.v
+# PDN Pitch
+set ::env(FP_PDN_VPITCH) 180
+set ::env(FP_PDN_HPITCH) $::env(FP_PDN_VPITCH)
 
--v $(USER_PROJECT_VERILOG)/rtl/spi_mem.v
-
- 
+# PDN Offset 
+set ::env(FP_PDN_VOFFSET) 5
+set ::env(FP_PDN_HOFFSET) $::env(FP_PDN_VOFFSET)

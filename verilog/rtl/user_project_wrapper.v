@@ -78,45 +78,52 @@ module user_project_wrapper #(
     output [2:0] user_irq
 );
 
-/*--------------------------------------*/
-/* User project is instantiated  here   */
-/*--------------------------------------*/
+    wire [`BUS_MIPORT] mportai;
+    wire [`BUS_MOPORT] mportao;
 
-user_proj_example mprj (
-`ifdef USE_POWER_PINS
-	.vccd1(vccd1),	// User area 1 1.8V power
-	.vssd1(vssd1),	// User area 1 digital ground
-`endif
+    wire [`BUS_SIPORT] sportai;
+    wire [`BUS_SOPORT] sportao;
 
-    .wb_clk_i(wb_clk_i),
-    .wb_rst_i(wb_rst_i),
+    assign mportao = la_data_in[0+:`BUS_SIPORT_SIZE];
+    assign la_data_out[0+:`BUS_SOPORT_SIZE] = mportai;
 
-    // MGMT SoC Wishbone Slave
+    busarb_m #(1, 1, 1) arbiter(
+        .clk_i(clk),
+        .nrst_i(nrst),
 
-    .wbs_cyc_i(wbs_cyc_i),
-    .wbs_stb_i(wbs_stb_i),
-    .wbs_we_i(wbs_we_i),
-    .wbs_sel_i(wbs_sel_i),
-    .wbs_adr_i(wbs_adr_i),
-    .wbs_dat_i(wbs_dat_i),
-    .wbs_ack_o(wbs_ack_o),
-    .wbs_dat_o(wbs_dat_o),
+        .mports_i({ mportao }),
+        .mports_o({ mportai }),
 
-    // Logic Analyzer
+        .sports_i({ sportao }),
+        .sports_o({ sportai })
+    );
 
-    .la_data_in(la_data_in),
-    .la_data_out(la_data_out),
-    .la_oenb (la_oenb),
+    wire spi_clk;
+    wire spi_cs;
+    wire [3:0] spi_mosi;
+    wire [3:0] spi_miso;
+    wire spi_dqsmi;
+    wire spi_dqsmo;
 
-    // IO Pads
+    reg [7:0] test_mem[1023:0];
 
-    .io_in ({io_in[37:30],io_in[7:0]}),
-    .io_out({io_out[37:30],io_out[7:0]}),
-    .io_oeb({io_oeb[37:30],io_oeb[7:0]}),
+    spi_mem_m #(0, 1024) spi_mem(
+        .clk_i(clk),
+        .nrst_i(nrst),
 
-    // IRQ
-    .irq(user_irq)
-);
+        .sport_i({ sportai }),
+        .sport_o({ sportao }),
+
+        .spi_clk_o(spi_clk),
+        .spi_cs_o(spi_cs),
+        .spi_mosi_o(spi_mosi),
+        .spi_miso_i(spi_miso),
+        .spi_dqsm_i(spi_dqsmi),
+        .spi_dqsm_o(spi_dqsmo)
+    );
+
+    assign io_out = {spi_clk, spi_cs, spi_mosi, spi_dqsmo};
+    assign {spi_miso, spi_dqsmi} = io_in;
 
 endmodule	// user_project_wrapper
 

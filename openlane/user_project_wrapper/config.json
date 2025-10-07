@@ -2,34 +2,32 @@
     "DESIGN_NAME": "user_project_wrapper",
     "VERILOG_FILES": [
         "dir::../../verilog/rtl/defines.v",
-        "dir::../../verilog/rtl/user_project_wrapper.v"
+        "dir::../../verilog/rtl/user_defines.v",
+        "dir::../../verilog/rtl/user_project_wrapper.v",
+
+        "dir::../../verilog/rtl/bus/busarb.v",
+        "dir::../../verilog/rtl/bus/busslave.v",
+        "dir::../../verilog/rtl/bus/ram.v",
+
+        "dir::../../verilog/rtl/spi_mem.v"
     ],
-    "ROUTING_CORES": 1,
+    "ROUTING_CORES": 4,
     "CLOCK_PERIOD": 25,
     "CLOCK_PORT": "wb_clk_i",
-    "CLOCK_NET": "mprj.clk",
-    "FP_PDN_MACRO_HOOKS": "mprj vccd1 vssd1 vccd1 vssd1",
     "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
     "MAGIC_DEF_LABELS": 0,
-    "VERILOG_FILES_BLACKBOX": [
-        "dir::../../verilog/gl/user_proj_example.v"
-    ],
-    "EXTRA_LEFS": "dir::../../lef/user_proj_example.lef",
-    "EXTRA_GDS_FILES": "dir::../../gds/user_proj_example.gds",
-    "EXTRA_LIBS": "dir::../../lib/user_proj_example.lib",
-    "EXTRA_SPEFS": [
-        "user_proj_example", 
-        "dir::../../spef/multicorner/user_proj_example.min.spef", 
-        "dir::../../spef/multicorner/user_proj_example.nom.spef", 
-        "dir::../../spef/multicorner/user_proj_example.max.spef"
-    ],
+    "EXTRA_SPEFS": [ ],
     "BASE_SDC_FILE": "dir::base_user_project_wrapper.sdc",
     "IO_SYNC": 0,
     "MAX_TRANSITION_CONSTRAINT": 1.5,
     "RUN_LINTER": 0,
     "QUIT_ON_SYNTH_CHECKS": 0,
     "FP_PDN_CHECK_NODES": 0,
-    "SYNTH_ELABORATE_ONLY": 1,
+    "SYNTH_ELABORATE_ONLY": 0,
+    "SYNTH_STRATEGY": "AREA 3",
+    "PL_TARGET_DENSITY": 0.3,
+    "FP_CORE_UTIL": 45,
+    "SYNTH_NO_FLAT": 0,
     "PL_RANDOM_GLB_PLACEMENT": 1,
     "PL_RESIZER_DESIGN_OPTIMIZATIONS": 0,
     "PL_RESIZER_TIMING_OPTIMIZATIONS": 0,

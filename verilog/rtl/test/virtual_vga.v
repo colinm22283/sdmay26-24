@@ -6,21 +6,21 @@
 
 `define COLOR_SIZE(color) (((color) == `COLOR_TYPE_RGB332) ? 8 : (((color) == `COLOR_TYPE_GSW) ? 32 : 1))
 
-`define VGA_WRITE(path, buffer, offset, width, height, color_type) \
+`define VGA_WRITE(path, in_buffer, offset, width, height, color_type) \
     begin : VGA_WRITE_PROC_`__LINE__ \
         integer i; \
         reg [`VIRTUAL_VGA_MAX_BUFFER_SIZE - 1:0] flat_buffer; \
         \
         for (i = 0; i < (width) * (height) * `COLOR_SIZE((color_type)) / 8; i = i + 1) begin \
             flat_buffer[i * 8+:8] = { \
-                buffer[offset + i][0], \
-                buffer[offset + i][1], \
-                buffer[offset + i][2], \
-                buffer[offset + i][3], \
-                buffer[offset + i][4], \
-                buffer[offset + i][5], \
-                buffer[offset + i][6], \
-                buffer[offset + i][7] \
+                in_buffer[offset + i][0], \
+                in_buffer[offset + i][1], \
+                in_buffer[offset + i][2], \
+                in_buffer[offset + i][3], \
+                in_buffer[offset + i][4], \
+                in_buffer[offset + i][5], \
+                in_buffer[offset + i][6], \
+                in_buffer[offset + i][7] \
             }; \
         end \
         \

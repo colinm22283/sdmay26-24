@@ -1,5 +1,3 @@
-`include "virtual_vga.v"
-
 module vga_tb();
 
     reg clk;

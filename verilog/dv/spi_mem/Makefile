@@ -21,8 +21,6 @@ BLOCKS := $(shell basename $(PWDD))
 
 # ---- Include Partitioned Makefiles ----
 
-VERILOG_FILES+=spi_chip.v
-
 CONFIG = caravel_user_project
 
 include $(MCW_ROOT)/verilog/dv/make/env.makefile

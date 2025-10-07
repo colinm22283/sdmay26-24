@@ -1,6 +1,3 @@
-`include "virtual_vga.v"
-`include "spi_chip.v"
-
 module rasterizer_tb();
 
     integer current_cycle;
@@ -360,7 +357,7 @@ module rasterizer_tb();
 
         `VGA_WRITE("output.bmp", spi_chip.mem, 0, 320, 240, `COLOR_TYPE_RGB332);
 
-        `VGA_WRITE("depth2.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
+        // `VGA_WRITE("depth2.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
 
         $finish;
     end

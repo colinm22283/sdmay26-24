@@ -20,6 +20,9 @@ module bary_pipe_m #(
     input wire [SC_WIDTH - 1:0] posx,
     input wire [SC_WIDTH - 1:0] posy,
 
+    input  wire [`STREAM_SI_PORT(SC_WIDTH * 2)] mstream_i,
+    output wire [`STREAM_SO_PORT(SC_WIDTH * 2)] mstream_o,
+
     input wire signed [WORD_WIDTH - 1:0] v0x,
     input wire signed [WORD_WIDTH - 1:0] v0y,
     input wire signed [WORD_WIDTH - 1:0] v0z,

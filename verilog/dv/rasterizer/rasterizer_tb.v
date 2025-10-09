@@ -352,12 +352,18 @@ module rasterizer_tb();
         end
 
         $display("Elapsed %d clock cycles", current_cycle);
+        $display("%d FPS at 10 MHz", 10000000.0 / current_cycle);
+        $display("%d FPS at 20 MHz", 20000000.0 / current_cycle);
+        $display("%d FPS at 30 MHz", 30000000.0 / current_cycle);
+        $display("%d FPS at 40 MHz", 40000000.0 / current_cycle);
+        $display("%d FPS at 50 MHz", 50000000.0 / current_cycle);
+        $display("%d FPS at 100 MHz", 100000000.0 / current_cycle);
 
         $display("Dumping image...");
 
         `VGA_WRITE("output.bmp", spi_chip.mem, 0, 320, 240, `COLOR_TYPE_RGB332);
 
-        // `VGA_WRITE("depth2.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
+        `VGA_WRITE("depth.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
 
         $finish;
     end

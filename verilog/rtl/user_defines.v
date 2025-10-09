@@ -146,5 +146,31 @@
 `define BUS_SIZE_TWORD  (2'b10)
 `define BUS_SIZE_STREAM (2'b11)
 
+// stream
+`define STREAM_MOPORT_SIZE(data_size) ((data_size) + 2)
+`define STREAM_MOPORT(data_size) `STREAM_MOPORT_SIZE((data_size)) - 1:0
+
+`define STREAM_MIPORT_SIZE(data_size) (1)
+`define STREAM_MIPORT(data_size) `STREAM_MIPORT_SIZE((data_size)) - 1:0
+
+`define STREAM_SOPORT_SIZE(data_size) (1)
+`define STREAM_SOPORT(data_size) `STREAM_SOPORT_SIZE((data_size)) - 1:0
+
+`define STREAM_SIPORT_SIZE(data_size) ((data_size) + 2)
+`define STREAM_SIPORT(data_size) `STREAM_SIPORT_SIZE((data_size)) - 1:0
+
+`define STREAM_MO_DATA(data_size) (data_size) - 1:0
+`define STREAM_MO_VALID(data_size) ((data_size) + 0)
+`define STREAM_MO_LAST(data_size) ((data_size) + 1)
+
+`define STREAM_MI_DATA(data_size) (0)
+
+`define STREAM_SO_DATA(data_size) (0)
+
+`define STREAM_SI_DATA(data_size) (data_size) - 1:0
+`define STREAM_SI_VALID(data_size) ((data_size) + 0)
+`define STREAM_SI_LAST(data_size) ((data_size) + 1)
+
+// addresses
 `define ADDR_DEPTH_BUFFER (100000)
 

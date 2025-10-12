@@ -113,7 +113,7 @@
 `define BUS_MO_ADDR   `BUS_DATA_SIZE+:`BUS_ADDR_SIZE
 `define BUS_MO_REQ    (`BUS_DATA_SIZE + `BUS_ADDR_SIZE + 0)
 `define BUS_MO_SEQMST (`BUS_DATA_SIZE + `BUS_ADDR_SIZE + 1)
-`define BUS_MO_SIZE   (`BUS_DATA_SIZE + `BUS_ADDR_SIZE + 2)
+`define BUS_MO_SIZE   (`BUS_DATA_SIZE + `BUS_ADDR_SIZE + 2)+:2
 `define BUS_MO_RW     (`BUS_DATA_SIZE + `BUS_ADDR_SIZE + 4)
 
 // slave in
@@ -124,7 +124,7 @@
 `define BUS_SI_ADDR   `BUS_DATA_SIZE+:`BUS_ADDR_SIZE
 `define BUS_SI_REQ    (`BUS_DATA_SIZE + `BUS_ADDR_SIZE + 0)
 `define BUS_SI_SEQMST (`BUS_DATA_SIZE + `BUS_ADDR_SIZE + 1)
-`define BUS_SI_SIZE   (`BUS_DATA_SIZE + `BUS_ADDR_SIZE + 2)
+`define BUS_SI_SIZE   (`BUS_DATA_SIZE + `BUS_ADDR_SIZE + 2)+:2
 `define BUS_SI_RW     (`BUS_DATA_SIZE + `BUS_ADDR_SIZE + 4)
 
 // slave out
@@ -141,4 +141,5 @@
 `define BUS_SIZE_BYTE  (2'b00)
 `define BUS_SIZE_WORD  (2'b01)
 `define BUS_SIZE_TWORD (2'b10)
-`define BUS_SIZE_QWORD (2'b11)
+// `define BUS_SIZE_QWORD (2'b11)
+

@@ -1,5 +1,3 @@
-`include "spi_chip.v"
-
 module spi_mem_m #(
     parameter ADDRESS = 0,
     parameter SIZE = 32
@@ -48,15 +46,30 @@ module spi_mem_m #(
     localparam STATE_LATENCY     = 4'b0101;
     localparam STATE_PRE_CYCLE   = 4'b0110;
     localparam STATE_READ        = 4'b0111;
-    localparam STATE_WRITE       = 4'b1000;
-    localparam STATE_WRITE_DELAY = 4'b1001;
-    localparam STATE_DONE        = 4'b1010;
+    localparam STATE_READ_WAIT   = 4'b1000;
+    localparam STATE_WRITE       = 4'b1010;
+    localparam STATE_WRITE_WAIT  = 4'b1011;
+    localparam STATE_WRITE_DELAY = 4'b1100;
+    localparam STATE_DONE        = 4'b1101;
 
     assign spi_dqsm_o = 0;
 
-    reg [31:0] data_buf [3:0];
-    wire [32 * 4 - 1:0] data_buf_exp;
-    assign data_buf_exp = { data_buf[3], data_buf[2], data_buf[1], data_buf[0] };
+    reg  [15:0] read_buf_upper;
+    reg  [15:0] read_buf_lower;
+    wire [31:0] read_buf;
+
+    assign read_buf = {
+        read_buf_upper[15:12],
+        read_buf_lower[15:12],
+        read_buf_upper[11:8],
+        read_buf_lower[11:8],
+        read_buf_upper[7:4],
+        read_buf_lower[7:4],
+        read_buf_upper[3:0],
+        read_buf_lower[3:0]
+    };
+
+    reg [31:0] write_buf;
 
     reg [3:0] state;
 
@@ -90,6 +103,8 @@ module spi_mem_m #(
 
             latency_count <= 0;
 
+            read_word <= 0;
+
             write_byte <= 0;
             write_word <= 0;
         end
@@ -100,6 +115,8 @@ module spi_mem_m #(
                     current_nibble  <= 0;
 
                     pre_cycle <= 0;
+
+                    read_word <= 0;
 
                     write_byte <= 0;
                     write_word <= 0;
@@ -165,6 +182,8 @@ module spi_mem_m #(
                         if (latency_count == 0) begin
                             if (sport_i[`BUS_SI_RW] == `BUS_WRITE) begin
                                 state <= STATE_WRITE;
+
+                                write_buf <= sport_i[`BUS_SI_DATA];
                             end
                             else if (spi_dqsm_i) begin
                                 state <= STATE_PRE_CYCLE;
@@ -201,7 +220,7 @@ module spi_mem_m #(
                             if (read_byte == 1) begin
                                 state <= STATE_DONE;
 
-                                sport_o[`BUS_SO_DATA] <= data_buf[0][7:0];
+                                sport_o[`BUS_SO_DATA] <= read_buf[7:0];
                             end
                         end
                         
@@ -209,10 +228,43 @@ module spi_mem_m #(
                             if (word_ready) begin
                                 state <= STATE_DONE;
 
-                                sport_o[`BUS_SO_DATA] <= data_buf[0];
+                                sport_o[`BUS_SO_DATA] <= {
+                                    read_buf[0 * 8 +: 8],
+                                    read_buf[1 * 8 +: 8],
+                                    read_buf[2 * 8 +: 8],
+                                    read_buf[3 * 8 +: 8]
+                                };
+                            end
+                        end
+
+                        `BUS_SIZE_TWORD: begin
+                            if (word_ready) begin
+                                state <= STATE_READ_WAIT;
+
+                                sport_o[`BUS_SO_DATA] <= {
+                                    read_buf[3 * 8 +: 8],
+                                    read_buf[2 * 8 +: 8],
+                                    read_buf[1 * 8 +: 8],
+                                    read_buf[0 * 8 +: 8]
+                                };
+                                sport_o[`BUS_SO_SEQSLV] <= 1;
+                            end
+                            else begin
+                                sport_o[`BUS_SO_SEQSLV] <= 0;
                             end
                         end
                     endcase
+                end
+
+                STATE_READ_WAIT: begin
+                    if (read_word == 2) begin
+                        state <= STATE_DONE;
+                    end
+                    else begin
+                        state <= STATE_READ;
+
+                        read_word <= read_word + 1;
+                    end
                 end
 
                 STATE_WRITE: begin : WRITE
@@ -225,10 +277,10 @@ module spi_mem_m #(
                             if (current_nibble[0]) begin
                                 state <= STATE_DONE;
 
-                                spi_mosi_o <= in_data[3:0];
+                                spi_mosi_o <= in_data[7:4];
                             end
                             else begin
-                                spi_mosi_o <= in_data[7:4];
+                                spi_mosi_o <= in_data[3:0];
 
                                 current_nibble[0] <= 1;
                             end
@@ -240,19 +292,57 @@ module spi_mem_m #(
                                     state <= STATE_WRITE_DELAY;
                                 end
 
-                                spi_mosi_o <= in_data[write_byte * 8+:4];
+                                spi_mosi_o <= in_data[write_byte * 8 + 4+:4];
 
                                 write_byte <= write_byte + 1;
 
                                 current_nibble[0] <= 0;
                             end
                             else begin
-                                spi_mosi_o <= in_data[write_byte * 8 + 4+:4];
+                                spi_mosi_o <= in_data[write_byte * 8+:4];
+
+                                current_nibble[0] <= 1;
+                            end
+                        end
+
+                        `BUS_SIZE_TWORD: begin
+                            if (current_nibble[0]) begin
+                                if (write_byte == 3) begin
+                                    if (write_word == 2) state <= STATE_WRITE_DELAY;
+                                    else begin
+                                        state <= STATE_WRITE;
+
+                                        write_byte <= 0;
+                                        write_word <= write_word + 1;
+                                    end
+                                        
+                                    write_buf <= in_data;
+                                end
+                                else if (write_byte == 1) begin
+                                    sport_o[`BUS_SO_SEQSLV] <= 1;
+
+                                    write_byte <= write_byte + 1;
+                                end
+                                else begin
+                                    sport_o[`BUS_SO_SEQSLV] <= 0;
+
+                                    write_byte <= write_byte + 1;
+                                end
+
+                                spi_mosi_o <= write_buf[write_byte * 8 + 4+:4];
+
+                                current_nibble[0] <= 0;
+                            end
+                            else begin
+                                spi_mosi_o <= write_buf[write_byte * 8+:4];
 
                                 current_nibble[0] <= 1;
                             end
                         end
                     endcase
+                end
+
+                STATE_WRITE_WAIT: begin
                 end
 
                 STATE_WRITE_DELAY: begin
@@ -263,6 +353,8 @@ module spi_mem_m #(
                 
                 STATE_DONE: begin
                     if (!sport_i[`BUS_SI_REQ]) state <= STATE_READY;
+
+                    sport_o[`BUS_SO_SEQSLV] <= 0;
 
                     clock_enable <= 0;
                 end
@@ -297,8 +389,12 @@ module spi_mem_m #(
 
     always @(negedge spi_dqsm_i) begin
         case (state)
-            STATE_READ: begin
-                data_buf[read_word][read_byte * 8 + 4 +: 4] <= spi_miso_i;
+            default: begin
+                read_buf_upper <= 0;
+            end
+
+            STATE_READ, STATE_READ_WAIT: begin
+                read_buf_upper[read_byte * 4 +: 4] <= spi_miso_i;
             end
         endcase
     end
@@ -306,21 +402,16 @@ module spi_mem_m #(
     always @(posedge spi_dqsm_i) begin
         case (state)
             default: begin
-                data_buf[0] <= 0;
-                data_buf[1] <= 0;
-                data_buf[2] <= 0;
-                data_buf[3] <= 0;
+                read_buf_lower <= 0;
 
                 read_byte <= 0;
-                read_word <= 0;
                 word_ready   <= 0;
             end
 
-            STATE_READ: begin
-                data_buf[read_word][read_byte * 8 +: 4] <= spi_miso_i;
+            STATE_READ, STATE_READ_WAIT: begin
+                read_buf_lower[read_byte * 4 +: 4] <= spi_miso_i;
 
                 if (read_byte == 3) begin
-                    read_word <= read_word + 1;
                     read_byte <= 0;
                     word_ready   <= 1;
                 end

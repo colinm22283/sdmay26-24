@@ -71,7 +71,7 @@ module spi_mem_tb();
         nrst = 1;
         #30;
 
-        #1000000;
+        #100000000;
         $finish;
     end
 
@@ -124,7 +124,7 @@ module spi_mem_tb();
             reg [31:0] data;
             data = {$random};
 
-            { test_mem[i], test_mem[i + 1], test_mem[i + 2], test_mem[i + 3] } = data;
+            { test_mem[i + 3], test_mem[i + 2], test_mem[i + 1], test_mem[i + 0] } = data;
 
             $display("Writing 0x%h to address 0x%h", data, i);
 
@@ -145,16 +145,20 @@ module spi_mem_tb();
             end
         end
 
+        $display("TWord write-read test");
+
         for (i = 0; i < 1013; i = i + 1) begin : LOOP3
             integer j;
 
             reg [95:0] data;
-            data = {$random};
+            data[31:0] = {$random};
+            data[63:32] = {$random};
+            data[95:64] = {$random};
 
             {
-                test_mem[i + 0], test_mem[i + 1], test_mem[i + 2], test_mem[i + 3],
-                test_mem[i + 4], test_mem[i + 5], test_mem[i + 6], test_mem[i + 7],
-                test_mem[i + 8], test_mem[i + 9], test_mem[i + 10], test_mem[i + 11]
+                test_mem[i + 11], test_mem[i + 10], test_mem[i + 9], test_mem[i + 8],
+                test_mem[i + 7], test_mem[i + 6], test_mem[i + 5], test_mem[i + 4],
+                test_mem[i + 3], test_mem[i + 2], test_mem[i + 1], test_mem[i + 0]
             } = data;
 
             $display("Writing 0x%h to address 0x%h", data, i);

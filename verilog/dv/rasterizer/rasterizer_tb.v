@@ -23,6 +23,9 @@ module rasterizer_tb();
     wire [`BUS_SIPORT] sportai;
     wire [`BUS_SOPORT] sportao;
 
+    // assign mportbo = mportao;
+    // assign mportai = mportbi;
+
     word_stripe_cache_m #(50, 8) cache(
         .clk_i(clk),
         .nrst_i(nrst),
@@ -67,7 +70,7 @@ module rasterizer_tb();
         .spi_dqsm_o(spi_dqsmo)
     );
 
-    spi_chip_m #(7, 3, 500000) spi_chip(
+    spi_chip_m #(7, 1, 500000) spi_chip(
         .clk_i(spi_clk),
         .cs_i(spi_cs),
         .mosi_i(spi_mosi),
@@ -363,7 +366,7 @@ module rasterizer_tb();
 
         `VGA_WRITE("output.bmp", spi_chip.mem, 0, 320, 240, `COLOR_TYPE_RGB332);
 
-        `VGA_WRITE("depth.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
+        // `VGA_WRITE("depth.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
 
         $finish;
     end

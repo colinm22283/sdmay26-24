@@ -79,6 +79,7 @@ module rasterizer_m #(
     localparam STATE_READY     = 4'b0000;
     localparam STATE_RUN_BARY  = 4'b0001;
     localparam STATE_WAIT_BARY = 4'b0010;
+    localparam STATE_EVAL_BARY = 4'b1011;
     localparam STATE_REQ_CHECK = 4'b0011;
     localparam STATE_ACK_CHECK = 4'b0100;
     localparam STATE_REQ_DEPTH = 4'b0101;
@@ -90,22 +91,24 @@ module rasterizer_m #(
 
     reg [3:0] state;
 
+    reg bary_last;
+
     reg [SC_WIDTH - 1:0] posx;
     reg [SC_WIDTH - 1:0] posy;
-
-    wire bary_continue;
-    wire bary_ready;
-    reg  bary_last;
 
     reg  signed [WORD_WIDTH - 1:0] bary_l0;
     reg  signed [WORD_WIDTH - 1:0] bary_l1;
     reg  signed [WORD_WIDTH - 1:0] bary_l2;
 
-    wire signed [WORD_WIDTH - 1:0] l0;
-    wire signed [WORD_WIDTH - 1:0] l1;
-    wire signed [WORD_WIDTH - 1:0] l2;
-
     reg [WORD_WIDTH - 1:0] depth;
+
+    wire [`STREAM_MIPORT(SC_WIDTH * 2)] pos_streami;
+    wire [`STREAM_MOPORT(SC_WIDTH * 2)] pos_streamo;
+    wire [SC_WIDTH * 2 - 1:0] pos_stream_data;
+
+    wire [`STREAM_MIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] bary_streami;
+    wire [`STREAM_MOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] bary_streamo;
+    wire [SC_WIDTH * 2 + WORD_WIDTH * 3 - 1:0] bary_stream_data;
 
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
@@ -129,33 +132,34 @@ module rasterizer_m #(
                 end
 
                 STATE_RUN_BARY: begin
-                    state <= STATE_WAIT_BARY;
+                    if (pos_streami[`STREAM_MI_READY(SC_WIDTH * 2)]) state <= STATE_WAIT_BARY;
                 end
 
                 STATE_WAIT_BARY: begin
-                    if (bary_ready) begin
-                        if (l0 >= 0 && l1 >= 0 && l2 >= 0) begin
-                            state <= STATE_REQ_CHECK;
-                        end
-                        else begin
-                            state <= STATE_NEXT;
-                        end
+                    if (bary_streamo[`STREAM_MO_VALID(SC_WIDTH * 2 + WORD_WIDTH * 3)]) begin
+                        state <= STATE_EVAL_BARY;
 
-                        depth <=
-                            (({{32{l0[31]}}, l0} * v0z) >> `DECIMAL_POS) +
-                            (({{32{l1[31]}}, l1} * v1z) >> `DECIMAL_POS) +
-                            (({{32{l2[31]}}, l2} * v2z) >> `DECIMAL_POS);
-
-                        bary_l0 <= l0;
-                        bary_l1 <= l1;
-                        bary_l2 <= l2;
+                        { bary_l0, bary_l1, bary_l2 } <= bary_stream_data[WORD_WIDTH * 3 - 1:0];
 
                         bary_last <= posx == bbx1 && posy == bby1;
                     end
                 end
 
-                STATE_REQ_CHECK: begin
+                STATE_EVAL_BARY: begin
+                    if (bary_l0 >= 0 && bary_l1 >= 0 && bary_l2 >= 0) begin
+                        state <= STATE_REQ_CHECK;
+                    end
+                    else begin
+                        state <= STATE_NEXT;
+                    end
 
+                    depth <=
+                        (({{32{bary_l0[31]}}, bary_l0} * v0z) >> `DECIMAL_POS) +
+                        (({{32{bary_l1[31]}}, bary_l1} * v1z) >> `DECIMAL_POS) +
+                        (({{32{bary_l2[31]}}, bary_l2} * v2z) >> `DECIMAL_POS);
+                end
+
+                STATE_REQ_CHECK: begin
                     if (mport_i[`BUS_MI_ACK]) begin
                         state <= STATE_ACK_CHECK;
 
@@ -252,7 +256,16 @@ module rasterizer_m #(
         end
     end
 
-    assign bary_continue = state == STATE_RUN_BARY;
+    assign pos_stream_data = { posx, posy };
+
+    assign pos_streamo[`STREAM_MO_VALID(SC_WIDTH * 2)] = state == STATE_RUN_BARY;
+    assign pos_streamo[`STREAM_MO_DATA(SC_WIDTH * 2)] = pos_stream_data;
+    assign pos_streamo[`STREAM_MO_LAST(SC_WIDTH * 2)] = bary_last;
+
+    assign bary_streami[`STREAM_MI_READY(SC_WIDTH * 2 + WORD_WIDTH * 3)] = state == STATE_WAIT_BARY;
+
+    assign bary_stream_data = bary_streamo[`STREAM_MO_DATA(SC_WIDTH * 2 + WORD_WIDTH * 3)];
+
     assign busy_o = state != STATE_READY && state != STATE_DONE;
 
     bary_pipe_m #(WORD_WIDTH, WIDTH, HEIGHT) bary_pipe (
@@ -261,12 +274,11 @@ module rasterizer_m #(
 
         .run_i(run_i),
 
-        .ready_o(bary_ready),
-        .continue_i(bary_continue),
-        .last_i(bary_last),
+        .sstream_i(pos_streamo),
+        .sstream_o(pos_streami),
 
-        .posx(posx),
-        .posy(posy),
+        .mstream_i(bary_streami),
+        .mstream_o(bary_streamo),
 
         .v0x(v0x),
         .v0y(v0y),
@@ -276,11 +288,7 @@ module rasterizer_m #(
         .v1z(v1z),
         .v2x(v2x),
         .v2y(v2y),
-        .v2z(v2z),
-
-        .l0(l0),
-        .l1(l1),
-        .l2(l2)
+        .v2z(v2z)
     );
 
 endmodule

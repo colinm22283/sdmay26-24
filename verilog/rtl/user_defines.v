@@ -163,9 +163,9 @@
 `define STREAM_MO_VALID(data_size) ((data_size) + 0)
 `define STREAM_MO_LAST(data_size) ((data_size) + 1)
 
-`define STREAM_MI_DATA(data_size) (0)
+`define STREAM_MI_READY(data_size) (0)
 
-`define STREAM_SO_DATA(data_size) (0)
+`define STREAM_SO_READY(data_size) (0)
 
 `define STREAM_SI_DATA(data_size) (data_size) - 1:0
 `define STREAM_SI_VALID(data_size) ((data_size) + 0)

@@ -1,4 +1,4 @@
-module vga_tb();
+module virt_vga_tb();
 
     reg clk;
     reg nrst;
@@ -35,6 +35,6 @@ module vga_tb();
         $finish;
     end
 
-    
+
 
 endmodule

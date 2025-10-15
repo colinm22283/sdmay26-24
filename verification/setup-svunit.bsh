@@ -1,0 +1,16 @@
+# Sets up SVUnit
+git submodule update --init --recursive
+
+cd ./svunit/
+export SVUNIT_INSTALL=`pwd`
+export PATH=$PATH:$SVUNIT_INSTALL"/bin"
+source Setup.bsh
+cd -
+
+# Sets up questasim
+export PATH=/usr/local/mentor/questasim/linux_x86_64:$PATH
+export SALT_LICENSE_SERVER=1717@io.ece.iastate.edu
+
+# Sets up search paths
+RTL_PATH=$(realpath $(pwd)/../verilog/rtl)
+echo +incdir+${RTL_PATH} > ./unit_tests/rtl.f

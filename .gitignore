@@ -19,3 +19,4 @@
 **/.testrunner.sv
 **/.logs
 **/compile.log
+**/rtl.f

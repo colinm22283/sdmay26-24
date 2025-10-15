@@ -37,7 +37,8 @@ endmodule
     since lines are burst-read and cached.
 */
 module vga #(
-    parameter ADDRESS = 0
+    parameter FB0_ADDR = 0,
+    parameter FB1_ADDR = 0
 ) (
     input wire clk_i, // Must be an integer multiple of 24MHz
     input wire nrst_i,
@@ -46,7 +47,10 @@ module vga #(
     input reg [3:0] prescaler_i,
     input reg [3:0] resolution_i, // 0x2 = 320x240, 0x4 = 160x120, 0x8 = 80x60
 
-    input reg framebuffer_i,
+    input wire [`BUS_MIPORT] mport_i, // For pixel data only
+    input reg [`BUS_MOPORT] mport_o,
+
+    input reg fb_i,
 
     output reg [7:0] pixel_o,
     output reg hsync_o,
@@ -78,86 +82,128 @@ module vga #(
 
     parameter CACHE_WIDTH = 9'd320;
     reg [CACHE_WIDTH-1:0] line_cache [7:0]; // 320x240 resolution, cache one line
+    reg [9:0] line_cache_idx;
+    reg fb;
+    parameter FB_READ_STATE_READY = 2'd0;
+    parameter FB_READ_STATE_PREP = 2'd1;
+    parameter FB_READ_STATE_READ = 2'd2;
+    reg fb_read_state;
 
     reg base_clk; // 640x480 pixel clock (24MHz)
     clkdiv div(clk_i, nrst_i, prescaler, base_clk);
 
-    always @ (negedge nrst_i) begin
-        base_h_counter <= 10'd0;
-        base_v_counter <= 10'd0;
-        res_h_counter <= 10'd0;
-        res_v_counter <= 10'd0;
-        prescaler <= 4'd0;
-        resolution <= 3'd0;
-        for (i = 0; i < CACHE_WIDTH; i = i+1)
-            line_cache[i] <= 8'd0;
-    end
-
-    always @ (posedge clk_i) begin
-        if (!enable_i) begin
-            prescaler <= prescaler_i;
-            resolution <= resolution_i;
-            case (resolution)
-                4'h2: begin
-                    res_h_active <= {1'b0, BASE_H_ACTIVE[9:1]};
-                    res_v_active <= {1'b0, BASE_V_ACTIVE[9:1]};
-                end
-                4'h4: begin
-                    res_h_active <= {2'b00, BASE_H_ACTIVE[9:2]};
-                    res_v_active <= {2'b00, BASE_V_ACTIVE[9:2]};
-                end
-                4'h8: begin
-                    res_h_active <= {3'b000, BASE_H_ACTIVE[9:3]};
-                    res_v_active <= {3'b000, BASE_V_ACTIVE[9:3]};
-                end
-            endcase
-
+    always @ (posedge clk_i or negedge nrst_i) begin
+        if (!nrst_i) begin
+            res_h_active <= 10'd0;
+            res_v_active <= 10'd0;
+            base_h_counter <= 10'd0;
+            base_v_counter <= 10'd0;
+            res_h_counter <= 10'd0;
+            res_v_counter <= 10'd0;
+            prescaler <= 4'd0;
+            resolution <= 3'd0;
             for (i = 0; i < CACHE_WIDTH; i = i+1)
                 line_cache[i] <= 8'd0;
+            line_cache_idx = 10'd0;
+            fb <= 0;
+            fb_read_state <= FB_READ_STATE_READY;
         end
+        else if (clk_i) begin
+            if (!enable_i) begin
+                base_h_counter <= 10'd0;
+                base_v_counter <= 10'd0;
+                res_h_counter <= 10'd0;
+                res_v_counter <= 10'd0;
+                prescaler <= prescaler_i;
+                resolution <= resolution_i;
+                case (resolution)
+                    4'h2: begin
+                        res_h_active <= {1'b0, BASE_H_ACTIVE[9:1]};
+                        res_v_active <= {1'b0, BASE_V_ACTIVE[9:1]};
+                    end
+                    4'h4: begin
+                        res_h_active <= {2'b00, BASE_H_ACTIVE[9:2]};
+                        res_v_active <= {2'b00, BASE_V_ACTIVE[9:2]};
+                    end
+                    4'h8: begin
+                        res_h_active <= {3'b000, BASE_H_ACTIVE[9:3]};
+                        res_v_active <= {3'b000, BASE_V_ACTIVE[9:3]};
+                    end
+                endcase
 
-        if (base_clk) begin
-            // Output pixels
-            if (base_h_counter < BASE_H_ACTIVE && base_v_counter < BASE_V_ACTIVE) begin
-                resolution_counter <= resolution_counter + 4'd1;
-                if (resolution_counter >= resolution) begin
-                    pixel_o <= line_cache[base_h_counter[8:0]];
+                for (i = 0; i < CACHE_WIDTH; i = i+1)
+                    line_cache[i] <= 8'd0;
+            end
 
-                    res_h_counter <= res_h_counter + 10'd1;
-                    if (res_h_counter >= res_h_active) begin
-                        res_h_counter <= 10'd0;
-                        res_v_counter <= res_v_counter + 10'd1;
-                        if (res_v_counter >= res_v_active) begin
-                            res_v_counter <= 10'd0;
-                            // TODO Fetch new line
+            if (base_clk) begin
+                // Output pixels
+                if (base_h_counter < BASE_H_ACTIVE && base_v_counter < BASE_V_ACTIVE) begin
+                    resolution_counter <= resolution_counter + 4'd1;
+                    if (resolution_counter >= resolution) begin
+                        pixel_o <= line_cache[base_h_counter[8:0]];
+
+                        res_h_counter <= res_h_counter + 10'd1;
+                        if (res_h_counter >= res_h_active) begin
+                            res_h_counter <= 10'd0;
+                            res_v_counter <= res_v_counter + 10'd1;
+                            if (res_v_counter >= res_v_active) begin
+                                res_v_counter <= 10'd0;
+                            end
+
+                            fb <= fb_i;
+                            fb_read_state <= FB_READ_STATE_PREP;
                         end
                     end
                 end
+
+                // HSYNC
+                base_h_counter <= base_h_counter + 10'd1;
+                if (base_h_counter >= BASE_H_ACTIVE + BASE_H_FPORCH
+                    && base_h_counter < BASE_H_ACTIVE + BASE_H_FPORCH + BASE_H_SYNC)
+                    hsync_o <= H_SYNC_ACTIVE;
+                else
+                    hsync_o <= ~H_SYNC_ACTIVE;
+
+                if (base_h_counter >= BASE_H_TOTAL) begin
+                    base_h_counter <= 10'd0;
+                    base_v_counter <= base_v_counter + 10'd1;
+                end
+
+                // VSYNC
+                if (base_v_counter >= BASE_V_ACTIVE + BASE_V_FPORCH
+                    && base_v_counter < BASE_V_ACTIVE + BASE_V_FPORCH + BASE_V_SYNC)
+                    vsync_o <= V_SYNC_ACTIVE;
+                else
+                    vsync_o <= ~V_SYNC_ACTIVE;
+
+                if (base_v_counter >= BASE_V_TOTAL) begin
+                    base_v_counter <= 10'd0;
+                end
             end
 
-            // HSYNC
-            base_h_counter <= base_h_counter + 10'd1;
-            if (base_h_counter >= BASE_H_ACTIVE + BASE_H_FPORCH
-                && base_h_counter < BASE_H_ACTIVE + BASE_H_FPORCH + BASE_H_SYNC)
-                hsync_o <= H_SYNC_ACTIVE;
-            else
-                hsync_o <= ~H_SYNC_ACTIVE;
-
-            if (base_h_counter >= BASE_H_TOTAL) begin
-                base_h_counter <= 10'd0;
-                base_v_counter <= base_v_counter + 10'd1;
+            // Fetch new line
+            case (fb_read_state)
+            FB_READ_STATE_PREP: begin
+                if (!fb)
+                    mport_o[`BUS_MO_ADDR] <= FB0_ADDR + res_v_counter;
+                else
+                    mport_o[`BUS_MO_ADDR] <= FB1_ADDR + res_v_counter;
+                mport_o[`BUS_MO_RW] <= `BUS_READ;
+                mport_o[`BUS_MO_SIZE] = `BUS_SIZE_STREAM;
+                mport_o[`BUS_MO_REQ]  = 1;
             end
-
-            // VSYNC
-            if (base_v_counter >= BASE_V_ACTIVE + BASE_V_FPORCH
-                && base_v_counter < BASE_V_ACTIVE + BASE_V_FPORCH + BASE_V_SYNC)
-                vsync_o <= V_SYNC_ACTIVE;
-            else
-                vsync_o <= ~V_SYNC_ACTIVE;
-
-            if (base_v_counter >= BASE_V_TOTAL) begin
-                base_v_counter <= 10'd0;
+            FB_READ_STATE_READ: begin
+                if (mport_i[`BUS_MI_SEQSLV]) begin
+                    line_cache[line_cache_idx] <= mport_i[`BUS_MI_DATA];
+                    line_cache_idx <= line_cache_idx + 9'd1;
+                    if (line_cache_idx >= CACHE_WIDTH) begin
+                        fb_read_state <= FB_READ_STATE_READY;
+                        line_cache_idx <= 9'd0;
+                        mport_o[`BUS_MO_REQ] = 0;
+                    end
+                end
             end
+            endcase
         end
     end
 

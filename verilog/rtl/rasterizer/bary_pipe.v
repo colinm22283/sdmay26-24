@@ -253,7 +253,7 @@ module bary_pipe_m #(
                 end
 
                 STATE_AWAIT_POS: begin : AWAIT_POS
-                    reg [WORD_WIDTH * 2 - 1:0] input_data;
+                    reg [SC_WIDTH * 2 - 1:0] input_data;
                     reg [WORD_WIDTH - 1:0] posx_extended, posy_extended;
 
                     input_data = sstream_i[`STREAM_SI_DATA(SC_WIDTH * 2)];

@@ -5,7 +5,7 @@ module inv_m #(parameter WIDTH = 32) (
 
     wire [63:0] a;
 
-    assign a = a_i;
+    assign a = {{32{a_i[WIDTH - 1]}}, a_i };
 
     assign y_o = ((64'd1 << `DECIMAL_POS) << `DECIMAL_POS) / a;
 

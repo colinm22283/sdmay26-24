@@ -68,8 +68,11 @@
                                 b = color[7:6] * 255.0 / 3.0; \
                             end \
  \
-                            `COLOR_TYPE_GSW: begin \
-                                r = color[31:24]; \
+                            `COLOR_TYPE_GSW: begin : GSW \
+                                reg [31:0] abs; \
+                                if ($signed(color) < 0) abs = -$signed(color); \
+                                else abs = color; \
+                                r = abs[31:24]; \
                                 g = r; \
                                 b = r; \
                             end \

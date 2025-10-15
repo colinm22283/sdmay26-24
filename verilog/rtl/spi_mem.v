@@ -307,10 +307,10 @@ module spi_mem_m #(
                             if (current_nibble[0]) begin
                                 state <= STATE_DONE;
 
-                                spi_mosi_o <= in_data[7:4];
+                                spi_mosi_o <= in_data[3:0];
                             end
                             else begin
-                                spi_mosi_o <= in_data[3:0];
+                                spi_mosi_o <= in_data[7:4];
 
                                 current_nibble[0] <= 1;
                             end
@@ -322,14 +322,14 @@ module spi_mem_m #(
                                     state <= STATE_WRITE_DELAY;
                                 end
 
-                                spi_mosi_o <= in_data[write_byte * 8 + 4+:4];
+                                spi_mosi_o <= in_data[write_byte * 8+:4];
 
                                 write_byte <= write_byte + 1;
 
                                 current_nibble[0] <= 0;
                             end
                             else begin
-                                spi_mosi_o <= in_data[write_byte * 8+:4];
+                                spi_mosi_o <= in_data[write_byte * 8 + 4+:4];
 
                                 current_nibble[0] <= 1;
                             end
@@ -359,12 +359,12 @@ module spi_mem_m #(
                                     write_byte <= write_byte + 1;
                                 end
 
-                                spi_mosi_o <= write_buf[write_byte * 8 + 4+:4];
+                                spi_mosi_o <= write_buf[write_byte * 8+:4];
 
                                 current_nibble[0] <= 0;
                             end
                             else begin
-                                spi_mosi_o <= write_buf[write_byte * 8+:4];
+                                spi_mosi_o <= write_buf[write_byte * 8 + 4+:4];
 
                                 current_nibble[0] <= 1;
                             end
@@ -394,12 +394,12 @@ module spi_mem_m #(
                                     write_byte <= write_byte + 1;
                                 end
 
-                                spi_mosi_o <= write_buf[write_byte * 8 + 4+:4];
+                                spi_mosi_o <= write_buf[write_byte * 8+:4];
 
                                 current_nibble[0] <= 0;
                             end
                             else begin
-                                spi_mosi_o <= write_buf[write_byte * 8+:4];
+                                spi_mosi_o <= write_buf[write_byte * 8 + 4+:4];
 
                                 current_nibble[0] <= 1;
                             end
@@ -431,10 +431,58 @@ module spi_mem_m #(
     always @(negedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
             spi_clk_o <= 0;
+
+            read_buf_upper <= 0;
+
+            read_buf_lower <= 0;
+
+            read_byte <= 0;
+            word_ready   <= 0;
         end
         else if (!clk_i) begin
-            if (clock_enable) spi_clk_o <= !spi_clk_o;
-            else spi_clk_o <= 0;
+            if (clock_enable) begin
+                spi_clk_o = !spi_clk_o;
+
+                if (!spi_clk_o) begin
+                    case (state)
+                        default: begin
+                            read_buf_lower <= 0;
+                        end
+
+                        STATE_READ, STATE_READ_WAIT: begin
+                            read_buf_lower[read_byte * 4 +: 4] <= spi_miso_i;
+                        end
+
+                        STATE_DONE: ;
+                    endcase
+                end
+                else begin
+                    case (state)
+                        default: begin
+                            read_buf_upper <= 0;
+
+                            read_byte <= 0;
+                            word_ready   <= 0;
+                        end
+
+                        STATE_READ, STATE_READ_WAIT: begin
+                            read_buf_upper[read_byte * 4 +: 4] <= spi_miso_i;
+
+                            if (read_byte == 3) begin
+                                read_byte <= 0;
+                                word_ready   <= 1;
+                            end
+                            else begin
+                                read_byte <= read_byte + 1;
+                                word_ready   <= 0;
+                            end
+                        end
+
+                        STATE_DONE: ;
+                    endcase
+                end
+            end
+            else spi_clk_o = 0;
         end
     end
     
@@ -472,46 +520,6 @@ module spi_mem_m #(
             default: begin
                 spi_dqsm_o <= 0;
             end
-        endcase
-    end
-
-    always @(negedge spi_clk_o) begin
-        case (state)
-            default: begin
-                read_buf_upper <= 0;
-            end
-
-            STATE_READ, STATE_READ_WAIT: begin
-                read_buf_upper[read_byte * 4 +: 4] <= spi_miso_i;
-            end
-
-            STATE_DONE: ;
-        endcase
-    end
-
-    always @(posedge spi_clk_o) begin
-        case (state)
-            default: begin
-                read_buf_lower <= 0;
-
-                read_byte <= 0;
-                word_ready   <= 0;
-            end
-
-            STATE_READ, STATE_READ_WAIT: begin
-                read_buf_lower[read_byte * 4 +: 4] <= spi_miso_i;
-
-                if (read_byte == 3) begin
-                    read_byte <= 0;
-                    word_ready   <= 1;
-                end
-                else begin
-                    read_byte <= read_byte + 1;
-                    word_ready   <= 0;
-                end
-            end
-
-            STATE_DONE: ;
         endcase
     end
 

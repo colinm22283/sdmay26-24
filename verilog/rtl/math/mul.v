@@ -6,8 +6,8 @@ module mul_m #(parameter WIDTH = 32) (
 
     wire [63:0] a, b;
 
-    assign a = a_i;
-    assign b = b_i;
+    assign a = {{32{a_i[WIDTH - 1]}}, a_i };
+    assign b = {{32{b_i[WIDTH - 1]}}, b_i };
 
     assign y_o = (a * b) >> `DECIMAL_POS;
 

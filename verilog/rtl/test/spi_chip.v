@@ -161,14 +161,14 @@ module spi_chip_m #(
 
                     if (!cs_i) begin
                         if (!dqsm_i) begin
-                            mem[addr][3:0] = mosi_i;
-                            write_data[3:0] = mosi_i;
+                            mem[addr][7:4] = mosi_i;
+                            write_data[7:4] = mosi_i;
                         end
 
                         wait(!clk_i);
                         if (!dqsm_i) begin
-                            mem[addr][7:4] = mosi_i;
-                            write_data[7:4] = mosi_i;
+                            mem[addr][3:0] = mosi_i;
+                            write_data[3:0] = mosi_i;
                         end
 
                         $display("Write 0x%h to 0x%h", write_data, addr);

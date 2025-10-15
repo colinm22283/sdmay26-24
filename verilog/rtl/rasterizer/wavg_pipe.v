@@ -12,7 +12,7 @@ module wavg_pipe_m #(
     output wire [`STREAM_SOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] sstream_o,
 
     input  wire [`STREAM_MIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] mstream_i,
-    output reg  [`STREAM_MOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] mstream_o,
+    output wire [`STREAM_MOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] mstream_o,
 
     input wire [WORD_WIDTH - 1:0] t0x,
     input wire [WORD_WIDTH - 1:0] t0y,
@@ -44,13 +44,15 @@ module wavg_pipe_m #(
     wire [SC_WIDTH - 1:0] posx, posy;
     wire signed [WORD_WIDTH - 1:0] l0, l1, l2;
 
+    reg [SC_WIDTH * 2 + WORD_WIDTH * 3 - 1:0] out_data;
+
     reg last;
 
     assign { posx, posy, l0, l1, l2 } = in_data;
 
-    reg signed [WORD_WIDTH - 1:0] depth;
     reg signed [WORD_WIDTH - 1:0] tx;
     reg signed [WORD_WIDTH - 1:0] ty;
+    reg [WORD_WIDTH - 1:0] depth;
 
     localparam STATE_READY = 4'b0000;
     localparam STATE_RUN0  = 4'b0001;
@@ -71,7 +73,9 @@ module wavg_pipe_m #(
         if (!nrst_i) begin
             state <= STATE_READY;
 
-            mstream_o <= 0;
+            out_data <= 0;
+
+            last <= 0;
         end
         else if (clk_i) begin
             case (state)
@@ -170,20 +174,21 @@ module wavg_pipe_m #(
                     state <= STATE_DONE;
                     ty <= a0y;
 
-                    mstream_o[`STREAM_MO_DATA(SC_WIDTH * 2 + WORD_WIDTH * 3)] <= { posx, posy, tx, a0y, depth };
-                    mstream_o[`STREAM_MO_VALID(SC_WIDTH * 2 + WORD_WIDTH * 3)] <= 1;
-                    mstream_o[`STREAM_MO_LAST(SC_WIDTH * 2 + WORD_WIDTH * 3)] <= last;
+                    out_data <= { posx, posy, tx, a0y, depth };
                 end
 
                 STATE_DONE: begin
                     if (mstream_i[`STREAM_MI_READY(SC_WIDTH * 2 + WORD_WIDTH * 3)]) begin
                         state <= STATE_READY;
-
-                        mstream_o[`STREAM_MO_VALID(SC_WIDTH * 2 + WORD_WIDTH * 3)] <= 0;
                     end
                 end
             endcase
         end
     end
+
+    assign mstream_o[`STREAM_MO_DATA(SC_WIDTH * 2 + WORD_WIDTH * 3)] = out_data;
+    assign mstream_o[`STREAM_MO_VALID(SC_WIDTH * 2 + WORD_WIDTH * 3)] = state == STATE_DONE;
+    assign mstream_o[`STREAM_MO_LAST(SC_WIDTH * 2 + WORD_WIDTH * 3)] = last;
+
 
 endmodule

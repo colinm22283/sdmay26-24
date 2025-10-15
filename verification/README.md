@@ -1,7 +1,7 @@
 # Verification
 To setup SVUnit, run ``source setup-svunit.bsh`` in the verification directory. This catches us up to "Installation and Setup" in the [documentation](https://docs.svunit.org/en/latest/).
 
-From here, let's talk about writing a testbench. The testbenches are written in ``/unit_tests``. To make a TB file, cd into ``unit_tests`` then call ``create_unit_test.pl ../../verilog/dv/<Path to verilog file>``. This will make a TB for you. 
+From here, let's talk about writing a testbench. The testbenches are written in ``/unit_tests``. To make a TB file, cd into ``unit_tests`` then call ``create_unit_test.pl ../../verilog/rtl/<Path to verilog file>``. This will make a TB for you. 
 
 When writing tests, your metrics are the following:
 ```

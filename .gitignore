@@ -13,3 +13,9 @@
 /mgmt_core_wrapper
 /logs
 /venv-cocotb
+**/work
+**/.__testsuite.sv
+**/.svunit.f
+**/.testrunner.sv
+**/.logs
+**/compile.log

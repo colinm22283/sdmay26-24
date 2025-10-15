@@ -11,6 +11,9 @@ module bary_pipe_m #(
     input wire nrst_i,
 
     input wire run_i,
+    output reg init_o,
+    output reg discard_o,
+    output wire busy_o,
 
     input  wire [`STREAM_SIPORT(SC_WIDTH * 2)] sstream_i,
     output wire [`STREAM_SOPORT(SC_WIDTH * 2)] sstream_o,
@@ -49,6 +52,7 @@ module bary_pipe_m #(
     localparam STATE_RUN8      = 5'b10001;
     localparam STATE_RUN9      = 5'b10010;
     localparam STATE_COMPLETE  = 5'b10011;
+    localparam STATE_DONE      = 5'b10100;
 
     reg [4:0] state;
 
@@ -70,7 +74,7 @@ module bary_pipe_m #(
     wire signed [WORD_WIDTH - 1:0] i1y;
     inv_m #(WORD_WIDTH) inv1( .a_i(i1a), .y_o(i1y) );
 
-    reg signed [WORD_WIDTH - 1:0] posx, posy;
+    reg [SC_WIDTH - 1:0] posx, posy;
 
     reg signed [WORD_WIDTH - 1:0] y1my2, x2mx1, x0mx2, y0my2, x2mx0, y2my0, x1mx0;
     reg signed [WORD_WIDTH - 1:0] y1py0, y2py1, y0py2;
@@ -86,11 +90,16 @@ module bary_pipe_m #(
 
     assign i1a = det_t;
 
+    assign busy_o = state != STATE_READY && state != STATE_DONE;
+
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
             state <= STATE_READY;
 
             mstream_o <= 0;
+
+            init_o <= 0;
+            discard_o <= 0;
 
             posx <= 0;
             posy <= 0;
@@ -124,6 +133,9 @@ module bary_pipe_m #(
                         a1a <= v1y;
                         a1b <= v0y;
                     end
+
+                    init_o <= 0;
+                    discard_o <= 0;
                 end
 
                 STATE_SETUP1: begin
@@ -230,8 +242,14 @@ module bary_pipe_m #(
                 end
 
                 STATE_SETUP8: begin
+                    init_o <= 1;
+
                     if (a1y < 0) state <= STATE_AWAIT_POS;
-                    else state <= STATE_READY;
+                    else begin
+                        state <= STATE_READY;
+
+                        discard_o <= 1;
+                    end
                 end
 
                 STATE_AWAIT_POS: begin : AWAIT_POS
@@ -342,11 +360,15 @@ module bary_pipe_m #(
 
                 STATE_COMPLETE: begin
                     if (mstream_i[`STREAM_MI_READY(SC_WIDTH * 2 + WORD_WIDTH * 3)]) begin
-                        if (last) state <= STATE_READY;
+                        if (last) state <= STATE_DONE;
                         else state <= STATE_AWAIT_POS;
 
                         mstream_o[`STREAM_MO_VALID(SC_WIDTH * 2 + WORD_WIDTH * 3)] <= 0;
                     end
+                end
+
+                STATE_DONE: begin
+                    if (!run_i) state <= STATE_READY;
                 end
 
             endcase

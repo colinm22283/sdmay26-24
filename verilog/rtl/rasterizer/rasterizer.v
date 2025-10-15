@@ -7,7 +7,7 @@ module rasterizer_m #(
     input wire nrst_i,
 
     input  wire [`BUS_MIPORT] mport_i,
-    output reg  [`BUS_MOPORT] mport_o,
+    output wire [`BUS_MOPORT] mport_o,
 
     input  wire run_i,
     output wire busy_o,
@@ -76,22 +76,19 @@ module rasterizer_m #(
         if (bby1 >= HEIGHT) bby1 = HEIGHT - 1;
     end
 
-    localparam STATE_READY     = 4'b0000;
-    localparam STATE_RUN_BARY  = 4'b0001;
-    localparam STATE_WAIT_BARY = 4'b0010;
-    localparam STATE_EVAL_BARY = 4'b1011;
-    localparam STATE_REQ_CHECK = 4'b0011;
-    localparam STATE_ACK_CHECK = 4'b0100;
-    localparam STATE_REQ_DEPTH = 4'b0101;
-    localparam STATE_ACK_DEPTH = 4'b0110;
-    localparam STATE_REQ_DRAW  = 4'b0111;
-    localparam STATE_ACK_DRAW  = 4'b1000;
-    localparam STATE_NEXT      = 4'b1001;
-    localparam STATE_DONE      = 4'b1010;
+    localparam STATE_READY     = 3'b000;
+    localparam STATE_BARY_BOOT = 3'b001;
+    localparam STATE_RUN_BARY  = 3'b010;
+    localparam STATE_WAIT_BARY = 3'b011;
+    localparam STATE_DONE      = 3'b100;
 
-    reg [3:0] state;
+    reg [2:0] state;
 
     reg bary_last;
+    
+    wire bary_init;
+    wire bary_discard;
+    wire bary_busy;
 
     reg [SC_WIDTH - 1:0] posx;
     reg [SC_WIDTH - 1:0] posy;
@@ -108,13 +105,16 @@ module rasterizer_m #(
 
     wire [`STREAM_MIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] bary_streami;
     wire [`STREAM_MOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] bary_streamo;
-    wire [SC_WIDTH * 2 + WORD_WIDTH * 3 - 1:0] bary_stream_data;
+
+    wire [`STREAM_MIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] filt_bary_streami;
+    wire [`STREAM_MOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] filt_bary_streamo;
+
+    wire [`STREAM_MIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] wavg_streami;
+    wire [`STREAM_MOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] wavg_streamo;
 
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
             state <= STATE_READY;
-
-            mport_o <= 0;
 
             posx <= 0;
             posy <= 0;
@@ -123,11 +123,18 @@ module rasterizer_m #(
             case (state)
                 STATE_READY: begin
                     if (run_i) begin
-                        state <= STATE_RUN_BARY;
+                        state <= STATE_BARY_BOOT;
 
                         // TODO: handle edge cases here
                         posx  <= bbx0;
                         posy  <= bby0;
+                    end
+                end
+
+                STATE_BARY_BOOT: begin
+                    if (bary_init) begin
+                        if (bary_discard) state <= STATE_DONE;
+                        else state <= STATE_RUN_BARY;
                     end
                 end
 
@@ -136,105 +143,9 @@ module rasterizer_m #(
                 end
 
                 STATE_WAIT_BARY: begin
-                    if (bary_streamo[`STREAM_MO_VALID(SC_WIDTH * 2 + WORD_WIDTH * 3)]) begin
-                        state <= STATE_EVAL_BARY;
-
-                        { bary_l0, bary_l1, bary_l2 } <= bary_stream_data[WORD_WIDTH * 3 - 1:0];
-
-                        bary_last <= posx == bbx1 && posy == bby1;
-                    end
-                end
-
-                STATE_EVAL_BARY: begin
-                    if (bary_l0 >= 0 && bary_l1 >= 0 && bary_l2 >= 0) begin
-                        state <= STATE_REQ_CHECK;
-                    end
-                    else begin
-                        state <= STATE_NEXT;
-                    end
-
-                    depth <=
-                        (({{32{bary_l0[31]}}, bary_l0} * v0z) >> `DECIMAL_POS) +
-                        (({{32{bary_l1[31]}}, bary_l1} * v1z) >> `DECIMAL_POS) +
-                        (({{32{bary_l2[31]}}, bary_l2} * v2z) >> `DECIMAL_POS);
-                end
-
-                STATE_REQ_CHECK: begin
-                    if (mport_i[`BUS_MI_ACK]) begin
-                        state <= STATE_ACK_CHECK;
-
-                        $display("(%d, %d): 0x%h", posx, posy, 4 * (posy * WIDTH + posx));
-                    end
-
-                    mport_o[`BUS_MO_ADDR] <= `ADDR_DEPTH_BUFFER + 4 * (posy * WIDTH + posx);
-
-                    mport_o[`BUS_MO_RW]   <= `BUS_READ;
-                    mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_WORD;
-
-                    mport_o[`BUS_MO_REQ]  <= 1;
-                end
-
-                STATE_ACK_CHECK: begin
-                    if (!mport_i[`BUS_MI_ACK]) begin
-                        $display("0x%h, 0x%h", mport_i[`BUS_MO_DATA], depth);
-                        // if (mport_i[`BUS_MO_DATA] != 32'hFFFFFFFF) $finish;
-                        if (mport_i[`BUS_MO_DATA] > depth) state <= STATE_REQ_DEPTH;
-                        else begin
-                            state <= STATE_NEXT;
-                        end
-                    
-                        mport_o[`BUS_MO_REQ]  <= 0;
-                    end
-                end
-
-                STATE_REQ_DEPTH: begin
-                    if (mport_i[`BUS_MI_ACK]) begin
-                        state <= STATE_ACK_DEPTH;
-
-                        $display("(%d, %d): 0x%h", posx, posy, 4 * (posy * WIDTH + posx));
-                    end
-
-                    mport_o[`BUS_MO_ADDR] <= `ADDR_DEPTH_BUFFER + 4 * (posy * WIDTH + posx);
-                    mport_o[`BUS_MO_DATA] <= depth;
-
-                    mport_o[`BUS_MO_RW]   <= `BUS_WRITE;
-                    mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_WORD;
-
-                    mport_o[`BUS_MO_REQ]  <= 1;
-                end
-
-                STATE_ACK_DEPTH: begin
-                    if (!mport_i[`BUS_MI_ACK]) begin
-                        state <= STATE_REQ_DRAW;
-                    
-                        mport_o[`BUS_MO_REQ]  <= 0;
-                    end
-                end
-
-                STATE_REQ_DRAW: begin
-                    if (mport_i[`BUS_MI_ACK]) begin
-                        state <= STATE_ACK_DRAW;
-                    end
-
-                    mport_o[`BUS_MO_ADDR] <= posy * WIDTH + posx;
-                    mport_o[`BUS_MO_DATA] <= color_i;
-
-                    mport_o[`BUS_MO_RW]   <= `BUS_WRITE;
-                    mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_BYTE;
-
-                    mport_o[`BUS_MO_REQ]  <= 1;
-                end
-
-                STATE_ACK_DRAW: begin
-                    if (!mport_i[`BUS_MI_ACK]) begin
-                        state <= STATE_NEXT;
-                    
-                        mport_o[`BUS_MO_REQ]  <= 0;
-                    end
-                end
-
-                STATE_NEXT: begin
                     state <= STATE_RUN_BARY;
+
+                    bary_last <= posx == (bbx1 - 1) && posy == bby1;
 
                     if (posx == bbx1) begin
                         posx <= bbx0;
@@ -262,17 +173,16 @@ module rasterizer_m #(
     assign pos_streamo[`STREAM_MO_DATA(SC_WIDTH * 2)] = pos_stream_data;
     assign pos_streamo[`STREAM_MO_LAST(SC_WIDTH * 2)] = bary_last;
 
-    assign bary_streami[`STREAM_MI_READY(SC_WIDTH * 2 + WORD_WIDTH * 3)] = state == STATE_WAIT_BARY;
+    assign busy_o = (state != STATE_READY && state != STATE_DONE) || bary_busy;
 
-    assign bary_stream_data = bary_streamo[`STREAM_MO_DATA(SC_WIDTH * 2 + WORD_WIDTH * 3)];
-
-    assign busy_o = state != STATE_READY && state != STATE_DONE;
-
-    bary_pipe_m #(WORD_WIDTH, WIDTH, HEIGHT) bary_pipe (
+    bary_pipe_m #(WORD_WIDTH, WIDTH, HEIGHT) bary_pipe(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 
         .run_i(run_i),
+        .init_o(bary_init),
+        .discard_o(bary_discard),
+        .busy_o(bary_busy),
 
         .sstream_i(pos_streamo),
         .sstream_o(pos_streami),
@@ -289,6 +199,52 @@ module rasterizer_m #(
         .v2x(v2x),
         .v2y(v2y),
         .v2z(v2z)
+    );
+
+    bary_check_pipe_m #(WORD_WIDTH, SC_WIDTH) bary_check_pipe(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+
+        .sstream_i(bary_streamo),
+        .sstream_o(bary_streami),
+
+        .mstream_i(filt_bary_streami),
+        .mstream_o(filt_bary_streamo)
+    );
+
+    wavg_pipe_m #(WORD_WIDTH, SC_WIDTH) wavg_pipe(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+
+        .sstream_i(filt_bary_streamo),
+        .sstream_o(filt_bary_streami),
+
+        .mstream_i(wavg_streami),
+        .mstream_o(wavg_streamo),
+
+        .t0x(t0x),
+        .t0y(t0y),
+        .t1x(t1x),
+        .t1y(t1y),
+        .t2x(t2x),
+        .t2y(t2y),
+
+        .v0z(v0z),
+        .v1z(v1z),
+        .v2z(v2z)
+    );
+
+    mem_write_m #(WORD_WIDTH, SC_WIDTH, WIDTH, HEIGHT) mem_write(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+
+        .sstream_i(wavg_streamo),
+        .sstream_o(wavg_streami),
+
+        .mport_i(mport_i),
+        .mport_o(mport_o),
+        
+        .color_i(color_i)
     );
 
 endmodule

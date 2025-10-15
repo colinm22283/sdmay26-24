@@ -33,7 +33,9 @@
 
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/rasterizer.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/bary_pipe.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/bary_check_pipe.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/wavg_pipe.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/mem_write.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/spi_mem.v
 

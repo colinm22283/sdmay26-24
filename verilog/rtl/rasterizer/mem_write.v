@@ -21,7 +21,7 @@ module mem_write_m #(
 
     reg [SC_WIDTH - 1:0] posx, posy;
     reg [WORD_WIDTH - 1:0] tx, ty;
-    reg signed [WORD_WIDTH - 1:0] depth;
+    reg [WORD_WIDTH - 1:0] depth;
 
     reg [7:0] state;
 
@@ -44,6 +44,57 @@ module mem_write_m #(
                 1: begin
                     if (mport_i[`BUS_MI_ACK]) begin
                         state <= 2;
+
+                        $display("(%d, %d): 0x%h", posx, posy, 4 * (posy * WIDTH + posx));
+                    end
+
+                    mport_o[`BUS_MO_ADDR] <= `ADDR_DEPTH_BUFFER + 4 * (posy * WIDTH + posx);
+
+                    mport_o[`BUS_MO_RW]   <= `BUS_READ;
+                    mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_WORD;
+
+                    mport_o[`BUS_MO_REQ]  <= 1;
+                end
+
+                2: begin
+                    if (!mport_i[`BUS_MI_ACK]) begin
+                        if (mport_i[`BUS_MO_DATA] > depth) state <= 3;
+                        else begin
+                            state <= 0;
+                        end
+                    
+                        mport_o[`BUS_MO_REQ]  <= 0;
+                    end
+                end
+
+                3: begin
+                    if (mport_i[`BUS_MI_ACK]) begin
+                        state <= 4;
+
+                        $display("(%d, %d): 0x%h", posx, posy, 4 * (posy * WIDTH + posx));
+                    end
+
+                    mport_o[`BUS_MO_ADDR] <= `ADDR_DEPTH_BUFFER + 4 * (posy * WIDTH + posx);
+                    mport_o[`BUS_MO_DATA] <= depth;
+
+                    mport_o[`BUS_MO_RW]   <= `BUS_WRITE;
+                    mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_WORD;
+
+                    mport_o[`BUS_MO_REQ]  <= 1;
+                end
+
+                4: begin
+                    if (!mport_i[`BUS_MI_ACK]) begin
+                        state <= 5;
+                    
+                        mport_o[`BUS_MO_REQ]  <= 0;
+                    end
+                end
+
+
+                5: begin
+                    if (mport_i[`BUS_MI_ACK]) begin
+                        state <= 6;
                     end
 
                     mport_o[`BUS_MO_ADDR] <= posy * WIDTH + posx;
@@ -55,7 +106,7 @@ module mem_write_m #(
                     mport_o[`BUS_MO_REQ]  <= 1;
                 end
 
-                2: begin
+                6: begin
                     if (!mport_i[`BUS_MI_ACK]) begin
                         state <= 0;
                     

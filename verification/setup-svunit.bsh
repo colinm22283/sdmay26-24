@@ -11,5 +11,6 @@ cd -
 export PATH=/usr/local/mentor/questasim/linux_x86_64:$PATH
 export SALT_LICENSE_SERVER=1717@io.ece.iastate.edu
 
-
-
+# Sets up search paths
+RTL_PATH=$(realpath $(pwd)/../verilog/rtl)
+echo +incdir+${RTL_PATH} > ./unit_tests/rtl.f

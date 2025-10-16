@@ -20,3 +20,8 @@
 **/.logs
 **/compile.log
 **/rtl.f
+**/run.log
+**/tests.xml
+*.wlf
+**/qrun.out
+**/transcript

@@ -4,8 +4,8 @@
 */
 
 module vga_display (
-    input wire clk_i; // 640 x 480 pixel clock (24MHz)
-    input wire nrst_i;
+    input wire clk_i, // 640 x 480 pixel clock (24MHz)
+    input wire nrst_i,
 
     input wire [7:0]color_i,
     input wire hsync_i,
@@ -47,7 +47,7 @@ module vga_display (
         else if (clk_i) begin
             h_counter <= h_counter + 10'd1;
             if (h_counter < H_ACTIVE)
-                screen[v_counter][h_counter] <= color;
+                screen[v_counter][h_counter] <= color_i;
             else if (h_counter >= H_ACTIVE + H_FPORCH
                      && h_counter < H_ACTIVE + H_FPORCH + H_SYNC
                      && hsync_i != H_SYNC_ACTIVE)

@@ -1,5 +1,3 @@
-`include "user_defines.v"
-
 /*
     Basic 8-bit integer clock divider.
     div >= 1 divides the input clock by div.
@@ -104,6 +102,10 @@ module vga #(
     wire base_clk; // 640x480 pixel clock (24MHz)
     clkdiv div(clk_i, nrst_i, {4'b0000, prescaler}, base_clk);
 
+`ifdef USING_SVUNIT
+    int i;
+`endif
+
     always @ (posedge clk_i or negedge nrst_i) begin
         if (!nrst_i) begin
             res_h_active <= 0;
@@ -116,7 +118,7 @@ module vga #(
             resolution <= 0;
             pixel_double_counter <= 0;
             line_double_counter <= 0;
-            for (int i = 0; i < CACHE_WIDTH; i = i+1)
+            for (i = 0; i < CACHE_WIDTH; i = i+1)
                 line_cache[i] <= 0;
             line_cache_idx = 1;
             fb <= 0;
@@ -150,7 +152,7 @@ module vga #(
                 resolution <= resolution_i;
                 pixel_double_counter <= 0;                // Make sure the first pixel gets outputted
                 line_double_counter <= 0;
-                for (int i = 0; i < CACHE_WIDTH; i = i+1)
+                for (i = 0; i < CACHE_WIDTH; i = i+1)
                     line_cache[i] <= 0;
                 fb <= fb_i;                               // Keep this up to date
                 fb_read_state <= FB_READ_STATE_PREP;

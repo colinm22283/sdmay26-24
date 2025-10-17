@@ -1,10 +1,12 @@
+`define USING_SVUNIT
+
 `include "svunit_defines.svh"
+`include "user_defines.v"
 `include "vga.v"
 `include "bus/busarb.v"
 `include "spi_mem.v"
 `include "test/vga_display.v"
 `include "test/spi_chip.v"
-`include "user_defines.v"
 
 module clkdiv_unit_test;
   import svunit_pkg::svunit_testcase;

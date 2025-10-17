@@ -92,7 +92,7 @@
 `endif // __USER_DEFINES_H
 
 `define WORD_WIDTH (32)
-`define DECIMAL_POS (16)
+`define DECIMAL_POS (17)
 
 `define BUS_ADDR_SIZE (20)
 `define BUS_ADDR_PORT (`BUS_ADDR_SIZE - 1):0

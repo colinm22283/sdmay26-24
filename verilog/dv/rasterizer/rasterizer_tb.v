@@ -190,7 +190,7 @@ module rasterizer_tb();
 
         v0x = 20 << `DECIMAL_POS;
         v0y = 20 << `DECIMAL_POS;
-        v0z = 3 * 64'h80000000 / 3;
+        v0z = 2 * 64'h80000000 / 3;
         t0x = 0;
         t0y = 0;
 
@@ -236,7 +236,7 @@ module rasterizer_tb();
 
         v2x = 140 << `DECIMAL_POS;
         v2y = 140 << `DECIMAL_POS;
-        v2z = 3 * 64'h80000000 / 3;
+        v2z = 2 * 64'h80000000 / 3;
         t2x = 0;
         t2y = 10;
 
@@ -364,9 +364,9 @@ module rasterizer_tb();
 
         $display("Dumping image...");
 
-        // `VGA_WRITE("output.bmp", spi_chip.mem, 0, 320, 240, `COLOR_TYPE_RGB332);
+        `VGA_WRITE("output.bmp", spi_chip.mem, 0, 320, 240, `COLOR_TYPE_RGB332);
 
-        `VGA_WRITE("depth.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
+        // `VGA_WRITE("depth.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
 
         $finish;
     end

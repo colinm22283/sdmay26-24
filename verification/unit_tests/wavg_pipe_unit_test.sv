@@ -10,6 +10,7 @@
 `include "test/stream_master.v"
 `include "test/stream_slave.v"
 `include "test/clk_rst.v"
+`include "test/fixed_point.v"
 
 module wavg_pipe_m_unit_test;
   import svunit_pkg::svunit_testcase;
@@ -136,14 +137,14 @@ module wavg_pipe_m_unit_test;
       reg signed [WORD_WIDTH - 1:0] correct_tx, tx;
       reg signed [WORD_WIDTH - 1:0] correct_ty, ty;
 
-      for (i = 0; i < 1000; i = i + 1) begin
+      for (i = 0; i < 10000; i = i + 1) begin
 
         posx = {$random} % WIDTH;
         posy = {$random} % HEIGHT;
 
-        l0 = {$random} % (1 << (`DECIMAL_POS + 4));
-        l1 = {$random} % (1 << (`DECIMAL_POS + 4));
-        l2 = {$random} % (1 << (`DECIMAL_POS + 4));
+        l0 = $random % (1 << (`DECIMAL_POS));
+        l1 = $random % (1 << (`DECIMAL_POS));
+        l2 = `FP(1) - l0 - l1;
 
         t0x = $random;
         t1x = $random;
@@ -153,28 +154,28 @@ module wavg_pipe_m_unit_test;
         t1y = $random;
         t2y = $random;
 
-        v0z = {$random} % (1 << (`DECIMAL_POS + 4));
-        v1z = {$random} % (1 << (`DECIMAL_POS + 4));
-        v2z = {$random} % (1 << (`DECIMAL_POS + 4));
+        v0z = $random;
+        v1z = $random;
+        v2z = $random;
 
         SEND_DATA(posx, posy, l0, l1, l2);
 
         RECEIVE_DATA(depth, tx, ty);
 
-        // $display("%d * %d", v0z >>> `DECIMAL_POS, l0 >>> `DECIMAL_POS);
-        // $display("%d * %d", v1z >>> `DECIMAL_POS, l1 >>> `DECIMAL_POS);
-        // $display("%d * %d", v2z >>> `DECIMAL_POS, l2 >>> `DECIMAL_POS);
+        $display("%d * %d", v0z >>> `DECIMAL_POS, l0 >>> `DECIMAL_POS);
+        $display("%d * %d", v1z >>> `DECIMAL_POS, l1 >>> `DECIMAL_POS);
+        $display("%d * %d", v2z >>> `DECIMAL_POS, l2 >>> `DECIMAL_POS);
 
-        // $display("%d", (({{32{v0z[WORD_WIDTH - 1]}}, v0z} * l0) >>> `DECIMAL_POS) >>> `DECIMAL_POS);
-        // $display("%d", (({{32{v1z[WORD_WIDTH - 1]}}, v1z} * l1) >>> `DECIMAL_POS) >>> `DECIMAL_POS);
-        // $display("%d", (({{32{v2z[WORD_WIDTH - 1]}}, v2z} * l2) >>> `DECIMAL_POS) >>> `DECIMAL_POS);
+        $display("%d", $signed(`FP_MUL(v0z, l0) / (1 << `DECIMAL_POS)));
+        $display("%d", $signed(`FP_MUL(v1z, l1) / (1 << `DECIMAL_POS)));
+        $display("%d", $signed(`FP_MUL(v2z, l2) / (1 << `DECIMAL_POS)));
 
         correct_depth =
-          (({{32{v0z[WORD_WIDTH - 1]}}, v0z} * l0) >>> `DECIMAL_POS) +
-          (({{32{v1z[WORD_WIDTH - 1]}}, v1z} * l1) >>> `DECIMAL_POS) +
-          (({{32{v2z[WORD_WIDTH - 1]}}, v2z} * l2) >>> `DECIMAL_POS);
+          $signed(`FP_MUL(v0z, l0)) +
+          $signed(`FP_MUL(v1z, l1)) +
+          $signed(`FP_MUL(v2z, l2));
 
-        // $display("%d == %d", depth >>> `DECIMAL_POS, correct_depth >>> `DECIMAL_POS);
+        $display("%d == %d", depth >>> `DECIMAL_POS, correct_depth >>> `DECIMAL_POS);
         `FAIL_UNLESS_EQUAL(depth, correct_depth);
 
       end

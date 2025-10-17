@@ -1,5 +1,8 @@
 `include "svunit_defines.svh"
-`include "spi_chip.v"
+
+`include "user_defines.v"
+
+`include "test/spi_chip.v"
 
 module spi_chip_m_unit_test;
   import svunit_pkg::svunit_testcase;

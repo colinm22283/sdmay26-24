@@ -1,6 +1,10 @@
 <testsuites>
   <testsuite name="__ts">
+    <testcase classname="bary_pipe_m_ut" name="bary_setup">
+    </testcase>
     <testcase classname="bary_pipe_m_ut" name="main">
+      <failure message="fail_unless_equal: (l1) !== (((($signed({ {(32){top[(32) - 1]}}, (top) }) << (17)) / $signed({ {(32){dut.det_t[(32) - 1]}}, (dut.det_t) })))) (at /local/colinm22/sdmay26-24/verification/unit_tests/./bary_pipe_unit_test.sv line:244)" type="failure">
+      </failure>
     </testcase>
   </testsuite>
 </testsuites>

@@ -12,6 +12,7 @@
 `include "test/clk_rst.v"
 `include "test/stream_master.v"
 `include "test/stream_slave.v"
+`include "test/fixed_point.v"
 
 module bary_pipe_m_unit_test;
   import svunit_pkg::svunit_testcase;
@@ -20,6 +21,8 @@ module bary_pipe_m_unit_test;
   svunit_testcase svunit_ut;
 
   localparam WORD_WIDTH = 32;
+  localparam WORD_SMAX = 64'd1 << (WORD_WIDTH - 2);
+
   localparam WIDTH = 320;
   localparam HEIGHT = 240;
   localparam SC_WIDTH = $clog2(WIDTH > HEIGHT ? WIDTH : HEIGHT);
@@ -62,7 +65,7 @@ module bary_pipe_m_unit_test;
   // This is the UUT that we're 
   // running the Unit Tests on
   //===================================
-  bary_pipe_m my_bary_pipe_m(
+  bary_pipe_m dut(
     .clk_i(clk),
     .nrst_i(nrst),
 
@@ -139,33 +142,163 @@ module bary_pipe_m_unit_test;
   //===================================
   `SVUNIT_TESTS_BEGIN
 
-    `SVTEST(main)
+    `SVTEST(bary_setup)
       integer i;
 
       reg [SC_WIDTH - 1:0] posx, posy;
 
       reg signed [WORD_WIDTH - 1:0] l0, l1, l2;
 
-      START_PIPELINE();
+      v0x = 10 << `DECIMAL_POS;
+      v0y = 50 << `DECIMAL_POS;
+      v0z = 1 * 64'h80000000 / 3;
 
-      posx = {$random} % WIDTH;
-      posy = {$random} % HEIGHT;
+      v1x = 50 << `DECIMAL_POS;
+      v1y = 10 << `DECIMAL_POS;
+      v1z = 1 * 64'h80000000 / 3;
 
-      SEND_DATA(posx, posy);
+      v2x = 140 << `DECIMAL_POS;
+      v2y = 140 << `DECIMAL_POS;
+      v2z = 3 * 64'h80000000 / 3;
 
-      // RECEIVE_DATA(l0, l1, l2);
+      SETUP_PIPELINE();
+
+      `FAIL_UNLESS_EQUAL(dut.y1my2, v1y - v2y);
+      `FAIL_UNLESS_EQUAL(dut.x2mx1, v2x - v1x);
+      `FAIL_UNLESS_EQUAL(dut.x0mx2, v0x - v2x);
+      `FAIL_UNLESS_EQUAL(dut.y0my2, v0y - v2y);
+      `FAIL_UNLESS_EQUAL(dut.x2mx0, v2x - v0x);
+      `FAIL_UNLESS_EQUAL(dut.y2my0, v2y - v0y);
+      `FAIL_UNLESS_EQUAL(dut.x1mx0, v1x - v0x);
+
+      `FAIL_UNLESS_EQUAL(dut.y1py0, v1y + v0y);
+      `FAIL_UNLESS_EQUAL(dut.y2py1, v2y + v1y);
+      `FAIL_UNLESS_EQUAL(dut.y0py2, v0y + v2y);
+
+      $display("DET: %0d == %0d", dut.det_t, `FP_MUL(dut.y1my2, dut.x0mx2) + `FP_MUL(dut.x2mx1, dut.y0my2));
+      `FAIL_UNLESS_EQUAL(dut.det_t, `FP_MUL(dut.y1my2, dut.x0mx2) + `FP_MUL(dut.x2mx1, dut.y0my2));
+
+      $display("INV DET: %0d == %0d", dut.inv_det_t, `FP_INV(dut.det_t));
+      `FAIL_UNLESS_EQUAL(dut.inv_det_t, `FP_INV(dut.det_t));
+    `SVTEST_END
+
+    `SVTEST(main)
+      integer i;
+
+      reg [SC_WIDTH - 1:0] posx, posy;
+
+      reg [WORD_WIDTH - 1:0] bbx0, bbx1, bby0, bby1;
+
+      reg signed [WORD_WIDTH - 1:0] l0, l1, l2;
+
+      reg signed [WORD_WIDTH - 1:0] xmx2, ymy2;
+
+      v0x = 10 << `DECIMAL_POS;
+      v0y = 50 << `DECIMAL_POS;
+      v0z = 1 * 64'h80000000 / 3;
+
+      v1x = 50 << `DECIMAL_POS;
+      v1y = 10 << `DECIMAL_POS;
+      v1z = 1 * 64'h80000000 / 3;
+
+      v2x = 140 << `DECIMAL_POS;
+      v2y = 140 << `DECIMAL_POS;
+      v2z = 3 * 64'h80000000 / 3;
+
+      SET_BBOX(bbx0, bbx1, bby0, bby1);
+
+      $display("BBOX (%0d, %0d) - (%0d, %0d)", bbx0, bby0, bbx1, bby1);
+
+      SETUP_PIPELINE();
+
+      for (i = 0; i < 1000; i = i + 1) begin
+        posx = bbx0 + {$random} % (bbx1 - bbx0);
+        posy = bby0 + {$random} % (bby1 - bby0);
+
+        $display("Testing (%0d, %0d)", posx, posy);
+
+        xmx2 = `FP(posx) - v2x;
+        ymy2 = `FP(posy) - v2y;
+
+        SEND_DATA(posx, posy);
+
+        RECEIVE_DATA(l0, l1, l2);
+
+        begin : L0_TEST
+          reg signed [`WORD_WIDTH - 1:0] top;
+          
+          top = `FP_MUL(dut.y1my2, xmx2) + `FP_MUL(dut.x2mx1, ymy2);
+
+          // $display("%0d == %0d", l0, `FP_DIV(top, dut.det_t));
+          // `FAIL_UNLESS_EQUAL(l0, `FP_DIV(top, dut.det_t));
+          $display("%0d == %0d", l0, `FP_MUL(top, dut.inv_det_t));
+          `FAIL_UNLESS_EQUAL(l0, `FP_MUL(top, dut.inv_det_t));
+        end
+
+        begin : L1_TEST
+          reg signed [`WORD_WIDTH - 1:0] top;
+          
+          top = `FP_MUL(dut.y2my0, xmx2) + `FP_MUL(dut.x0mx2, ymy2);
+
+          $display("%0d == %0d", l1, `FP_DIV(top, dut.det_t));
+          `FAIL_UNLESS_EQUAL(l1, `FP_DIV(top, dut.det_t));
+        end
+
+        begin : L2_TEST
+          `FAIL_UNLESS_EQUAL(l2, `FP(1) - l0 - l1);
+        end
+      end
 
     `SVTEST_END
 
   `SVUNIT_TESTS_END
 
-  task START_PIPELINE;
+  task SETUP_PIPELINE;
   begin
     bary_run = 1;
     clk_rst.WAIT_CYCLES(2);
     bary_run = 0;
 
     wait(bary_init);
+  end
+  endtask
+
+  task SET_BBOX;
+    output [WORD_WIDTH - 1:0] bbx0;
+    output [WORD_WIDTH - 1:0] bbx1;
+    output [WORD_WIDTH - 1:0] bby0;
+    output [WORD_WIDTH - 1:0] bby1;
+  begin
+    bbx0 = WORD_SMAX;
+    bby0 = WORD_SMAX;
+    bbx1 = 0;
+    bby1 = 0;
+
+    if (v0x < bbx0) bbx0 = v0x;
+    if (v1x < bbx0) bbx0 = v1x;
+    if (v2x < bbx0) bbx0 = v2x;
+
+    if (v0y < bby0) bby0 = v0y;
+    if (v1y < bby0) bby0 = v1y;
+    if (v2y < bby0) bby0 = v2y;
+
+    if (v0x > bbx1) bbx1 = v0x;
+    if (v1x > bbx1) bbx1 = v1x;
+    if (v2x > bbx1) bbx1 = v2x;
+
+    if (v0y > bby1) bby1 = v0y;
+    if (v1y > bby1) bby1 = v1y;
+    if (v2y > bby1) bby1 = v2y;
+
+    bbx0 = bbx0 >>> `DECIMAL_POS;
+    bby0 = bby0 >>> `DECIMAL_POS;
+    bbx1 = bbx1 >>> `DECIMAL_POS;
+    bby1 = bby1 >>> `DECIMAL_POS;
+
+    if (bbx0 < 0) bbx0 = 0;
+    if (bby0 < 0) bby0 = 0;
+    if (bbx1 >= WIDTH) bbx1 = WIDTH - 1;
+    if (bby1 >= HEIGHT) bby1 = HEIGHT - 1;
   end
   endtask
 

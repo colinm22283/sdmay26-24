@@ -1,5 +1,5 @@
 # vsim -c -lib work -do "run -all; quit" -l run.log testrunner 
-# Start time: 01:29:59 on Oct 17,2025
+# Start time: 14:58:45 on Oct 17,2025
 # ** Note: (vsim-3812) Design is being optimized...
 # //  Questa Sim-64
 # //  Version 2023.2_2 linux_x86_64 Jun  9 2023
@@ -24,9 +24,23 @@
 # INFO:  [0][testrunner]: Registering Test Suite __ts
 # INFO:  [0][__ts]: RUNNING
 # INFO:  [0][bary_pipe_m_ut]: RUNNING
-# INFO:  [0][bary_pipe_m_ut]: main::RUNNING
-# Break key hit
-# Break at an unknown location
-#  quit
-# End time: 01:30:02 on Oct 17,2025, Elapsed time: 0:00:03
+# INFO:  [0][bary_pipe_m_ut]: bary_setup::RUNNING
+# DET: 1153433600 == 1153433600
+# INV DET: 14 == 14
+# INFO:  [215][bary_pipe_m_ut]: bary_setup::PASSED
+# INFO:  [215][bary_pipe_m_ut]: main::RUNNING
+# BBOX (10, 10) - (140, 140)
+# Testing (58, 67)
+# 57260 == 57260
+# 29540 == 31427
+# ERROR: [440][bary_pipe_m_ut]: fail_unless_equal: (l1) !== (((($signed({ {(32){top[(32) - 1]}}, (top) }) << (17)) / $signed({ {(32){dut.det_t[(32) - 1]}}, (dut.det_t) })))) (at /local/colinm22/sdmay26-24/verification/unit_tests/./bary_pipe_unit_test.sv line:244)
+# INFO:  [440][bary_pipe_m_ut]: main::FAILED
+# INFO:  [440][bary_pipe_m_ut]: FAILED (1 of 2 tests passing)
+# 
+# INFO:  [440][__ts]: FAILED (0 of 1 testcases passing)
+# 
+# INFO:  [440][testrunner]: FAILED (0 of 1 suites passing) [SVUnit Unreleased]
+# ** Note: $finish    : .testrunner.sv(38)
+#    Time: 440 ns  Iteration: 3  Instance: /testrunner
+# End time: 14:58:45 on Oct 17,2025, Elapsed time: 0:00:00
 # Errors: 0, Warnings: 0

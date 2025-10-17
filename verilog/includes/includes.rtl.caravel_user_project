@@ -19,10 +19,26 @@
 
 -v $(USER_PROJECT_VERILOG)/rtl/test/virtual_vga.v
 -v $(USER_PROJECT_VERILOG)/rtl/test/spi_chip.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/stream_master.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/stream_slave.v
+-v $(USER_PROJECT_VERILOG)/rtl/test/clk_rst.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/bus/busarb.v
 -v $(USER_PROJECT_VERILOG)/rtl/bus/busslave.v
+-v $(USER_PROJECT_VERILOG)/rtl/bus/word_stripe_cache.v
 -v $(USER_PROJECT_VERILOG)/rtl/bus/ram.v
+
+-v $(USER_PROJECT_VERILOG)/rtl/math/add.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/sub.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/mul.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/div.v
+-v $(USER_PROJECT_VERILOG)/rtl/math/inv.v
+
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/rasterizer.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/bary_pipe.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/bary_check_pipe.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/wavg_pipe.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/mem_write.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/spi_mem.v
 

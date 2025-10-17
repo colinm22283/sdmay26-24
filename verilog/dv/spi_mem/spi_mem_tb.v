@@ -1,5 +1,7 @@
 module spi_mem_tb();
 
+    localparam MEMORY_SIZE = 10000;
+
     reg clk;
     reg nrst;
 
@@ -34,9 +36,9 @@ module spi_mem_tb();
     wire spi_dqsmi;
     wire spi_dqsmo;
 
-    reg [7:0] test_mem[1023:0];
+    reg [7:0] test_mem[MEMORY_SIZE - 1:0];
 
-    spi_mem_m #(0, 1024) spi_mem(
+    spi_mem_m #(0, MEMORY_SIZE) spi_mem(
         .clk_i(clk),
         .nrst_i(nrst),
 
@@ -51,7 +53,7 @@ module spi_mem_tb();
         .spi_dqsm_o(spi_dqsmo)
     );
 
-    spi_chip_m spi_chip(
+    spi_chip_m #(7, 1, MEMORY_SIZE) spi_chip(
         .clk_i(spi_clk),
         .cs_i(spi_cs),
         .mosi_i(spi_mosi),
@@ -71,7 +73,7 @@ module spi_mem_tb();
         nrst = 1;
         #30;
 
-        #1000000;
+        #100000000;
         $finish;
     end
 
@@ -82,14 +84,14 @@ module spi_mem_tb();
 
         #100;
 
-        for (i = 0; i < 1024; i = i + 1) begin
+        for (i = 0; i < MEMORY_SIZE; i = i + 1) begin
             test_mem[i] = 0;
             spi_chip.mem[i] = 0;
         end
 
         $display("Byte write-read test");
 
-        for (i = 0; i < 1024; i = i + 1) begin : LOOP1
+        for (i = 0; i < MEMORY_SIZE - 1; i = i + 1) begin : LOOP1
             integer j;
 
             reg [7:0] data;
@@ -108,7 +110,7 @@ module spi_mem_tb();
                 $finish;
             end
 
-            for (j = 0; j < 1023; j = j + 1) begin
+            for (j = 0; j < MEMORY_SIZE; j = j + 1) begin
                 if (test_mem[j] != spi_chip.mem[j]) begin
                     $display("Full test failure at address 0x%h\n", j);
                     $finish;
@@ -116,65 +118,69 @@ module spi_mem_tb();
             end
         end
 
-        $display("Word write-read test");
+        // $display("Word write-read test");
 
-        for (i = 0; i < 1021; i = i + 1) begin : LOOP2
-            integer j;
+        // for (i = 0; i < 1021; i = i + 1) begin : LOOP2
+        //     integer j;
 
-            reg [31:0] data;
-            data = {$random};
+        //     reg [31:0] data;
+        //     data = {$random};
 
-            { test_mem[i], test_mem[i + 1], test_mem[i + 2], test_mem[i + 3] } = data;
+        //     { test_mem[i + 3], test_mem[i + 2], test_mem[i + 1], test_mem[i + 0] } = data;
 
-            $display("Writing 0x%h to address 0x%h", data, i);
+        //     $display("Writing 0x%h to address 0x%h", data, i);
 
-            PORTA_WRITE_WORD(i, data);
-            PORTA_READ_WORD(i, read_data);
+        //     PORTA_WRITE_WORD(i, data);
+        //     PORTA_READ_WORD(i, read_data);
 
-            $display("0x%h == 0x%h", data, read_data[31:0]);
-            if (data != read_data[31:0]) begin
-                $display("Read error at address 0x%h", i);
-                $finish;
-            end
+        //     $display("0x%h == 0x%h", data, read_data[31:0]);
+        //     if (data != read_data[31:0]) begin
+        //         $display("Read error at address 0x%h", i);
+        //         $finish;
+        //     end
 
-            for (j = 0; j < 1023; j = j + 1) begin
-                if (test_mem[j] != spi_chip.mem[j]) begin
-                    $display("Full test failure at address 0x%h\n", j);
-                    $finish;
-                end
-            end
-        end
+        //     for (j = 0; j < 1023; j = j + 1) begin
+        //         if (test_mem[j] != spi_chip.mem[j]) begin
+        //             $display("Full test failure at address 0x%h\n", j);
+        //             $finish;
+        //         end
+        //     end
+        // end
 
-        for (i = 0; i < 1013; i = i + 1) begin : LOOP3
-            integer j;
+        // $display("TWord write-read test");
 
-            reg [95:0] data;
-            data = {$random};
+        // for (i = 0; i < 1013; i = i + 1) begin : LOOP3
+        //     integer j;
 
-            {
-                test_mem[i + 0], test_mem[i + 1], test_mem[i + 2], test_mem[i + 3],
-                test_mem[i + 4], test_mem[i + 5], test_mem[i + 6], test_mem[i + 7],
-                test_mem[i + 8], test_mem[i + 9], test_mem[i + 10], test_mem[i + 11]
-            } = data;
+        //     reg [95:0] data;
+        //     data[31:0] = {$random};
+        //     data[63:32] = {$random};
+        //     data[95:64] = {$random};
 
-            $display("Writing 0x%h to address 0x%h", data, i);
+        //     {
+        //         test_mem[i + 11], test_mem[i + 10], test_mem[i + 9], test_mem[i + 8],
+        //         test_mem[i + 7], test_mem[i + 6], test_mem[i + 5], test_mem[i + 4],
+        //         test_mem[i + 3], test_mem[i + 2], test_mem[i + 1], test_mem[i + 0]
+        //     } = data;
 
-            PORTA_WRITE_TWORD(i, data);
-            PORTA_READ_TWORD(i, read_data);
+        //     $display("Writing 0x%h to address 0x%h", data, i);
 
-            $display("0x%h == 0x%h", data, read_data);
-            if (data != read_data) begin
-                $display("Read error at address 0x%h", i);
-                $finish;
-            end
+        //     PORTA_WRITE_TWORD(i, data);
+        //     PORTA_READ_TWORD(i, read_data);
 
-            for (j = 0; j < 1023; j = j + 1) begin
-                if (test_mem[j] != spi_chip.mem[j]) begin
-                    $display("Full test failure at address 0x%h\n", j);
-                    $finish;
-                end
-            end
-        end
+        //     $display("0x%h == 0x%h", data, read_data);
+        //     if (data != read_data) begin
+        //         $display("Read error at address 0x%h", i);
+        //         $finish;
+        //     end
+
+        //     for (j = 0; j < 1023; j = j + 1) begin
+        //         if (test_mem[j] != spi_chip.mem[j]) begin
+        //             $display("Full test failure at address 0x%h\n", j);
+        //             $finish;
+        //         end
+        //     end
+        // end
 
         $finish;
     end

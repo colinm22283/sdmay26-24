@@ -91,10 +91,13 @@
 
 `endif // __USER_DEFINES_H
 
-`define BUS_ADDR_SIZE 20
+`define WORD_WIDTH (32)
+`define DECIMAL_POS (16)
+
+`define BUS_ADDR_SIZE (20)
 `define BUS_ADDR_PORT (`BUS_ADDR_SIZE - 1):0
 
-`define BUS_DATA_SIZE 32
+`define BUS_DATA_SIZE (32)
 `define BUS_DATA_PORT (`BUS_DATA_SIZE - 1):0
 
 // master in
@@ -138,8 +141,36 @@
 `define BUS_READ  (1'b0)
 `define BUS_WRITE (1'b1)
 
-`define BUS_SIZE_BYTE  (2'b00)
-`define BUS_SIZE_WORD  (2'b01)
-`define BUS_SIZE_TWORD (2'b10)
-// `define BUS_SIZE_QWORD (2'b11)
+`define BUS_SIZE_BYTE   (2'b00)
+`define BUS_SIZE_WORD   (2'b01)
+`define BUS_SIZE_TWORD  (2'b10)
+`define BUS_SIZE_STREAM (2'b11)
+
+// stream
+`define STREAM_MOPORT_SIZE(data_size) ((data_size) + 2)
+`define STREAM_MOPORT(data_size) `STREAM_MOPORT_SIZE((data_size)) - 1:0
+
+`define STREAM_MIPORT_SIZE(data_size) (1)
+`define STREAM_MIPORT(data_size) `STREAM_MIPORT_SIZE((data_size)) - 1:0
+
+`define STREAM_SOPORT_SIZE(data_size) (1)
+`define STREAM_SOPORT(data_size) `STREAM_SOPORT_SIZE((data_size)) - 1:0
+
+`define STREAM_SIPORT_SIZE(data_size) ((data_size) + 2)
+`define STREAM_SIPORT(data_size) `STREAM_SIPORT_SIZE((data_size)) - 1:0
+
+`define STREAM_MO_DATA(data_size) (data_size) - 1:0
+`define STREAM_MO_VALID(data_size) ((data_size) + 0)
+`define STREAM_MO_LAST(data_size) ((data_size) + 1)
+
+`define STREAM_MI_READY(data_size) (0)
+
+`define STREAM_SO_READY(data_size) (0)
+
+`define STREAM_SI_DATA(data_size) (data_size) - 1:0
+`define STREAM_SI_VALID(data_size) ((data_size) + 0)
+`define STREAM_SI_LAST(data_size) ((data_size) + 1)
+
+// addresses
+`define ADDR_DEPTH_BUFFER (100000)
 

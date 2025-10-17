@@ -1,6 +1,6 @@
 module spi_chip_m #(
     parameter LATENCY_COUNT = 7,
-    parameter PRE_CYCLES = 3,
+    parameter PRE_CYCLES = 1,
     parameter SIZE = 1024
 ) (
     input  wire       clk_i,
@@ -109,49 +109,45 @@ module spi_chip_m #(
 
             if (command == CMD_READ) begin : READ
                 integer addr;
+                integer delay;
+                delay = {$random} % 6 + 1;
 
-                begin : OFFSET_DELAY
-                    integer delay;
-                    delay = {$random} % 6 + 1;
-
-                    $display("Offset delay: %d ns", delay);
-
-                    #delay;
-                end
+                $display("Offset delay: %d ns", delay);
 
                 for (i = 0; i < PRE_CYCLES; i = i + 1) begin
+                    wait(clk_i);
+                    #delay;
                     dqsm_o = 1;
-                    #half_clk;
+                    
+                    wait(!clk_i);
+                    #delay;
                     dqsm_o = 0;
-                    #half_clk;
                 end
 
                 addr = address;
 
+                wait(clk_i);
+                #delay;
                 dqsm_o = 1;
-                #quarter_clk;
 
                 miso_o = mem[addr][7:4];
 
-                #quarter_clk;
-
                 while (!cs_i) begin
-
+                    wait(!clk_i || cs_i);
+                    #delay;
                     dqsm_o = 0;
-                    #quarter_clk;
 
                     miso_o = mem[addr][3:0];
                     
-                    #quarter_clk;
+                    wait(clk_i || cs_i);
+                    #delay;
                     dqsm_o = 1;
-                    #quarter_clk;
 
                     $display("Read 0x%h", mem[addr]);
 
                     addr = addr + 1;
 
                     miso_o = mem[addr][7:4];
-                    #quarter_clk;
                 end
             end
             else if (command == CMD_WRITE) begin : WRITE
@@ -165,14 +161,14 @@ module spi_chip_m #(
 
                     if (!cs_i) begin
                         if (!dqsm_i) begin
-                            mem[addr][3:0] = mosi_i;
-                            write_data[3:0] = mosi_i;
+                            mem[addr][7:4] = mosi_i;
+                            write_data[7:4] = mosi_i;
                         end
 
                         wait(!clk_i);
                         if (!dqsm_i) begin
-                            mem[addr][7:4] = mosi_i;
-                            write_data[7:4] = mosi_i;
+                            mem[addr][3:0] = mosi_i;
+                            write_data[3:0] = mosi_i;
                         end
 
                         $display("Write 0x%h to 0x%h", write_data, addr);

@@ -35,7 +35,7 @@ module mem_write_m #(
             case (state)
                 0: begin
                     if (sstream_i[`STREAM_SI_VALID(SC_WIDTH * 2 + WORD_WIDTH * 3)]) begin
-                        state <= 3;
+                        state <= 1;
 
                         { posx, posy, tx, ty, depth } <= sstream_i[`STREAM_SI_DATA(SC_WIDTH * 2 + WORD_WIDTH * 3)];
                     end

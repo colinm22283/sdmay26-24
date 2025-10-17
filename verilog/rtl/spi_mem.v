@@ -165,7 +165,7 @@ module spi_mem_m #(
                     if (current_nibble == 7) begin
                         state <= STATE_LATENCY;
 
-                        if (sport_i[`BUS_SI_RW] == `BUS_READ) latency_count <= LATENCY_COUNT - 4;
+                        if (sport_i[`BUS_SI_RW] == `BUS_READ) latency_count <= LATENCY_COUNT - 3;
                         else latency_count <= LATENCY_COUNT - 4;
 
                         current_nibble <= 0;

@@ -267,8 +267,6 @@ module bary_pipe_m #(
                         state <= STATE_RUN1;
 
                         last <= sstream_i[`STREAM_SI_LAST(SC_WIDTH * 2)];
-
-                        $display("left mul a nums: %0d", `FP(posx_extended), v2x);
                     end
 
                     s1a <= $signed(posx_extended << `DECIMAL_POS);
@@ -287,18 +285,12 @@ module bary_pipe_m #(
 
                     m1a <= y1my2;
                     m1b <= s1y;
-
-
-                    $display("left mul a: %0d", y1my2);
-                    $display("left mul b: %0d", s1y);
                 end
 
                 STATE_RUN2: begin
                     state <= STATE_RUN3;
 
                     a1a <= m1y;
-
-                    $display("left mul: %0d", m1y);
 
                     m1a <= x2mx1;
                     m1b <= s1y;
@@ -308,8 +300,6 @@ module bary_pipe_m #(
                     state <= STATE_RUN4;
 
                     a1b <= m1y;
-
-                    $display("right mul: %0d", m1y);
 
                     m1a <= y2my0;
                     m1b <= temp1;
@@ -322,14 +312,10 @@ module bary_pipe_m #(
 
                     m1a <= a1y;
                     m1b <= inv_det_t;
-
-                    $display("inv_det: %0d", inv_det_t);
                 end
 
                 STATE_RUN5: begin
                     state <= STATE_RUN6;
-
-                    $display("yep: %0d", m1y);
                     
                     l0 <= m1y;
 

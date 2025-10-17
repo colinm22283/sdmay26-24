@@ -4,6 +4,11 @@ module div_m #(parameter WIDTH = 32) (
     output wire signed [WIDTH - 1:0] y_o
 );
 
-    assign y_o = (a_i << `DECIMAL_POS) / b_i;
+    wire signed [WIDTH * 2 - 1:0] a, b;
+
+    assign a = {{WIDTH{a_i[WIDTH - 1]}}, a_i };
+    assign b = {{WIDTH{b_i[WIDTH - 1]}}, b_i };
+
+    assign y_o = (a << `DECIMAL_POS) / b;
 
 endmodule

@@ -70,9 +70,9 @@ module bary_pipe_m #(
     wire signed [WORD_WIDTH - 1:0] m1y;
     mul_m #(WORD_WIDTH) mul1( .a_i(m1a), .b_i(m1b), .y_o(m1y) );
 
-    wire signed [WORD_WIDTH - 1:0] i1a;
-    wire signed [WORD_WIDTH - 1:0] i1y;
-    inv_m #(WORD_WIDTH) inv1( .a_i(i1a), .y_o(i1y) );
+    reg  signed [WORD_WIDTH - 1:0] d1a, d1b;
+    wire signed [WORD_WIDTH - 1:0] d1y;
+    div_m #(WORD_WIDTH) div1( .a_i(d1a), .b_i(d1b), .y_o(d1y) );
 
     reg [SC_WIDTH - 1:0] posx, posy;
 
@@ -84,11 +84,7 @@ module bary_pipe_m #(
 
     reg signed [WORD_WIDTH - 1:0] det_t;
 
-    reg signed [WORD_WIDTH - 1:0] inv_det_t;
-
     reg signed [WORD_WIDTH - 1:0] l0, l1,l2;
-
-    assign i1a = det_t;
 
     assign busy_o = state != STATE_READY && state != STATE_DONE;
 
@@ -114,8 +110,6 @@ module bary_pipe_m #(
             y1py0 <= 0;
             y2py1 <= 0;
             y0py2 <= 0;
-
-            inv_det_t <= 0;
 
             l0 <= WORD_SMAX;
             l1 <= WORD_SMAX;
@@ -237,8 +231,6 @@ module bary_pipe_m #(
                     y2my0 <= s1y;
                     a1a <= a1y;
                     a1b <= m1y; // 2-1
-                    
-                    inv_det_t <= i1y;
                 end
 
                 STATE_SETUP8: begin
@@ -310,14 +302,14 @@ module bary_pipe_m #(
 
                     a1a <= m1y;
 
-                    m1a <= a1y;
-                    m1b <= inv_det_t;
+                    d1a <= a1y;
+                    d1b <= det_t;
                 end
 
                 STATE_RUN5: begin
                     state <= STATE_RUN6;
                     
-                    l0 <= m1y;
+                    l0 <= d1y;
 
                     m1a <= x0mx2;
                     m1b <= s1y;
@@ -335,17 +327,17 @@ module bary_pipe_m #(
                 STATE_RUN7: begin
                     state <= STATE_RUN8;
 
-                    m1a <= a1y;
-                    m1b <= inv_det_t;
+                    d1a <= a1y;
+                    d1b <= det_t;
                 end
 
                 STATE_RUN8: begin
                     state <= STATE_RUN9;
 
-                    l1 <= m1y;
+                    l1 <= d1y;
 
                     s1a <= s1y;
-                    s1b <= m1y;
+                    s1b <= d1y;
                 end
 
                 STATE_RUN9: begin

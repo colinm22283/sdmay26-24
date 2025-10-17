@@ -5,7 +5,7 @@
 `include "math/add.v"
 `include "math/sub.v"
 `include "math/mul.v"
-`include "math/inv.v"
+`include "math/div.v"
 
 `include "rasterizer/bary_pipe.v"
 
@@ -177,9 +177,6 @@ module bary_pipe_m_unit_test;
 
       $display("DET: %0d == %0d", dut.det_t, `FP_MUL(dut.y1my2, dut.x0mx2) + `FP_MUL(dut.x2mx1, dut.y0my2));
       `FAIL_UNLESS_EQUAL(dut.det_t, `FP_MUL(dut.y1my2, dut.x0mx2) + `FP_MUL(dut.x2mx1, dut.y0my2));
-
-      $display("INV DET: %0d == %0d", dut.inv_det_t, `FP_INV(dut.det_t));
-      `FAIL_UNLESS_EQUAL(dut.inv_det_t, `FP_INV(dut.det_t));
     `SVTEST_END
 
     `SVTEST(main)
@@ -229,10 +226,8 @@ module bary_pipe_m_unit_test;
           
           top = `FP_MUL(dut.y1my2, xmx2) + `FP_MUL(dut.x2mx1, ymy2);
 
-          // $display("%0d == %0d", l0, `FP_DIV(top, dut.det_t));
-          // `FAIL_UNLESS_EQUAL(l0, `FP_DIV(top, dut.det_t));
-          $display("%0d == %0d", l0, `FP_MUL(top, dut.inv_det_t));
-          `FAIL_UNLESS_EQUAL(l0, `FP_MUL(top, dut.inv_det_t));
+          $display("%0d == %0d", l0, `FP_DIV(top, dut.det_t));
+          `FAIL_UNLESS_EQUAL(l0, `FP_DIV(top, dut.det_t));
         end
 
         begin : L1_TEST

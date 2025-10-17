@@ -199,6 +199,8 @@ module spi_mem_m #(
 
                                     current_dqsm <= 1;
                                 end
+
+                                latency_count <= LATENCY_COUNT - 1;
                             end
                             else begin
                                 latency_count <= latency_count - 1;

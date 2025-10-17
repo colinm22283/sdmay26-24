@@ -65,10 +65,10 @@ module rasterizer_m #(
         if (v1y > bby1) bby1 = v1y;
         if (v2y > bby1) bby1 = v2y;
 
-        bbx0 = bbx0 >> `DECIMAL_POS;
-        bby0 = bby0 >> `DECIMAL_POS;
-        bbx1 = bbx1 >> `DECIMAL_POS;
-        bby1 = bby1 >> `DECIMAL_POS;
+        bbx0 = bbx0 >>> `DECIMAL_POS;
+        bby0 = bby0 >>> `DECIMAL_POS;
+        bbx1 = bbx1 >>> `DECIMAL_POS;
+        bby1 = bby1 >>> `DECIMAL_POS;
 
         if (bbx0 < 0) bbx0 = 0;
         if (bby0 < 0) bby0 = 0;

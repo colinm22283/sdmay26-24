@@ -3,9 +3,9 @@ module inv_m #(parameter WIDTH = 32) (
     output wire signed [WIDTH - 1:0] y_o
 );
 
-    wire [63:0] a;
+    wire signed [WIDTH * 2 - 1:0] a, b;
 
-    assign a = {{32{a_i[WIDTH - 1]}}, a_i };
+    assign a = {{WIDTH{a_i[WIDTH - 1]}}, a_i };
 
     assign y_o = ((64'd1 << `DECIMAL_POS) << `DECIMAL_POS) / a;
 

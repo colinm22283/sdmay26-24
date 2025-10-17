@@ -446,11 +446,11 @@ module spi_mem_m #(
                 if (!spi_clk_o) begin
                     case (state)
                         default: begin
-                            read_buf_lower <= 0;
+                            read_buf_upper <= 0;
                         end
 
                         STATE_READ, STATE_READ_WAIT: begin
-                            read_buf_lower[read_byte * 4 +: 4] <= spi_miso_i;
+                            read_buf_upper[read_byte * 4 +: 4] <= spi_miso_i;
                         end
 
                         STATE_DONE: ;
@@ -459,14 +459,14 @@ module spi_mem_m #(
                 else begin
                     case (state)
                         default: begin
-                            read_buf_upper <= 0;
+                            read_buf_lower <= 0;
 
                             read_byte <= 0;
                             word_ready   <= 0;
                         end
 
                         STATE_READ, STATE_READ_WAIT: begin
-                            read_buf_upper[read_byte * 4 +: 4] <= spi_miso_i;
+                            read_buf_lower[read_byte * 4 +: 4] <= spi_miso_i;
 
                             if (read_byte == 3) begin
                                 read_byte <= 0;

@@ -4,11 +4,14 @@ module mul_m #(parameter WIDTH = 32) (
     output wire signed [WIDTH - 1:0] y_o
 );
 
-    wire [63:0] a, b;
+    wire signed [WIDTH * 2 - 1:0] a, b;
+    wire signed [WIDTH * 2 - 1:0] y;
 
-    assign a = {{32{a_i[WIDTH - 1]}}, a_i };
-    assign b = {{32{b_i[WIDTH - 1]}}, b_i };
+    assign a = {{WIDTH{a_i[WIDTH - 1]}}, a_i };
+    assign b = {{WIDTH{b_i[WIDTH - 1]}}, b_i };
 
-    assign y_o = (a * b) >> `DECIMAL_POS;
+    assign y = a * b;
+
+    assign y_o = y >>> `DECIMAL_POS;
 
 endmodule

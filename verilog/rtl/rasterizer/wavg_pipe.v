@@ -1,9 +1,7 @@
 module wavg_pipe_m #(
     parameter WORD_WIDTH = 32,
 
-    parameter SC_WIDTH = 32,
-
-    parameter WORD_SMAX = 1 << (WORD_WIDTH - 2)
+    parameter SC_WIDTH = 32
 ) (
     input wire clk_i,
     input wire nrst_i,

@@ -37,21 +37,19 @@ module stream_master_m #(
     task WRITE_LAST;
         input [SIZE - 1:0] data;
     begin
-        wait(clk_i);
-        wait(!clk_i);
-        #1;
-        while (mstream_i[`STREAM_MI_READY(SIZE)]) begin
-            wait(clk_i);
-            wait(!clk_i);
-            #1;
-        end
-
         mstream_o[`STREAM_MO_VALID(SIZE)] = 1;
+
         mstream_o[`STREAM_MO_LAST(SIZE)] = 1;
         mstream_o[`STREAM_MO_DATA(SIZE)] = data;
 
+        wait(!clk_i);
         wait(clk_i);
-        #1;
+        while (!mstream_i[`STREAM_MI_READY(SIZE)]) begin
+            wait(!clk_i);
+            wait(clk_i);
+        end
+        
+        mstream_o[`STREAM_MO_VALID(SIZE)] = 0;
 
         mstream_o = 0;
     end

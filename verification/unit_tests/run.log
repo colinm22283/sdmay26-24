@@ -1,0 +1,32 @@
+# vsim -c -lib work -do "run -all; quit" -l run.log testrunner 
+# Start time: 01:29:59 on Oct 17,2025
+# ** Note: (vsim-3812) Design is being optimized...
+# //  Questa Sim-64
+# //  Version 2023.2_2 linux_x86_64 Jun  9 2023
+# //
+# //  Copyright 1991-2023 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  QuestaSim and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading sv_std.std
+# Loading work.junit_xml(fast)
+# Loading work.svunit_pkg(fast)
+# Loading work.testrunner(fast)
+# run -all
+# INFO:  [0][__ts]: Registering Unit Test Case bary_pipe_m_ut
+# INFO:  [0][testrunner]: Registering Test Suite __ts
+# INFO:  [0][__ts]: RUNNING
+# INFO:  [0][bary_pipe_m_ut]: RUNNING
+# INFO:  [0][bary_pipe_m_ut]: main::RUNNING
+# Break key hit
+# Break at an unknown location
+#  quit
+# End time: 01:30:02 on Oct 17,2025, Elapsed time: 0:00:03
+# Errors: 0, Warnings: 0

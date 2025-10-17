@@ -1,0 +1,6 @@
+<testsuites>
+  <testsuite name="__ts">
+    <testcase classname="bary_pipe_m_ut" name="main">
+    </testcase>
+  </testsuite>
+</testsuites>

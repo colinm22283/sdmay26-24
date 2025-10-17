@@ -12,7 +12,7 @@ module vga_display (
     input wire vsync_i,
 
     output reg resolution_detected_o,
-    output reg [7:0] screen[479:0][639:0]
+    output reg [7:0] screen_o[479:0][639:0]
 );
 
     localparam H_ACTIVE = 10'd640;
@@ -31,40 +31,66 @@ module vga_display (
     reg [9:0] h_counter;
     reg [9:0] v_counter;
 
+    reg vsync_discovered;
+    reg full_frame_done;
     reg resolution_good;
+
+    always @ (posedge vsync_i) begin
+        if (!vsync_discovered) begin
+            vsync_discovered <= 1;
+            h_counter <= 0;
+            v_counter <= V_ACTIVE + V_FPORCH;
+        end
+    end
 
     always @ (posedge clk_i or negedge nrst_i) begin
         if(!nrst_i) begin
-            h_counter = 10'd0;
-            v_counter = 10'd0;
-            resolution_detected_o = 0;
-            resolution_good = 1;
+            h_counter <= 0;
+            v_counter <= 0;
+            resolution_detected_o <= 0;
+            resolution_good <= 1;
+            vsync_discovered <= 0;
+            full_frame_done <= 0;
             for (int i = 0; i < V_ACTIVE; i++) begin
                 for (int j = 0; j < H_ACTIVE; j++)
-                    screen[i][j] = 8'd0;
+                    screen_o[i][j] <= 0;
             end
         end
         else if (clk_i) begin
-            h_counter <= h_counter + 10'd1;
-            if (h_counter < H_ACTIVE)
-                screen[v_counter][h_counter] <= color_i;
-            else if (h_counter >= H_ACTIVE + H_FPORCH
-                     && h_counter < H_ACTIVE + H_FPORCH + H_SYNC
-                     && hsync_i != H_SYNC_ACTIVE)
-                resolution_good <= 0; // Check HSYNC
-            else if (h_counter >= H_TOTAL) begin
-                h_counter <= 10'd0;
-                v_counter <= v_counter + 10'd1;
-                if (v_counter >= V_TOTAL) begin
-                    v_counter <= 10'd0;
-                    resolution_detected_o <= resolution_good;
+            // Counting starts at h = 0, v = VACTIVE + VFPORCH.
+            // vsync_discovered takes 1 clock (1 pixel) to propogate.
+            if (vsync_discovered) begin
+                h_counter = h_counter + 1;
+                if (h_counter < H_ACTIVE)
+                    screen_o[v_counter][h_counter] <= color_i;
+                else if (h_counter > H_ACTIVE + H_FPORCH
+                        && h_counter < H_ACTIVE + H_FPORCH + H_SYNC
+                        && hsync_i != H_SYNC_ACTIVE) begin
+                    $display("bar");
+                    resolution_good = 0; // Check HSYNC
+                        end
+                else if (h_counter >= H_TOTAL) begin
+                    h_counter = 0;
+                    v_counter = v_counter + 1;
+                    if (v_counter >= V_TOTAL) begin
+                        v_counter = 0;
+                        if (full_frame_done)
+                            resolution_detected_o = resolution_good;
+                        else
+                            full_frame_done = 1;
+                    end
+                end
+
+                if (v_counter >= V_ACTIVE + V_FPORCH
+                    && v_counter < V_ACTIVE + V_FPORCH + V_SYNC
+                    && vsync_i != V_SYNC_ACTIVE) begin
+                    // Running into some issues here with vsync/CLK changing
+                    // at the same time, janky fix:
+                    #1;
+                    if (vsync_i != V_SYNC_ACTIVE)
+                        resolution_good = 0; // Check VSYNC
                 end
             end
-
-            if (v_counter >= V_ACTIVE + V_FPORCH
-                && v_counter < V_ACTIVE + V_FPORCH + V_SYNC
-                && vsync_i != V_SYNC_ACTIVE)
-                resolution_good <= 0; // Check VSYNC
         end
     end
 

@@ -19,6 +19,14 @@ module clk_rst_m #(
     #(CLK_PER / 2);
   end
 
+  task RESET;
+  begin
+    nrst_o = 0;
+    #RESET_PER;
+    nrst_o = 1;
+  end
+  endtask
+
   task WAIT_CYCLES;
     input integer cycles;
 

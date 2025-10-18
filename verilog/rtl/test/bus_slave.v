@@ -15,9 +15,11 @@ module bus_slave #(
     localparam STATE_READY = 4'd0;
     localparam STATE_READ = 4'd1;
     localparam STATE_READ_WAIT = 4'd2;
-    localparam STATE_WRITE = 4'd3;
-    localparam STATE_WRITE_WAIT = 4'd4;
-    localparam STATE_DONE = 4'd5;
+    localparam STATE_WRITE_ARB = 4'd3; // Need 1 cycle of waiting between ACK and write for arbiter
+    localparam STATE_WRITE_PREP = 4'd4; // Need to pull SEQSLV high for 1 cycle before a tword/stream so the master can prep its data
+    localparam STATE_WRITE = 4'd5;
+    localparam STATE_WRITE_WAIT = 4'd6;
+    localparam STATE_DONE = 4'd7;
     reg [3:0] state;
 
     wire [`BUS_ADDR_PORT] rel_addr;
@@ -48,7 +50,7 @@ module bus_slave #(
                         if (sport_i[`BUS_SI_RW] == `BUS_READ)
                             state <= STATE_READ;
                         else
-                            state <= STATE_WRITE;
+                            state <= STATE_WRITE_ARB;
 
                         sport_o[`BUS_SO_ACK] <= 1; // "I got a request"
 
@@ -124,12 +126,22 @@ module bus_slave #(
                     end
                     endcase
                 end
+                STATE_WRITE_ARB: begin
+                    case (sport_i[`BUS_SI_SIZE])
+                    `BUS_SIZE_BYTE, `BUS_SIZE_WORD: state <= STATE_WRITE;
+                    `BUS_SIZE_TWORD, `BUS_SIZE_STREAM: begin
+                        sport_o[`BUS_SO_SEQSLV] <= 1;
+                        state <= STATE_WRITE_PREP;
+                    end
+                    endcase
+                end
+                STATE_WRITE_PREP: begin
+                    state <= STATE_WRITE;
+                end
                 STATE_WRITE: begin
-                    // Invalid addresses aren't allowed on PKBus, so no address checking is done
                     case (sport_i[`BUS_SI_SIZE])
                     `BUS_SIZE_BYTE: begin
                         mem[rel_addr] <= in_data[7:0];
-                        sport_o[`BUS_SO_ACK] <= 0; // Operation done
                         state <= STATE_DONE;
                     end
                     `BUS_SIZE_WORD: begin
@@ -137,7 +149,6 @@ module bus_slave #(
                         mem[rel_addr + 2] <= in_data[23:16];
                         mem[rel_addr + 1] <= in_data[15:8];
                         mem[rel_addr + 0] <= in_data[7:0];
-                        sport_o[`BUS_SO_ACK] <= 0; // Operation done
                         state <= STATE_DONE;
                     end
                     `BUS_SIZE_TWORD: begin
@@ -145,26 +156,26 @@ module bus_slave #(
                         mem[rel_addr + stream_counter * 4 + 2] <= in_data[23:16];
                         mem[rel_addr + stream_counter * 4 + 1] <= in_data[15:8];
                         mem[rel_addr + stream_counter * 4 + 0] <= in_data[7:0];
-                        sport_o[`BUS_SO_SEQSLV] <= 0; // Data written
-                        state <= STATE_READ_WAIT;
+                        sport_o[`BUS_SO_SEQSLV] <= 0; // Data stored
+                        state <= STATE_WRITE_WAIT;
                     end
                     `BUS_SIZE_STREAM: begin
                         mem[rel_addr + 3] <= in_data[31:24];
                         mem[rel_addr + 2] <= in_data[23:16];
                         mem[rel_addr + 1] <= in_data[15:8];
                         mem[rel_addr + 0] <= in_data[7:0];
-                        sport_o[`BUS_SO_SEQSLV] <= 0; // Data written
-                        state <= STATE_READ_WAIT;
+                        sport_o[`BUS_SO_SEQSLV] <= 0; // Data stored
+                        state <= STATE_WRITE_WAIT;
                     end
                     endcase
                 end
                 STATE_WRITE_WAIT: begin
-                    sport_o[`BUS_SO_SEQSLV] <= 1; // Allow writes again
                     case (sport_i[`BUS_SI_SIZE])
                     `BUS_SIZE_TWORD:
-                        if (stream_counter >= 2)
+                        if (stream_counter >= 2) // We'll be in here once before word 0 is sent, add an extra cycle
                             state <= STATE_DONE;
                         else begin
+                            sport_o[`BUS_SO_SEQSLV] <= 1; // Next bus write will be stored
                             state <= STATE_WRITE; // Simulate 1 cycle of latency between repeat reads
                             stream_counter <= stream_counter + 1;
                         end
@@ -172,6 +183,7 @@ module bus_slave #(
                         if (!sport_i[`BUS_SI_REQ])
                             state <= STATE_DONE;
                         else begin
+                            sport_o[`BUS_SO_SEQSLV] <= 1; // Next bus write will be stored
                             state <= STATE_WRITE; // Simulate 1 cycle of latency between repeat reads
                         end
                     end
@@ -182,7 +194,7 @@ module bus_slave #(
                         state <= STATE_READY;
                     sport_o[`BUS_SO_SEQSLV] <= 0;
                     stream_counter <= 0;
-                    sport_o[`BUS_SO_ACK] <= 0;
+                    sport_o[`BUS_SO_ACK] <= 0; // Operation done
                 end
             endcase
         end

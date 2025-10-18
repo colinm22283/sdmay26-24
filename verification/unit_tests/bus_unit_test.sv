@@ -41,9 +41,7 @@ module bus_unit_test;
       .mports_o({ mportai }),
 
       .sports_i({ sportao }),
-      .sports_o({ sportai }),
-
-      .dbg_state_o(arb_state)
+      .sports_o({ sportai })
   );
 
   localparam SLAVE_ADDR = 20'd0;

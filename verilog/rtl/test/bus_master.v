@@ -2,30 +2,28 @@
     Simulated memory block acting as a PKBus master.
 
     Will read or write the contents of its memory block to a PKBus
-    slave in transactions of [size_i].
+    slave in transactions of [rw_size_i].
 */
-module bus_slave #(
+module bus_master #(
     parameter SIZE = 1024
 ) (
-    input wire clk_i;
-    input wire nrst_i;
+    input wire clk_i,
+    input wire nrst_i,
 
-    input  wire [`BUS_MIPORT] mport_i,
-    output reg  [`BUS_MOPORT] mport_o
+    input wire [`BUS_MIPORT] mport_i,
+    output reg  [`BUS_MOPORT] mport_o,
 
-    input wire [`BUS_ADDR_PORT] slave_addr_i;
-    input wire rw_i; // BUS_READ or BUS_WRITE
-    input [1:0] wire rw_size_i; // BUS_SIZE*
+    input wire [`BUS_ADDR_PORT] slave_addr_i,
+    input wire rw_i, // BUS_READ or BUS_WRITE
+    input wire [1:0] rw_size_i, // BUS_SIZE*
 
-    output reg done_o;
+    output reg done_o
 );
 
     localparam STATE_READY = 4'd0;
-    localparam STATE_READ = 4'd2;
-    localparam STATE_READ_WAIT = 4'd3;
-    localparam STATE_WRITE = 4'd4;
-    localparam STATE_WRITE_WAIT = 4'd5;
-    localparam STATE_DONE = 4'd6;
+    localparam STATE_READ = 4'd1;
+    localparam STATE_WRITE = 4'd2;
+    localparam STATE_DONE = 4'd3;
     reg [3:0] state;
 
     reg [`BUS_ADDR_PORT] stream_counter;
@@ -45,6 +43,7 @@ module bus_slave #(
                 mem[i] <= 0;
             mport_o <= 0;
             mem_idx <= 0;
+            stream_counter <= 0;
             state <= STATE_READY;
             done_o <= 0;
         end
@@ -52,7 +51,7 @@ module bus_slave #(
             case (state)
                 STATE_READY: begin
                     mport_o[`BUS_MO_ADDR] <= slave_addr_i + mem_idx;
-                    mport_o[`BUS_MO_SIZE] <= size_i;
+                    mport_o[`BUS_MO_SIZE] <= rw_size_i;
                     mport_o[`BUS_MO_RW] <= rw_i;
                     if (mem_idx >= SIZE)
                         done_o = 1;
@@ -62,7 +61,7 @@ module bus_slave #(
                     end
                     else if (rw_i == `BUS_WRITE) begin
                         state <= STATE_WRITE;
-                        case (size_i)
+                        case (rw_size_i)
                         `BUS_SIZE_BYTE: begin
                             mport_o[`BUS_MO_DATA] <= {24'b0, mem[mem_idx]};
                             mem_idx <= mem_idx + 1;
@@ -85,9 +84,9 @@ module bus_slave #(
                     `BUS_SIZE_BYTE: begin
                         if (mport_i[`BUS_MI_ACK]) begin
                             mport_o[`BUS_MO_REQ] <= 0;
-                            mem[mem_idx] <= in_data[7:0]
+                            mem[mem_idx] <= in_data[7:0];
                             mem_idx <= mem_idx + 1;
-                            state <= STATE_READY;
+                            state <= STATE_DONE;
                         end
                     end
                     `BUS_SIZE_WORD: begin
@@ -98,7 +97,7 @@ module bus_slave #(
                             mem[mem_idx + 1] <= in_data[15:8];
                             mem[mem_idx + 0] <= in_data[7:0];
                             mem_idx <= mem_idx + 4;
-                            state <= STATE_READY;
+                            state <= STATE_DONE;
                         end
                     end
                     `BUS_SIZE_TWORD: begin
@@ -110,10 +109,10 @@ module bus_slave #(
                             mem_idx <= mem_idx + 4;
                             stream_counter <= stream_counter + 1;
                         end
-                        if (stream_counter >= 2) begin
+                        if (stream_counter > 2) begin
                             mport_o[`BUS_MO_REQ] <= 0;
                             stream_counter <= 0;
-                            state <= STATE_READY;
+                            state <= STATE_DONE;
                         end
                     end
                     `BUS_SIZE_STREAM: begin
@@ -123,10 +122,11 @@ module bus_slave #(
                             mem[mem_idx + 1] <= in_data[15:8];
                             mem[mem_idx + 0] <= in_data[7:0];
                             mem_idx <= mem_idx + 4;
+                            mport_o[`BUS_MO_ADDR] <= slave_addr_i + mem_idx + 4;
                         end
                         if (mem_idx >= SIZE) begin // Stream the whole memory block
                             mport_o[`BUS_MO_REQ] <= 0;
-                            state <= STATE_READY;
+                            state <= STATE_DONE;
                         end
                     end
                     endcase
@@ -137,7 +137,7 @@ module bus_slave #(
                     `BUS_SIZE_BYTE, `BUS_SIZE_WORD: begin
                         if (mport_i[`BUS_MI_ACK]) begin
                             mport_o[`BUS_MO_REQ] <= 0;
-                            state <= STATE_READY;
+                            state <= STATE_DONE;
                         end
                     end
                     `BUS_SIZE_TWORD: begin
@@ -149,11 +149,12 @@ module bus_slave #(
                                 mem[mem_idx + 0]
                             };
                             mem_idx <= mem_idx + 4;
+                            stream_counter <= stream_counter + 1;
                         end
-                        if (stream_counter >= 2) begin
+                        if (stream_counter > 2) begin
                             mport_o[`BUS_MO_REQ] <= 0;
                             stream_counter <= 0;
-                            state <= STATE_READY;
+                            state <= STATE_DONE;
                         end
                     end
                     `BUS_SIZE_STREAM: begin
@@ -168,10 +169,14 @@ module bus_slave #(
                         end
                         if (mem_idx >= SIZE) begin // Stream the whole memory block
                             mport_o[`BUS_MO_REQ] <= 0;
-                            state <= STATE_READY;
+                            state <= STATE_DONE;
                         end
                     end
                     endcase
+                end
+                STATE_DONE: begin
+                    // Bus arbiter needs 1 latency cycle between actions
+                    state <= STATE_READY;
                 end
             endcase
         end

@@ -1,12 +1,10 @@
-`define USING_SVUNIT
-
 `include "svunit_defines.svh"
 `include "user_defines.v"
 `include "vga.v"
 `include "bus/busarb.v"
-`include "spi_mem.v"
 `include "test/vga_display.v"
-`include "test/spi_chip.v"
+`include "test/bus_slave.v"
+`include "test/clk_rst.v"
 
 module clkdiv_unit_test;
   import svunit_pkg::svunit_testcase;
@@ -19,7 +17,7 @@ module clkdiv_unit_test;
   // This is the UUT that we're
   // running the Unit Tests on
   //===================================
-  reg clk;
+  reg clk; // Not using clk_rst here, we need more clock control
   reg nrst;
   reg [7:0] div;
   reg clk_out;
@@ -142,8 +140,13 @@ module vga_unit_test;
   // This is the UUT that we're
   // running the Unit Tests on
   //===================================
-  reg clk;
-  reg nrst;
+  wire clk;
+  wire nrst;
+
+  clk_rst_m  #(10, 30) clk_rst (
+    .clk_o(clk),
+    .nrst_o(nrst)
+  );
 
   wire [`BUS_MIPORT] mportai;
   reg  [`BUS_MOPORT] mportao;
@@ -162,40 +165,17 @@ module vga_unit_test;
       .sports_o({ sportai })
   );
 
-  wire spi_clk;
-  wire spi_cs;
-  wire [3:0] spi_mosi;
-  wire [3:0] spi_miso;
-  wire spi_dqsmi;
-  wire spi_dqsmo;
+  localparam FB_HEIGHT = 10'd320;
+  localparam FB_WIDTH = 10'd240;
+  localparam MEMORY_SIZE = 2 * FB_HEIGHT * FB_WIDTH;
+  localparam FB0_ADDR = 0;
+  localparam FB1_ADDR = FB_HEIGHT * FB_WIDTH;
 
-  localparam FRAME_HEIGHT = 10'd320;
-  localparam FRAME_WIDTH = 10'd240;
-  localparam MEMORY_SIZE = 2 * FRAME_HEIGHT * FRAME_WIDTH;
-  reg [31:0] mem_idx;
-
-  spi_mem_m #(0, MEMORY_SIZE) spi_mem(
+  bus_slave #(FB0_ADDR, MEMORY_SIZE) ram (
       .clk_i(clk),
       .nrst_i(nrst),
-
-      .sport_i({ sportai }),
-      .sport_o({ sportao }),
-
-      .spi_clk_o(spi_clk),
-      .spi_cs_o(spi_cs),
-      .spi_mosi_o(spi_mosi),
-      .spi_miso_i(spi_miso),
-      .spi_dqsm_i(spi_dqsmi),
-      .spi_dqsm_o(spi_dqsmo)
-  );
-
-  spi_chip_m #(7, 1, MEMORY_SIZE) spi_chip(
-      .clk_i(spi_clk),
-      .cs_i(spi_cs),
-      .mosi_i(spi_mosi),
-      .miso_o(spi_miso),
-      .dqsm_o(spi_dqsmi),
-      .dqsm_i(spi_dqsmo)
+      .sport_i(sportai),
+      .sport_o(sportao)
   );
 
   reg resolution_detected;
@@ -217,8 +197,6 @@ module vga_unit_test;
     .screen_o(screen)
   );
 
-  localparam FB0_ADDR = 0;
-  localparam FB1_ADDR = FRAME_HEIGHT * FRAME_WIDTH;
   reg enable;
   reg [3:0] prescaler;
   reg [3:0] resolution;
@@ -253,22 +231,18 @@ module vga_unit_test;
   task setup();
     svunit_ut.setup();
     /* Place Setup Code Here */
+    enable = 0;
+    clk_rst.RESET();
+
     // Fill framebuffer, make sure most lines are different
-    for (int i = 0; i < FRAME_HEIGHT; i++) begin
-        for (int j = 0; j < FRAME_WIDTH; j++) begin
-            spi_chip.mem[FB0_ADDR + i * FRAME_WIDTH + j] = (i + j) % FRAME_WIDTH;
-            spi_chip.mem[FB1_ADDR + i * FRAME_WIDTH + j] = (i + j) % 20;
+    for (int i = 0; i < FB_HEIGHT; i++) begin
+        for (int j = 0; j < FB_WIDTH; j++) begin
+            ram.mem[FB0_ADDR + i * FB_WIDTH + j] = (i + j) % FB_WIDTH;
+            ram.mem[FB1_ADDR + i * FB_WIDTH + j] = (i + j) % 20;
         end
     end
 
-    mem_idx = 0;
-
-    enable = 0;
-    clk = 0;
-    nrst = 0;
-    #30;
-    nrst = 1;
-    #30;
+    clk_rst.WAIT_CYCLES(1); // Make sure we don't enable and leave reset in the same cycle
   endtask
 
 
@@ -299,12 +273,12 @@ module vga_unit_test;
   `SVUNIT_TESTS_BEGIN
 
   `SVTEST(test_320x240)
-    prescaler = 4'd1;
-    resolution = 4'd2;
+    prescaler = 1;
+    resolution = `VGA_RES_320x240;
     fb = 0;
-    toggle_clk();
+    clk_rst.WAIT_CYCLES(1);
     enable = 1;
-    test_fb(0);
+    test_fb(0, `VGA_RES_320x240);
   `SVTEST_END
 
   `SVTEST(test_160x120)
@@ -317,14 +291,13 @@ module vga_unit_test;
 
   `SVUNIT_TESTS_END
 
-  task toggle_clk; begin
-    #5 clk <= ~clk;
-    #5 clk <= ~clk;
-  end
-  endtask
-
   task test_fb;
     input fb_num;
+    input integer res;
+
+    integer mem_idx;
+    integer pixel_double_counter;
+    integer line_double_counter;
   begin
     // Wait for the resolution to be detected, takes 1 frame. The memory,
     // memory controller, bus, VGA, and display should all interact
@@ -332,16 +305,31 @@ module vga_unit_test;
     for (int i = 0; i < 1000000; i++) begin
       if (resolution_detected)
         break;
-      toggle_clk();
+      clk_rst.WAIT_CYCLES(1);
     end
     `FAIL_UNLESS_EQUAL(resolution_detected, 1'b1);
 
     // Compare frames
+    mem_idx = fb_num ? FB1_ADDR : FB0_ADDR;
     for(int i = 0; i < 480; i++) begin
       for(int j = 0; j < 640; j++) begin
-        `FAIL_UNLESS_EQUAL(spi_chip.mem[mem_idx], screen[i][j]);
-        mem_idx = mem_idx + 1;
+        if (ram.mem[mem_idx] != screen[i][j]) begin
+          $display("Screen mismatch at line, col %d, %d", i, j);
+          `FAIL_UNLESS_EQUAL(ram.mem[mem_idx], screen[i][j]);
+        end
+
+        pixel_double_counter = pixel_double_counter + 1;
+        if (pixel_double_counter >= res) begin
+          pixel_double_counter = 0;
+          mem_idx = mem_idx + 1;
+        end
       end
+
+      line_double_counter = line_double_counter + 1;
+      if (line_double_counter >= res)
+        line_double_counter = 0;
+      else
+        mem_idx = mem_idx - 640 / res; // Go back to the start of the line, double it
     end
   end
   endtask

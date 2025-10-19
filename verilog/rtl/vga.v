@@ -94,7 +94,7 @@ module vga #(
     localparam FB_READ_STATE_READY = 0;
     localparam FB_READ_STATE_PREP = 2'd1;
     localparam FB_READ_STATE_READ = 2'd2;
-    reg fb_read_state;
+    reg [1:0] fb_read_state;
 
     wire [`BUS_DATA_SIZE-1:0] pixel_data_in;
     assign pixel_data_in = mport_i[`BUS_MI_DATA];
@@ -102,9 +102,7 @@ module vga #(
     wire base_clk; // 640x480 pixel clock (24MHz)
     clkdiv div(clk_i, nrst_i, {4'b0000, prescaler}, base_clk);
 
-`ifdef USING_SVUNIT
-    int i;
-`endif
+    integer i;
 
     always @ (posedge clk_i or negedge nrst_i) begin
         if (!nrst_i) begin
@@ -120,7 +118,7 @@ module vga #(
             line_double_counter <= 0;
             for (i = 0; i < CACHE_WIDTH; i = i+1)
                 line_cache[i] <= 0;
-            line_cache_idx = 1;
+            line_cache_idx = 0;
             fb <= 0;
             fb_read_state <= FB_READ_STATE_READY;
             pixel_o <= 0;
@@ -215,13 +213,13 @@ module vga #(
             // Fetch new line
             case (fb_read_state)
             FB_READ_STATE_PREP: begin
-                if (!fb)
-                    mport_o[`BUS_MO_ADDR] <= FB0_ADDR + res_v_counter;
-                else
-                    mport_o[`BUS_MO_ADDR] <= FB1_ADDR + res_v_counter;
+                if (!res_v_counter)
+                    mport_o[`BUS_MO_ADDR] <= fb ? FB1_ADDR : FB0_ADDR;
+
                 mport_o[`BUS_MO_RW] <= `BUS_READ;
-                mport_o[`BUS_MO_SIZE] = `BUS_SIZE_STREAM;
-                mport_o[`BUS_MO_REQ]  = 1;
+                mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_STREAM;
+                mport_o[`BUS_MO_REQ]  <= 1;
+                fb_read_state <= FB_READ_STATE_READ;
             end
             FB_READ_STATE_READ: begin
                 if (mport_i[`BUS_MI_SEQSLV]) begin
@@ -229,11 +227,12 @@ module vga #(
                     line_cache[line_cache_idx + 1] <= pixel_data_in[15:8];
                     line_cache[line_cache_idx + 2] <= pixel_data_in[23:16];
                     line_cache[line_cache_idx + 3] <= pixel_data_in[31:24];
+                    mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + 4;
                     line_cache_idx <= line_cache_idx + 4;
                     if (line_cache_idx >= res_h_active) begin
                         fb_read_state <= FB_READ_STATE_READY;
                         line_cache_idx <= 0;
-                        mport_o[`BUS_MO_REQ] = 0;
+                        mport_o[`BUS_MO_REQ] <= 0;
                     end
                 end
             end

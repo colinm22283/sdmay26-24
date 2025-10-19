@@ -58,9 +58,7 @@ module bus_unit_test;
     .nrst_i(nrst),
 
     .mport_i(mportai),
-    .mport_o(mportao),
-
-    .slave_addr_i(SLAVE_ADDR)
+    .mport_o(mportao)
   );
 
 
@@ -111,7 +109,7 @@ module bus_unit_test;
   `SVTEST(test_rbyte)
     load_slave();
     fork
-      master.READ(`BUS_SIZE_BYTE, MEM_SIZE, 0);
+      master.READ(`BUS_SIZE_BYTE, MEM_SIZE, SLAVE_ADDR, 0);
       timeout(1000000);
     join_any
     disable fork;
@@ -121,7 +119,7 @@ module bus_unit_test;
   `SVTEST(test_rword)
     load_slave();
     fork
-      master.READ(`BUS_SIZE_WORD, MEM_SIZE, 0);
+      master.READ(`BUS_SIZE_WORD, MEM_SIZE, SLAVE_ADDR, 0);
       timeout(1000000);
     join_any
     disable fork;
@@ -131,7 +129,7 @@ module bus_unit_test;
   `SVTEST(test_rtword)
     load_slave();
     fork
-      master.READ(`BUS_SIZE_TWORD, MEM_SIZE, 0);
+      master.READ(`BUS_SIZE_TWORD, MEM_SIZE, SLAVE_ADDR, 0);
       timeout(1000000);
     join_any
     disable fork;
@@ -141,7 +139,7 @@ module bus_unit_test;
   `SVTEST(test_rstream)
     load_slave();
     fork
-      master.READ(`BUS_SIZE_STREAM, MEM_SIZE, 0);
+      master.READ(`BUS_SIZE_STREAM, MEM_SIZE, SLAVE_ADDR, 0);
       timeout(1000000);
     join_any
     disable fork;
@@ -151,7 +149,7 @@ module bus_unit_test;
   `SVTEST(test_wbyte)
     load_master();
     fork
-      master.WRITE(`BUS_SIZE_BYTE, MEM_SIZE, 0);
+      master.WRITE(`BUS_SIZE_BYTE, MEM_SIZE, 0, SLAVE_ADDR);
       timeout(1000000);
     join_any
     disable fork;
@@ -161,7 +159,7 @@ module bus_unit_test;
   `SVTEST(test_wword)
     load_master();
     fork
-      master.WRITE(`BUS_SIZE_WORD, MEM_SIZE, 0);
+      master.WRITE(`BUS_SIZE_WORD, MEM_SIZE, 0, SLAVE_ADDR);
       timeout(1000000);
     join_any
     disable fork;
@@ -171,7 +169,7 @@ module bus_unit_test;
   `SVTEST(test_wtword)
     load_master();
     fork
-      master.WRITE(`BUS_SIZE_TWORD, MEM_SIZE, 0);
+      master.WRITE(`BUS_SIZE_TWORD, MEM_SIZE, 0, SLAVE_ADDR);
       timeout(1000000);
     join_any
     disable fork;
@@ -181,7 +179,7 @@ module bus_unit_test;
   `SVTEST(test_wstream)
     load_master();
     fork
-      master.WRITE(`BUS_SIZE_STREAM, MEM_SIZE, 0);
+      master.WRITE(`BUS_SIZE_STREAM, MEM_SIZE, 0, SLAVE_ADDR);
       timeout(1000000);
     join_any
     disable fork;

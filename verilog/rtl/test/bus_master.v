@@ -8,9 +8,7 @@ module bus_master #(
     input wire nrst_i,
 
     input wire [`BUS_MIPORT] mport_i,
-    output reg  [`BUS_MOPORT] mport_o,
-
-    input wire [`BUS_ADDR_PORT] slave_addr_i
+    output reg  [`BUS_MOPORT] mport_o
 );
 
     localparam STATE_READY = 4'd0;
@@ -43,18 +41,20 @@ module bus_master #(
     task READ;
         input [1:0] size;           // BUS_SIZE*
         input integer num_bytes;    // Bytes to read in [size] increments. Data read into mem[]
-        input integer offset;       // Read data from [slave_addr_i] + [offset] into mem[offset]
+        input [`BUS_ADDR_PORT] src; // Slave address to read from
+        input integer dest;         // Address in mem[] to write to
     begin
-        RUN(`BUS_READ, size, num_bytes, offset);
+        RUN(`BUS_READ, size, num_bytes, dest, src);
     end
     endtask
 
     task WRITE;
-        input [1:0] size;           // BUS_SIZE*
-        input integer num_bytes;    // Bytes to write in [size] increments. Data written from mem[]
-        input integer offset;       // Write data from mem[offset] to [slave_addr_i] + [offset]
+        input [1:0] size;            // BUS_SIZE*
+        input integer num_bytes;     // Bytes to write in [size] increments. Data written from mem[]
+        input integer src;           // Address in mem[] to read from
+        input [`BUS_ADDR_PORT] dest; // Slave address to write to
     begin
-        RUN(`BUS_WRITE, size, num_bytes, offset);
+        RUN(`BUS_WRITE, size, num_bytes, src, dest);
     end
     endtask
 
@@ -63,17 +63,17 @@ module bus_master #(
         input rw; // BUS_READ, BUS_WRITE
         input [1:0] size; // BUS_SIZE*
         input integer num_bytes;
-        input integer offset;
-
-        integer i;
+        input integer master_addr;
+        input integer slave_addr;
     begin
-        mem_idx = offset;
-        while (mem_idx < offset + num_bytes || state != STATE_DONE) begin
+        mem_idx = master_addr;
+
+        while (mem_idx < master_addr + num_bytes || state != STATE_DONE) begin
             wait(!clk_i);
             wait(clk_i);
             case (state)
                 STATE_READY: begin
-                    mport_o[`BUS_MO_ADDR] <= slave_addr_i + mem_idx;
+                    mport_o[`BUS_MO_ADDR] <= slave_addr + mem_idx - master_addr;
                     mport_o[`BUS_MO_SIZE] <= size;
                     mport_o[`BUS_MO_RW] <= rw;
                     mport_o[`BUS_MO_REQ] <= 1;
@@ -150,7 +150,7 @@ module bus_master #(
                             mem[mem_idx + 1] <= in_data[15:8];
                             mem[mem_idx + 0] <= in_data[7:0];
                             mem_idx <= mem_idx + 4;
-                            mport_o[`BUS_MO_ADDR] <= slave_addr_i + mem_idx + 4;
+                            mport_o[`BUS_MO_ADDR] <= slave_addr + mem_idx - master_addr + 4;
                         end
                         if (mem_idx >= SIZE) begin // Stream the whole memory block
                             mport_o[`BUS_MO_REQ] <= 0;
@@ -193,7 +193,8 @@ module bus_master #(
                                 mem[mem_idx + 0]
                             };
                             mem_idx <= mem_idx + 4;
-                            mport_o[`BUS_MO_ADDR] <= slave_addr_i + mem_idx; // Keep the address of mport_o[`BUS_MO_DATA] on the bus, don't increment
+                            // Keep the address of mport_o[`BUS_MO_DATA] on the bus, don't increment
+                            mport_o[`BUS_MO_ADDR] <= slave_addr + mem_idx - master_addr;
                         end
                         if (mem_idx >= SIZE) begin // Stream the whole memory block
                             mport_o[`BUS_MO_REQ] <= 0;

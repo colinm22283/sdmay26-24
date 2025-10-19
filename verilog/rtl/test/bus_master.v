@@ -1,8 +1,5 @@
 /*
     Simulated memory block acting as a PKBus master.
-
-    Will read or write the contents of its memory block to a PKBus
-    slave in transactions of [rw_size_i].
 */
 module bus_master #(
     parameter SIZE = 1024
@@ -13,11 +10,7 @@ module bus_master #(
     input wire [`BUS_MIPORT] mport_i,
     output reg  [`BUS_MOPORT] mport_o,
 
-    input wire [`BUS_ADDR_PORT] slave_addr_i,
-    input wire rw_i, // BUS_READ or BUS_WRITE
-    input wire [1:0] rw_size_i, // BUS_SIZE*
-
-    output reg done_o
+    input wire [`BUS_ADDR_PORT] slave_addr_i
 );
 
     localparam STATE_READY = 4'd0;
@@ -38,31 +31,58 @@ module bus_master #(
 
     integer i;
 
-    always @ (posedge clk_i or negedge nrst_i) begin
-        if (!nrst_i) begin
-            for(i = 0; i < SIZE; i++)
-                mem[i] <= 0;
-            mport_o <= 0;
-            mem_idx <= 0;
-            stream_counter <= 0;
-            state <= STATE_READY;
-            done_o <= 0;
-        end
-        else if (clk_i) begin
+    always @ (negedge nrst_i) begin
+        for(i = 0; i < SIZE; i++)
+            mem[i] <= 0;
+        mport_o <= 0;
+        mem_idx <= 0;
+        stream_counter <= 0;
+        state <= STATE_READY;
+    end
+
+    task READ;
+        input [1:0] size;           // BUS_SIZE*
+        input integer num_bytes;    // Bytes to read in [size] increments. Data read into mem[]
+        input integer offset;       // Read data from [slave_addr_i] + [offset] into mem[offset]
+    begin
+        RUN(`BUS_READ, size, num_bytes, offset);
+    end
+    endtask
+
+    task WRITE;
+        input [1:0] size;           // BUS_SIZE*
+        input integer num_bytes;    // Bytes to write in [size] increments. Data written from mem[]
+        input integer offset;       // Write data from mem[offset] to [slave_addr_i] + [offset]
+    begin
+        RUN(`BUS_WRITE, size, num_bytes, offset);
+    end
+    endtask
+
+    // Internal, do not use
+    task RUN;
+        input rw; // BUS_READ, BUS_WRITE
+        input [1:0] size; // BUS_SIZE*
+        input integer num_bytes;
+        input integer offset;
+
+        integer i;
+    begin
+        mem_idx = offset;
+        while (mem_idx < offset + num_bytes || state != STATE_DONE) begin
+            wait(!clk_i);
+            wait(clk_i);
             case (state)
                 STATE_READY: begin
                     mport_o[`BUS_MO_ADDR] <= slave_addr_i + mem_idx;
-                    mport_o[`BUS_MO_SIZE] <= rw_size_i;
-                    mport_o[`BUS_MO_RW] <= rw_i;
+                    mport_o[`BUS_MO_SIZE] <= size;
+                    mport_o[`BUS_MO_RW] <= rw;
                     mport_o[`BUS_MO_REQ] <= 1;
-                    if (mem_idx >= SIZE)
-                        done_o = 1;
-                    else if (rw_i == `BUS_READ) begin
+                    if (rw == `BUS_READ) begin
                         state <= STATE_READ;
                     end
-                    else if (rw_i == `BUS_WRITE) begin
+                    else if (rw == `BUS_WRITE) begin
                         state <= STATE_WRITE;
-                        case (rw_size_i)
+                        case (size)
                         `BUS_SIZE_BYTE: begin
                             mport_o[`BUS_MO_DATA] <= {24'b0, mem[mem_idx]};
                             mem_idx <= mem_idx + 1;
@@ -77,7 +97,7 @@ module bus_master #(
                             mem_idx <= mem_idx + 4;
                         end
                         `BUS_SIZE_TWORD, `BUS_SIZE_STREAM: begin
-                           mport_o[`BUS_MO_DATA] <= {
+                            mport_o[`BUS_MO_DATA] <= {
                                 mem[mem_idx + 3],
                                 mem[mem_idx + 2],
                                 mem[mem_idx + 1],
@@ -190,7 +210,8 @@ module bus_master #(
                     state <= STATE_READY;
                 end
             endcase
+            end
         end
-    end
+    endtask
 
 endmodule

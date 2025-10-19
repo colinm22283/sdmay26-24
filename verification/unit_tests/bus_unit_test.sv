@@ -31,8 +31,6 @@ module bus_unit_test;
   wire [`BUS_SIPORT] sportai;
   wire [`BUS_SOPORT] sportao;
 
-  wire [1:0] arb_state [1 - 1:0];
-
   busarb_m #(1, 1, 1) arbiter (
       .clk_i(clk),
       .nrst_i(nrst),
@@ -55,10 +53,6 @@ module bus_unit_test;
     .sport_o(sportao)
   );
 
-  reg rw;
-  reg [1:0] size;
-  reg done;
-
   bus_master #(MEM_SIZE) master (
     .clk_i(clk),
     .nrst_i(nrst),
@@ -66,11 +60,7 @@ module bus_unit_test;
     .mport_i(mportai),
     .mport_o(mportao),
 
-    .slave_addr_i(SLAVE_ADDR),
-    .rw_i(rw),
-    .rw_size_i(size),
-
-    .done_o(done)
+    .slave_addr_i(SLAVE_ADDR)
   );
 
 
@@ -120,122 +110,82 @@ module bus_unit_test;
 
   `SVTEST(test_rbyte)
     load_slave();
-    rw = `BUS_READ;
-    size = `BUS_SIZE_BYTE;
-    for(int i = 0; i < 1000000 && !done; i++) begin
-      clk_rst.WAIT_CYCLES(1);
-    end
-    for(int i = 0; i < MEM_SIZE; i++) begin
-      if (master.mem[i] != slave.mem[i]) begin
-        $display("Memory not equal at offset %d", i);
-        `FAIL_UNLESS_EQUAL(master.mem[i], slave.mem[i]);
-      end
-    end
+    fork
+      master.READ(`BUS_SIZE_BYTE, MEM_SIZE, 0);
+      timeout(1000000);
+    join_any
+    disable fork;
+    check_mem();
   `SVTEST_END
 
   `SVTEST(test_rword)
     load_slave();
-    rw = `BUS_READ;
-    size = `BUS_SIZE_WORD;
-    for(int i = 0; i < 1000000 && !done; i++) begin
-      clk_rst.WAIT_CYCLES(1);
-    end
-    for(int i = 0; i < MEM_SIZE; i++) begin
-      if (master.mem[i] != slave.mem[i]) begin
-        $display("Memory not equal at offset %d", i);
-        `FAIL_UNLESS_EQUAL(master.mem[i], slave.mem[i]);
-      end
-    end
+    fork
+      master.READ(`BUS_SIZE_WORD, MEM_SIZE, 0);
+      timeout(1000000);
+    join_any
+    disable fork;
+    check_mem();
   `SVTEST_END
 
   `SVTEST(test_rtword)
     load_slave();
-    rw = `BUS_READ;
-    size = `BUS_SIZE_TWORD;
-    for(int i = 0; i < 1000000 && !done; i++) begin
-      clk_rst.WAIT_CYCLES(1);
-    end
-    for(int i = 0; i < MEM_SIZE; i++) begin
-      if (master.mem[i] != slave.mem[i]) begin
-        $display("Memory not equal at offset %d", i);
-        `FAIL_UNLESS_EQUAL(master.mem[i], slave.mem[i]);
-      end
-    end
+    fork
+      master.READ(`BUS_SIZE_TWORD, MEM_SIZE, 0);
+      timeout(1000000);
+    join_any
+    disable fork;
+    check_mem();
   `SVTEST_END
 
   `SVTEST(test_rstream)
     load_slave();
-    rw = `BUS_READ;
-    size = `BUS_SIZE_STREAM;
-    for(int i = 0; i < 1000000 && !done; i++) begin
-      clk_rst.WAIT_CYCLES(1);
-    end
-    for(int i = 0; i < MEM_SIZE; i++) begin
-      if (master.mem[i] != slave.mem[i]) begin
-        $display("Memory not equal at offset %d", i);
-        `FAIL_UNLESS_EQUAL(master.mem[i], slave.mem[i]);
-      end
-    end
+    fork
+      master.READ(`BUS_SIZE_STREAM, MEM_SIZE, 0);
+      timeout(1000000);
+    join_any
+    disable fork;
+    check_mem();
   `SVTEST_END
 
   `SVTEST(test_wbyte)
     load_master();
-    rw = `BUS_WRITE;
-    size = `BUS_SIZE_BYTE;
-    for(int i = 0; i < 1000000 && !done; i++) begin
-      clk_rst.WAIT_CYCLES(1);
-    end
-    for(int i = 0; i < MEM_SIZE; i++) begin
-      if (master.mem[i] != slave.mem[i]) begin
-        $display("Memory not equal at offset %d", i);
-        `FAIL_UNLESS_EQUAL(master.mem[i], slave.mem[i]);
-      end
-    end
+    fork
+      master.WRITE(`BUS_SIZE_BYTE, MEM_SIZE, 0);
+      timeout(1000000);
+    join_any
+    disable fork;
+    check_mem();
   `SVTEST_END
 
   `SVTEST(test_wword)
     load_master();
-    rw = `BUS_WRITE;
-    size = `BUS_SIZE_WORD;
-    for(int i = 0; i < 1000000 && !done; i++) begin
-      clk_rst.WAIT_CYCLES(1);
-    end
-    for(int i = 0; i < MEM_SIZE; i++) begin
-      if (master.mem[i] != slave.mem[i]) begin
-        $display("Memory not equal at offset %d", i);
-        `FAIL_UNLESS_EQUAL(master.mem[i], slave.mem[i]);
-      end
-    end
+    fork
+      master.WRITE(`BUS_SIZE_WORD, MEM_SIZE, 0);
+      timeout(1000000);
+    join_any
+    disable fork;
+    check_mem();
   `SVTEST_END
 
   `SVTEST(test_wtword)
     load_master();
-    rw = `BUS_WRITE;
-    size = `BUS_SIZE_TWORD;
-    for(int i = 0; i < 1000000 && !done; i++) begin
-      clk_rst.WAIT_CYCLES(1);
-    end
-    for(int i = 0; i < MEM_SIZE; i++) begin
-      if (master.mem[i] != slave.mem[i]) begin
-        $display("Memory not equal at offset %d", i);
-        `FAIL_UNLESS_EQUAL(master.mem[i], slave.mem[i]);
-      end
-    end
+    fork
+      master.WRITE(`BUS_SIZE_TWORD, MEM_SIZE, 0);
+      timeout(1000000);
+    join_any
+    disable fork;
+    check_mem();
   `SVTEST_END
 
   `SVTEST(test_wstream)
     load_master();
-    rw = `BUS_WRITE;
-    size = `BUS_SIZE_STREAM;
-    for(int i = 0; i < 1000000 && !done; i++) begin
-      clk_rst.WAIT_CYCLES(1);
-    end
-    for(int i = 0; i < MEM_SIZE; i++) begin
-      if (master.mem[i] != slave.mem[i]) begin
-        $display("Memory not equal at offset %d", i);
-        `FAIL_UNLESS_EQUAL(master.mem[i], slave.mem[i]);
-      end
-    end
+    fork
+      master.WRITE(`BUS_SIZE_STREAM, MEM_SIZE, 0);
+      timeout(1000000);
+    join_any
+    disable fork;
+    check_mem();
   `SVTEST_END
 
   `SVUNIT_TESTS_END
@@ -251,6 +201,24 @@ module bus_unit_test;
     for(int i = 0; i < MEM_SIZE; i++) begin
       master.mem[i] = $urandom % 256;
     end
+  end
+  endtask
+
+  task check_mem;
+  begin
+    for(int i = 0; i < MEM_SIZE; i++) begin
+      if (master.mem[i] != slave.mem[i]) begin
+        $display("Memory not equal at offset %d", i);
+        `FAIL_UNLESS_EQUAL(master.mem[i], slave.mem[i]);
+      end
+    end
+  end
+  endtask
+
+  task timeout;
+    input integer cycles;
+  begin
+    clk_rst.WAIT_CYCLES(cycles);
   end
   endtask
 

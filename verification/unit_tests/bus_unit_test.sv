@@ -45,12 +45,16 @@ module bus_unit_test;
   localparam SLAVE_ADDR = 20'd0;
   localparam MEM_SIZE = 1024;
 
+  wire bad_read;
+
   bus_slave #(SLAVE_ADDR, MEM_SIZE) slave (
     .clk_i(clk),
     .nrst_i(nrst),
 
     .sport_i(sportai),
-    .sport_o(sportao)
+    .sport_o(sportao),
+
+    .bad_read_o(bad_read)
   );
 
   bus_master #(MEM_SIZE) master (

@@ -9,7 +9,9 @@ module bus_slave #(
     input wire nrst_i,
 
     input wire [`BUS_SIPORT] sport_i,
-    output reg  [`BUS_SOPORT] sport_o
+    output reg  [`BUS_SOPORT] sport_o,
+
+    output reg bad_read_o
 );
 
     localparam STATE_READY = 4'd0;
@@ -42,6 +44,7 @@ module bus_slave #(
             sport_o <= 0;
             state <= STATE_READY;
             stream_counter <= 0;
+            bad_read_o <= 0;
         end
         else if (clk_i) begin
             case (state)
@@ -60,7 +63,8 @@ module bus_slave #(
                 STATE_READ: begin
                     // Return 0 if out of address range
                     if (rel_addr + stream_counter * 4 >= SIZE) begin
-                        sport_o[`BUS_SO_DATA] = 0;
+                        sport_o[`BUS_SO_DATA] <= 0;
+                        bad_read_o <= 1;
                         case (sport_i[`BUS_SI_SIZE])
                             `BUS_SIZE_BYTE, `BUS_SIZE_WORD: state <= STATE_DONE;
                             `BUS_SIZE_TWORD, `BUS_SIZE_STREAM: begin

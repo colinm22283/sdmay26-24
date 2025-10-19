@@ -94,7 +94,7 @@
 `define WORD_WIDTH (32)
 `define DECIMAL_POS (16)
 
-`define BUS_ADDR_SIZE (20)
+`define BUS_ADDR_SIZE (32)
 `define BUS_ADDR_PORT (`BUS_ADDR_SIZE - 1):0
 
 `define BUS_DATA_SIZE (32)
@@ -173,4 +173,9 @@
 
 // addresses
 `define ADDR_DEPTH_BUFFER (100000)
+
+// VGA
+`define VGA_RES_320x240 (2)
+`define VGA_RES_160x120 (4)
+`define VGA_RES_80x60 (8)
 

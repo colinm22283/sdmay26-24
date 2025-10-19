@@ -179,7 +179,6 @@ module vga_unit_test;
   );
 
   reg resolution_detected;
-  reg [7:0] screen[479:0][639:0];
 
   reg [7:0] pixel;
   reg hsync;
@@ -193,8 +192,7 @@ module vga_unit_test;
     .hsync_i(hsync),
     .vsync_i(vsync),
 
-    .resolution_detected_o(resolution_detected),
-    .screen_o(screen)
+    .resolution_detected_o(resolution_detected)
   );
 
   reg enable;
@@ -272,7 +270,7 @@ module vga_unit_test;
   //===================================
   `SVUNIT_TESTS_BEGIN
 
-  `SVTEST(test_320x240)
+  `SVTEST(test_320x240_fb0)
     prescaler = 1;
     resolution = `VGA_RES_320x240;
     fb = 0;
@@ -281,12 +279,49 @@ module vga_unit_test;
     test_fb(0, `VGA_RES_320x240);
   `SVTEST_END
 
-  `SVTEST(test_160x120)
-
+  `SVTEST(test_160x120_fb0)
+    prescaler = 1;
+    resolution = `VGA_RES_160x120;
+    fb = 0;
+    clk_rst.WAIT_CYCLES(1);
+    enable = 1;
+    test_fb(0, `VGA_RES_160x120);
   `SVTEST_END
 
-  `SVTEST(test_80x60)
+  `SVTEST(test_80x60_fb0)
+    prescaler = 1;
+    resolution = `VGA_RES_80x60;
+    fb = 0;
+    clk_rst.WAIT_CYCLES(1);
+    enable = 1;
+    test_fb(0, `VGA_RES_80x60);
+  `SVTEST_END
 
+  `SVTEST(test_320x240_fb1)
+    prescaler = 1;
+    resolution = `VGA_RES_320x240;
+    fb = 1;
+    clk_rst.WAIT_CYCLES(1);
+    enable = 1;
+    test_fb(1, `VGA_RES_320x240);
+  `SVTEST_END
+
+  `SVTEST(test_160x120_fb1)
+    prescaler = 1;
+    resolution = `VGA_RES_160x120;
+    fb = 1;
+    clk_rst.WAIT_CYCLES(1);
+    enable = 1;
+    test_fb(1, `VGA_RES_160x120);
+  `SVTEST_END
+
+  `SVTEST(test_80x60_fb1)
+    prescaler = 1;
+    resolution = `VGA_RES_80x60;
+    fb = 1;
+    clk_rst.WAIT_CYCLES(1);
+    enable = 1;
+    test_fb(1, `VGA_RES_80x60);
   `SVTEST_END
 
   `SVUNIT_TESTS_END
@@ -311,11 +346,13 @@ module vga_unit_test;
 
     // Compare frames
     mem_idx = fb_num ? FB1_ADDR : FB0_ADDR;
+    pixel_double_counter = 0;
+    line_double_counter = 0;
     for(int i = 0; i < 480; i++) begin
       for(int j = 0; j < 640; j++) begin
-        if (ram.mem[mem_idx] != screen[i][j]) begin
-          $display("Screen mismatch at line, col %d, %d", i, j);
-          `FAIL_UNLESS_EQUAL(ram.mem[mem_idx], screen[i][j]);
+        if (ram.mem[mem_idx] != display.screen[i][j]) begin
+          $display("Screen mismatch at line %d, col %d. Expected: 0x%x, got 0x%x", i, j, ram.mem[mem_idx], display.screen[i][j]);
+          `FAIL_UNLESS_EQUAL(ram.mem[mem_idx], display.screen[i][j]);
         end
 
         pixel_double_counter = pixel_double_counter + 1;

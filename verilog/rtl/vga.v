@@ -88,7 +88,7 @@ module vga #(
     reg [3:0] line_double_counter;
 
     localparam CACHE_WIDTH = 9'd320;
-    reg [7:0] line_cache[CACHE_WIDTH:0]; // 320x240 resolution, cache one line (+1 pixel)
+    reg [7:0] line_cache[CACHE_WIDTH-1:0]; // 320x240 resolution, cache one line
     reg [9:0] line_cache_idx;
     reg fb;
     localparam FB_READ_STATE_READY = 0;
@@ -103,6 +103,13 @@ module vga #(
     clkdiv div(clk_i, nrst_i, {4'b0000, prescaler}, base_clk);
 
     integer i;
+
+    always @ (*) begin
+      if (base_h_counter < BASE_H_ACTIVE && base_v_counter < BASE_V_ACTIVE)
+        pixel_o = line_cache[res_h_counter[8:0]];
+      else
+        pixel_o = 0; // Pixel must be black during blanking time
+    end
 
     always @ (posedge clk_i or negedge nrst_i) begin
         if (!nrst_i) begin
@@ -144,7 +151,7 @@ module vga #(
                 endcase
                 base_h_counter <= 0;
                 base_v_counter <= BASE_V_ACTIVE + BASE_V_FPORCH + BASE_V_SYNC; // Give us some blanking time to grab the first line
-                res_h_counter <= 1;
+                res_h_counter <= 0;
                 res_v_counter <= 0;
                 prescaler <= prescaler_i;
                 resolution <= resolution_i;
@@ -164,14 +171,16 @@ module vga #(
                     pixel_double_counter = pixel_double_counter + 1; // Handle pixel doubling
                     if (pixel_double_counter >= resolution) begin
                         pixel_double_counter <= 0;
-                        pixel_o = line_cache[res_h_counter[8:0]];
 
                         res_h_counter = res_h_counter + 1;
                         if (res_h_counter >= res_h_active) begin
+                            res_h_counter = 0;
                             line_double_counter = line_double_counter + 1; // Handle line doubling
                             if (line_double_counter >= resolution) begin
                                 line_double_counter <= 0;
                                 res_v_counter = res_v_counter + 1;
+                                if (res_v_counter >= res_v_active)
+                                    res_v_counter = 0;
 
                                 fb <= fb_i;
                                 fb_read_state <= FB_READ_STATE_PREP;
@@ -179,11 +188,9 @@ module vga #(
                         end
                     end
                 end
-                else
-                    pixel_o <= 0; // Pixel must be black during blanking time
 
                 // HSYNC
-                base_h_counter <= base_h_counter + 1;
+                base_h_counter = base_h_counter + 1;
                 if (base_h_counter >= BASE_H_ACTIVE + BASE_H_FPORCH
                     && base_h_counter < BASE_H_ACTIVE + BASE_H_FPORCH + BASE_H_SYNC)
                     hsync_o <= H_SYNC_ACTIVE;
@@ -191,8 +198,8 @@ module vga #(
                     hsync_o <= ~H_SYNC_ACTIVE;
 
                 if (base_h_counter >= BASE_H_TOTAL) begin
-                    base_h_counter <= 1;
-                    res_h_counter <= 1;
+                    base_h_counter <= 0;
+                    res_h_counter <= 0;
                     pixel_double_counter <= 0;
                     base_v_counter = base_v_counter + 1;
                 end
@@ -229,7 +236,7 @@ module vga #(
                     line_cache[line_cache_idx + 3] <= pixel_data_in[31:24];
                     mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + 4;
                     line_cache_idx <= line_cache_idx + 4;
-                    if (line_cache_idx >= res_h_active) begin
+                    if (line_cache_idx >= res_h_active - 4) begin
                         fb_read_state <= FB_READ_STATE_READY;
                         line_cache_idx <= 0;
                         mport_o[`BUS_MO_REQ] <= 0;

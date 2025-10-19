@@ -11,8 +11,7 @@ module vga_display (
     input wire hsync_i,
     input wire vsync_i,
 
-    output reg resolution_detected_o,
-    output reg [7:0] screen_o[479:0][639:0]
+    output reg resolution_detected_o
 );
 
     localparam H_ACTIVE = 10'd640;
@@ -28,12 +27,16 @@ module vga_display (
     localparam H_SYNC_ACTIVE = 1'b0;
     localparam V_SYNC_ACTIVE = 1'b1;
 
+    reg [7:0] screen[479:0][639:0];
+
     reg [9:0] h_counter;
     reg [9:0] v_counter;
 
     reg vsync_discovered;
     reg full_frame_done;
     reg resolution_good;
+
+    integer i;
 
     always @ (posedge vsync_i) begin
         if (!vsync_discovered) begin
@@ -51,9 +54,9 @@ module vga_display (
             resolution_good <= 1;
             vsync_discovered <= 0;
             full_frame_done <= 0;
-            for (int i = 0; i < V_ACTIVE; i++) begin
+            for (i = 0; i < V_ACTIVE; i++) begin
                 for (int j = 0; j < H_ACTIVE; j++)
-                    screen_o[i][j] <= 0;
+                    screen[i][j] <= 0;
             end
         end
         else if (clk_i) begin
@@ -61,12 +64,11 @@ module vga_display (
             // vsync_discovered takes 1 clock (1 pixel) to propogate.
             if (vsync_discovered) begin
                 h_counter = h_counter + 1;
-                if (h_counter < H_ACTIVE)
-                    screen_o[v_counter][h_counter] <= color_i;
+                if (h_counter <= H_ACTIVE)
+                    screen[v_counter][h_counter - 1] = color_i;
                 else if (h_counter > H_ACTIVE + H_FPORCH
                         && h_counter < H_ACTIVE + H_FPORCH + H_SYNC
                         && hsync_i != H_SYNC_ACTIVE) begin
-                    $display("bar");
                     resolution_good = 0; // Check HSYNC
                         end
                 else if (h_counter >= H_TOTAL) begin

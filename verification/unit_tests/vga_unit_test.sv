@@ -83,6 +83,14 @@ module vga_unit_test;
     .resolution_detected_o(resolution_detected)
   );
 
+  reg [9:0] base_h_active;
+  reg [4:0] base_h_fporch;
+  reg [6:0] base_h_sync;
+  reg [6:0] base_h_bporch;
+  reg [8:0] base_v_active;
+  reg [2:0] base_v_fporch;
+  reg [2:0] base_v_sync;
+  reg [3:0] base_v_bporch;
   reg enable;
   reg [3:0] prescaler;
   reg [3:0] resolution;
@@ -94,6 +102,14 @@ module vga_unit_test;
     .enable_i(enable),
     .prescaler_i(prescaler),
     .resolution_i(resolution),
+    .base_h_active_i(base_h_active),
+    .base_h_fporch_i(base_h_fporch),
+    .base_h_sync_i(base_h_sync),
+    .base_h_bporch_i(base_h_bporch),
+    .base_v_active_i(base_v_active),
+    .base_v_fporch_i(base_v_fporch),
+    .base_v_sync_i(base_v_sync),
+    .base_v_bporch_i(base_v_bporch),
     .mport_i(mportai),
     .mport_o(mportao),
     .fb_i(fb),
@@ -128,6 +144,15 @@ module vga_unit_test;
             ram.mem[FB1_ADDR + i * FB_WIDTH + j] = (i + j) % 20;
         end
     end
+
+    base_h_active = `VGA_BASE_H_ACTIVE;
+    base_h_fporch = `VGA_BASE_H_FPORCH;
+    base_h_sync = `VGA_BASE_H_SYNC;
+    base_h_bporch = `VGA_BASE_H_BPORCH;
+    base_v_active = `VGA_BASE_V_ACTIVE;
+    base_v_fporch = `VGA_BASE_V_FPORCH;
+    base_v_sync = `VGA_BASE_V_SYNC;
+    base_v_bporch = `VGA_BASE_V_BPORCH;
 
     clk_rst_slow.WAIT_CYCLES(1); // Make sure we don't enable and leave reset in the same cycle
   endtask

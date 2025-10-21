@@ -20,6 +20,16 @@ module vga_m #(
     input wire [3:0] prescaler_i,
     input wire [3:0] resolution_i, // 0x2 = 320x240, 0x4 = 160x120, 0x8 = 80x60
 
+    // Base resolution timings, exposed so they can be tuned on-chip
+    input wire [9:0] base_h_active_i,
+    input wire [4:0] base_h_fporch_i,
+    input wire [6:0] base_h_sync_i,
+    input wire [6:0] base_h_bporch_i,
+    input wire [8:0] base_v_active_i,
+    input wire [2:0] base_v_fporch_i,
+    input wire [2:0] base_v_sync_i,
+    input wire [3:0] base_v_bporch_i,
+
     input wire [`BUS_MIPORT] mport_i, // For pixel data only
     output reg [`BUS_MOPORT] mport_o,
 
@@ -29,16 +39,18 @@ module vga_m #(
     output reg hsync_o,
     output reg vsync_o
 );
-    localparam BASE_H_ACTIVE = 10'd640;
-    localparam BASE_H_FPORCH = 5'd16;
-    localparam BASE_H_SYNC = 7'd64;
-    localparam BASE_H_BPORCH = 7'd80;
-    localparam BASE_H_TOTAL = BASE_H_ACTIVE + BASE_H_FPORCH + BASE_H_SYNC + BASE_H_BPORCH;
-    localparam BASE_V_ACTIVE = 10'd480;
-    localparam BASE_V_FPORCH = 2'd3;
-    localparam BASE_V_SYNC = 3'd4;
-    localparam BASE_V_BPORCH = 4'd13;
-    localparam BASE_V_TOTAL = BASE_V_ACTIVE + BASE_V_FPORCH + BASE_V_SYNC + BASE_V_BPORCH;
+    reg [9:0] base_h_active;
+    reg [4:0] base_h_fporch;
+    reg [6:0] base_h_sync;
+    reg [6:0] base_h_bporch;
+    reg [8:0] base_v_active;
+    reg [2:0] base_v_fporch;
+    reg [2:0] base_v_sync;
+    reg [3:0] base_v_bporch;
+    wire [9:0] base_h_total;
+    assign base_h_total = base_h_active + base_h_fporch + base_h_sync + base_h_bporch;
+    wire [9:0] base_v_total;
+    assign base_v_total = base_v_active + base_v_fporch + base_v_sync + base_v_bporch;
     localparam H_SYNC_ACTIVE = 1'b0;
     localparam V_SYNC_ACTIVE = 1'b1;
 
@@ -57,7 +69,7 @@ module vga_m #(
     reg [3:0] line_double_counter;
 
     wire in_active_area;
-    assign in_active_area = base_h_counter < BASE_H_ACTIVE && base_v_counter < BASE_V_ACTIVE;
+    assign in_active_area = base_h_counter < base_h_active && base_v_counter < base_v_active;
 
     localparam CACHE_WIDTH = 9'd320;
     reg [7:0] line_cache[CACHE_WIDTH-1:0]; // 320x240 resolution, cache one line
@@ -81,15 +93,15 @@ module vga_m #(
             pixel_o <= 0; // Pixel must be black during blanking time
 
         // HSYNC
-        if (base_h_counter >= BASE_H_ACTIVE + BASE_H_FPORCH
-            && base_h_counter < BASE_H_ACTIVE + BASE_H_FPORCH + BASE_H_SYNC)
+        if (base_h_counter >= base_h_active + base_h_fporch
+            && base_h_counter < base_h_active + base_h_fporch + base_h_sync)
             hsync_o <= H_SYNC_ACTIVE;
         else
             hsync_o <= ~H_SYNC_ACTIVE;
 
         // VSYNC
-        if (base_v_counter >= BASE_V_ACTIVE + BASE_V_FPORCH
-            && base_v_counter < BASE_V_ACTIVE + BASE_V_FPORCH + BASE_V_SYNC)
+        if (base_v_counter >= base_v_active + base_v_fporch
+            && base_v_counter < base_v_active + base_v_fporch + base_v_sync)
             vsync_o <= V_SYNC_ACTIVE;
         else
             vsync_o <= ~V_SYNC_ACTIVE;
@@ -97,11 +109,19 @@ module vga_m #(
 
     always @ (posedge clk_i or negedge nrst_i) begin
         if (!nrst_i) begin
+            base_h_active <= 0;
+            base_h_fporch <= 0;
+            base_h_sync <= 0;
+            base_h_bporch <= 0;
+            base_v_active <= 0;
+            base_v_fporch <= 0;
+            base_v_sync <= 0;
+            base_v_bporch <= 0;
             res_h_active <= 0;
             res_v_active <= 0;
             prescaler_counter <= 0;
             base_h_counter <= 0;
-            base_v_counter <= BASE_V_ACTIVE + BASE_V_FPORCH + BASE_V_SYNC;
+            base_v_counter <= 0;
             res_h_counter <= 0;
             res_v_counter <= 0;
             prescaler <= 0;
@@ -117,23 +137,31 @@ module vga_m #(
         end
         else if (clk_i) begin
             if (!enable_i) begin
+                base_h_active <= base_h_active_i;
+                base_h_fporch <= base_h_fporch_i;
+                base_h_sync <= base_h_sync_i;
+                base_h_bporch <= base_h_bporch_i;
+                base_v_active <= base_v_active_i;
+                base_v_fporch <= base_v_fporch_i;
+                base_v_sync <= base_v_sync_i;
+                base_v_bporch <= base_v_bporch_i;
                 case (resolution_i)
-                    4'h2: begin
-                        res_h_active <= {1'b0, BASE_H_ACTIVE[9:1]};
-                        res_v_active <= {1'b0, BASE_V_ACTIVE[9:1]};
+                    `VGA_RES_320x240: begin
+                        res_h_active <= {1'b0, base_h_active_i[9:1]};
+                        res_v_active <= {1'b0, base_v_active_i[8:1]};
                     end
-                    4'h4: begin
-                        res_h_active <= {2'b00, BASE_H_ACTIVE[9:2]};
-                        res_v_active <= {2'b00, BASE_V_ACTIVE[9:2]};
+                    `VGA_RES_160x120: begin
+                        res_h_active <= {2'b00, base_h_active_i[9:2]};
+                        res_v_active <= {2'b00, base_v_active_i[8:2]};
                     end
-                    4'h8: begin
-                        res_h_active <= {3'b000, BASE_H_ACTIVE[9:3]};
-                        res_v_active <= {3'b000, BASE_V_ACTIVE[9:3]};
+                    `VGA_RES_80x60: begin
+                        res_h_active <= {3'b000, base_h_active_i[9:3]};
+                        res_v_active <= {3'b000, base_v_active_i[8:3]};
                     end
                 endcase
                 prescaler_counter <= 0;
                 base_h_counter <= 0;
-                base_v_counter <= BASE_V_ACTIVE + BASE_V_FPORCH + BASE_V_SYNC; // Give us some blanking time to grab the first line
+                base_v_counter <= base_v_active_i + base_v_fporch_i + base_v_sync_i; // Give us some blanking time to grab the first line
                 res_h_counter <= 0;
                 res_v_counter <= 0;
                 prescaler <= prescaler_i;
@@ -175,12 +203,12 @@ module vga_m #(
                         pixel_double_counter <= pixel_double_counter + 1; // Handle pixel doubling
                 end
 
-                if (base_h_counter == BASE_H_TOTAL - 1) begin
+                if (base_h_counter == base_h_total - 1) begin
                     base_h_counter <= 0;
                     res_h_counter <= 0;
                     pixel_double_counter <= 0;
 
-                    if (base_v_counter == BASE_V_TOTAL - 1) begin
+                    if (base_v_counter == base_v_total - 1) begin
                         res_v_counter <= 0;
                         base_v_counter <= 0;
                     end

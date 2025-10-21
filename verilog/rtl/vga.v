@@ -75,10 +75,10 @@ module vga_m #(
 
     always @ (*) begin
         // Color output
-        if (in_active_area || !enable_i || !nrst_i)
-            pixel_o = line_cache[res_h_counter[8:0]];
+        if (in_active_area && enable_i && nrst_i)
+            pixel_o <= line_cache[res_h_counter[8:0]];
         else
-            pixel_o = 0; // Pixel must be black during blanking time
+            pixel_o <= 0; // Pixel must be black during blanking time
 
         // HSYNC
         if (base_h_counter >= BASE_H_ACTIVE + BASE_H_FPORCH

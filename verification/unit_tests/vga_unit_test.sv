@@ -17,13 +17,24 @@ module vga_unit_test;
   // This is the UUT that we're
   // running the Unit Tests on
   //===================================
-  wire clk;
+  wire clk_slow;
   wire nrst;
 
-  clk_rst_m  #(10, 30) clk_rst (
-    .clk_o(clk),
+  clk_rst_m  #(10, 30) clk_rst_slow (
+    .clk_o(clk_slow),
     .nrst_o(nrst)
   );
+
+  wire clk_fast;
+
+  clk_rst_m  #(2, 30) clk_rst_fast (
+    .clk_o(clk_fast),
+    .nrst_o()
+  );
+
+  reg clk_fast_sel;
+  wire clk;
+  assign clk = clk_fast_sel ? clk_fast : clk_slow;
 
   wire [`BUS_MIPORT] mportai;
   reg  [`BUS_MOPORT] mportao;
@@ -62,7 +73,7 @@ module vga_unit_test;
   reg vsync;
 
   vga_display_m display (
-    .clk_i(clk),
+    .clk_i(clk_slow), // Run at slow clock so we can test prescaling
     .nrst_i(nrst),
 
     .color_i(pixel),
@@ -107,7 +118,8 @@ module vga_unit_test;
     svunit_ut.setup();
     /* Place Setup Code Here */
     enable = 0;
-    clk_rst.RESET();
+    clk_fast_sel = 0;
+    clk_rst_slow.RESET();
 
     // Fill framebuffer, make sure most lines are different
     for (int i = 0; i < FB_HEIGHT; i++) begin
@@ -117,7 +129,7 @@ module vga_unit_test;
         end
     end
 
-    clk_rst.WAIT_CYCLES(1); // Make sure we don't enable and leave reset in the same cycle
+    clk_rst_slow.WAIT_CYCLES(1); // Make sure we don't enable and leave reset in the same cycle
   endtask
 
 
@@ -151,7 +163,7 @@ module vga_unit_test;
     prescaler = 1;
     resolution = `VGA_RES_320x240;
     fb = 0;
-    clk_rst.WAIT_CYCLES(1);
+    clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(0, `VGA_RES_320x240);
   `SVTEST_END
@@ -160,7 +172,7 @@ module vga_unit_test;
     prescaler = 1;
     resolution = `VGA_RES_160x120;
     fb = 0;
-    clk_rst.WAIT_CYCLES(1);
+    clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(0, `VGA_RES_160x120);
   `SVTEST_END
@@ -169,7 +181,7 @@ module vga_unit_test;
     prescaler = 1;
     resolution = `VGA_RES_80x60;
     fb = 0;
-    clk_rst.WAIT_CYCLES(1);
+    clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(0, `VGA_RES_80x60);
   `SVTEST_END
@@ -178,7 +190,7 @@ module vga_unit_test;
     prescaler = 1;
     resolution = `VGA_RES_320x240;
     fb = 1;
-    clk_rst.WAIT_CYCLES(1);
+    clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(1, `VGA_RES_320x240);
   `SVTEST_END
@@ -187,7 +199,7 @@ module vga_unit_test;
     prescaler = 1;
     resolution = `VGA_RES_160x120;
     fb = 1;
-    clk_rst.WAIT_CYCLES(1);
+    clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(1, `VGA_RES_160x120);
   `SVTEST_END
@@ -196,9 +208,21 @@ module vga_unit_test;
     prescaler = 1;
     resolution = `VGA_RES_80x60;
     fb = 1;
-    clk_rst.WAIT_CYCLES(1);
+    clk_rst_slow.WAIT_CYCLES(1);
     enable = 1;
     test_fb(1, `VGA_RES_80x60);
+  `SVTEST_END
+
+  `SVTEST(test_320x240_fb0_prescaled)
+    prescaler = 5;
+    resolution = `VGA_RES_320x240;
+    fb = 0;
+    clk_fast_sel = 1; // clk_fast is 5x faster
+    clk_rst_fast.WAIT_CYCLES(3); // TB quirk: VSYNC/HSYNC have to be perfectly in
+                                 // phase with clk_slow, so delay a little. Won't
+                                 // matter on real devices.
+    enable = 1;
+    test_fb(0, `VGA_RES_320x240);
   `SVTEST_END
 
   `SVUNIT_TESTS_END
@@ -217,7 +241,7 @@ module vga_unit_test;
     for (int i = 0; i < 1000000; i++) begin
       if (resolution_detected)
         break;
-      clk_rst.WAIT_CYCLES(1);
+      clk_rst_slow.WAIT_CYCLES(1);
     end
     `FAIL_UNLESS_EQUAL(resolution_detected, 1'b1);
 

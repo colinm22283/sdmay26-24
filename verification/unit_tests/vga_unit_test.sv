@@ -48,7 +48,7 @@ module vga_unit_test;
   localparam FB0_ADDR = 0;
   localparam FB1_ADDR = FB_HEIGHT * FB_WIDTH;
 
-  bus_slave #(FB0_ADDR, MEMORY_SIZE) ram (
+  bus_slave_m #(FB0_ADDR, MEMORY_SIZE) ram (
       .clk_i(clk),
       .nrst_i(nrst),
       .sport_i(sportai),
@@ -61,7 +61,7 @@ module vga_unit_test;
   reg hsync;
   reg vsync;
 
-  vga_display display (
+  vga_display_m display (
     .clk_i(clk),
     .nrst_i(nrst),
 
@@ -77,7 +77,7 @@ module vga_unit_test;
   reg [3:0] resolution;
   reg fb;
 
-  vga #(FB0_ADDR, FB1_ADDR) my_vga (
+  vga_m #(FB0_ADDR, FB1_ADDR) my_vga (
     .clk_i(clk),
     .nrst_i(nrst),
     .enable_i(enable),

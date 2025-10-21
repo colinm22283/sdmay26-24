@@ -9,7 +9,7 @@
     compatability. Doesn't cost us any performance either
     since lines are burst-read and cached.
 */
-module vga #(
+module vga_m #(
     parameter FB0_ADDR = 0,
     parameter FB1_ADDR = 0
 ) (

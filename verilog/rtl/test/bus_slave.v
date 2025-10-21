@@ -1,7 +1,7 @@
 /*
     Simulated memory block acting as a PKBus slave.
 */
-module bus_slave #(
+module bus_slave_m #(
     parameter ADDRESS = 0,
     parameter SIZE = 1024
 ) (

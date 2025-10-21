@@ -3,7 +3,7 @@
     Emulates 640x480 @ 60Hz with 8 bit color.
 */
 
-module vga_display (
+module vga_display_m (
     input wire clk_i, // 640 x 480 pixel clock (24MHz)
     input wire nrst_i,
 

@@ -1,36 +1,4 @@
 /*
-    Basic 8-bit integer clock divider.
-    div >= 1 divides the input clock by div.
-*/
-module clkdiv (
-    input wire clk_i,
-    input wire nrst_i,
-    input wire [7:0] div_i, // Must be >= 1
-
-    output wire clk_o
-);
-
-    reg [7:0] counter;
-    reg clk_prescaled;
-
-    assign clk_o = (div_i == 8'd1) ? clk_i : clk_prescaled;
-
-    always @ (posedge clk_i or negedge nrst_i) begin
-        if (!nrst_i) begin
-            clk_prescaled <= 1'b0;
-            counter <= 0;
-        end
-        else if (clk_i) begin
-            counter <= counter + 8'd1;
-            if (counter >= (div_i - 8'd1)) begin
-                counter <= 0;
-            end
-            clk_prescaled <= (counter < {1'b0, div_i[7:1]}) ? 1'b1 : 1'b0;
-        end
-    end
-endmodule
-
-/*
     320x240 @ 60Hz (6MHz pixel clock) VGA output module.
     Does line doubling/pixel doubling to get smaller
     resolutions.
@@ -77,9 +45,10 @@ module vga #(
     reg [9:0] res_h_active;
     reg [9:0] res_v_active;
 
-    reg [9:0] base_h_counter; // Counters at base resolution, including blanking time
+    reg [8:0] prescaler_counter; // Generates base resolution pixel clock from clk_i
+    reg [9:0] base_h_counter;    // Counters at base resolution, including blanking time
     reg [9:0] base_v_counter;
-    reg [9:0] res_h_counter;  // Counters at scaled resolution, only for active area
+    reg [9:0] res_h_counter;     // Counters at scaled resolution, only for active area
     reg [9:0] res_v_counter;
 
     reg [3:0] prescaler;
@@ -101,11 +70,6 @@ module vga #(
 
     wire [`BUS_DATA_SIZE-1:0] pixel_data_in;
     assign pixel_data_in = mport_i[`BUS_MI_DATA];
-
-    wire base_clk; // 640x480 pixel clock (24MHz)
-    // assign base_clk = clk_i;
-    assign base_clk = 1'b1;
-    // clkdiv div(clk_i, nrst_i, {4'b0000, prescaler}, base_clk);
 
     integer i;
 
@@ -135,6 +99,7 @@ module vga #(
         if (!nrst_i) begin
             res_h_active <= 0;
             res_v_active <= 0;
+            prescaler_counter <= 0;
             base_h_counter <= 0;
             base_v_counter <= BASE_V_ACTIVE + BASE_V_FPORCH + BASE_V_SYNC;
             res_h_counter <= 0;
@@ -166,6 +131,7 @@ module vga #(
                         res_v_active <= {3'b000, BASE_V_ACTIVE[9:3]};
                     end
                 endcase
+                prescaler_counter <= 0;
                 base_h_counter <= 0;
                 base_v_counter <= BASE_V_ACTIVE + BASE_V_FPORCH + BASE_V_SYNC; // Give us some blanking time to grab the first line
                 res_h_counter <= 0;
@@ -179,7 +145,9 @@ module vga #(
                 fb <= fb_i;                               // Keep this up to date
                 fb_read_state <= FB_READ_STATE_PREP;
             end
-            else if (base_clk) begin
+            else if (prescaler_counter == prescaler - 1) begin
+                prescaler_counter <= 0;
+
                 // Output pixels
                 if (in_active_area) begin
                     if (pixel_double_counter == resolution - 1) begin
@@ -222,6 +190,8 @@ module vga #(
                 else
                     base_h_counter <= base_h_counter + 1;
             end
+            else
+                prescaler_counter <= prescaler_counter + 1;
 
             // Fetch new line
             case (fb_read_state)

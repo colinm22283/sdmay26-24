@@ -21,7 +21,7 @@ module clkdiv (
             counter <= 0;
         end
         else if (clk_i) begin
-            counter <= counter + 8'd1; // Add must come before everything
+            counter <= counter + 8'd1;
             if (counter >= (div_i - 8'd1)) begin
                 counter <= 0;
             end
@@ -103,7 +103,8 @@ module vga #(
     assign pixel_data_in = mport_i[`BUS_MI_DATA];
 
     wire base_clk; // 640x480 pixel clock (24MHz)
-    assign base_clk = clk_i;
+    // assign base_clk = clk_i;
+    assign base_clk = 1'b1;
     // clkdiv div(clk_i, nrst_i, {4'b0000, prescaler}, base_clk);
 
     integer i;

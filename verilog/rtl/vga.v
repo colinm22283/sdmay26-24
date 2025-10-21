@@ -87,6 +87,9 @@ module vga #(
     reg [3:0] pixel_double_counter;
     reg [3:0] line_double_counter;
 
+    wire in_active_area;
+    assign in_active_area = base_h_counter < BASE_H_ACTIVE && base_v_counter < BASE_V_ACTIVE;
+
     localparam CACHE_WIDTH = 9'd320;
     reg [7:0] line_cache[CACHE_WIDTH-1:0]; // 320x240 resolution, cache one line
     reg [9:0] line_cache_idx;
@@ -100,15 +103,31 @@ module vga #(
     assign pixel_data_in = mport_i[`BUS_MI_DATA];
 
     wire base_clk; // 640x480 pixel clock (24MHz)
-    clkdiv div(clk_i, nrst_i, {4'b0000, prescaler}, base_clk);
+    assign base_clk = clk_i;
+    // clkdiv div(clk_i, nrst_i, {4'b0000, prescaler}, base_clk);
 
     integer i;
 
     always @ (*) begin
-      if (base_h_counter < BASE_H_ACTIVE && base_v_counter < BASE_V_ACTIVE)
-        pixel_o = line_cache[res_h_counter[8:0]];
-      else
-        pixel_o = 0; // Pixel must be black during blanking time
+        // Color output
+        if (in_active_area || !enable_i || !nrst_i)
+            pixel_o = line_cache[res_h_counter[8:0]];
+        else
+            pixel_o = 0; // Pixel must be black during blanking time
+
+        // HSYNC
+        if (base_h_counter >= BASE_H_ACTIVE + BASE_H_FPORCH
+            && base_h_counter < BASE_H_ACTIVE + BASE_H_FPORCH + BASE_H_SYNC)
+            hsync_o <= H_SYNC_ACTIVE;
+        else
+            hsync_o <= ~H_SYNC_ACTIVE;
+
+        // VSYNC
+        if (base_v_counter >= BASE_V_ACTIVE + BASE_V_FPORCH
+            && base_v_counter < BASE_V_ACTIVE + BASE_V_FPORCH + BASE_V_SYNC)
+            vsync_o <= V_SYNC_ACTIVE;
+        else
+            vsync_o <= ~V_SYNC_ACTIVE;
     end
 
     always @ (posedge clk_i or negedge nrst_i) begin
@@ -125,12 +144,9 @@ module vga #(
             line_double_counter <= 0;
             for (i = 0; i < CACHE_WIDTH; i = i+1)
                 line_cache[i] <= 0;
-            line_cache_idx = 0;
+            line_cache_idx <= 0;
             fb <= 0;
             fb_read_state <= FB_READ_STATE_READY;
-            pixel_o <= 0;
-            hsync_o <= ~H_SYNC_ACTIVE;
-            vsync_o <= ~V_SYNC_ACTIVE;
             mport_o <= 0;
         end
         else if (clk_i) begin
@@ -161,60 +177,49 @@ module vga #(
                     line_cache[i] <= 0;
                 fb <= fb_i;                               // Keep this up to date
                 fb_read_state <= FB_READ_STATE_PREP;
-                pixel_o <= 0;
-                hsync_o <= ~H_SYNC_ACTIVE;
-                vsync_o <= ~V_SYNC_ACTIVE;
             end
             else if (base_clk) begin
                 // Output pixels
-                if (base_h_counter < BASE_H_ACTIVE && base_v_counter < BASE_V_ACTIVE) begin
-                    pixel_double_counter = pixel_double_counter + 1; // Handle pixel doubling
-                    if (pixel_double_counter >= resolution) begin
+                if (in_active_area) begin
+                    if (pixel_double_counter == resolution - 1) begin
                         pixel_double_counter <= 0;
 
-                        res_h_counter = res_h_counter + 1;
-                        if (res_h_counter >= res_h_active) begin
-                            res_h_counter = 0;
-                            line_double_counter = line_double_counter + 1; // Handle line doubling
-                            if (line_double_counter >= resolution) begin
+                        if (res_h_counter == res_h_active - 1) begin
+                            res_h_counter <= 0;
+                            if (line_double_counter == resolution - 1) begin
                                 line_double_counter <= 0;
-                                res_v_counter = res_v_counter + 1;
-                                if (res_v_counter >= res_v_active)
-                                    res_v_counter = 0;
+                                if (res_v_counter == res_v_active - 1)
+                                    res_v_counter <= 0;
+                                else
+                                    res_v_counter <= res_v_counter + 1;
 
                                 fb <= fb_i;
                                 fb_read_state <= FB_READ_STATE_PREP;
                             end
+                            else
+                                line_double_counter <= line_double_counter + 1; // Handle line doubling
                         end
+                        else
+                            res_h_counter <= res_h_counter + 1;
                     end
+                    else
+                        pixel_double_counter <= pixel_double_counter + 1; // Handle pixel doubling
                 end
 
-                // HSYNC
-                base_h_counter = base_h_counter + 1;
-                if (base_h_counter >= BASE_H_ACTIVE + BASE_H_FPORCH
-                    && base_h_counter < BASE_H_ACTIVE + BASE_H_FPORCH + BASE_H_SYNC)
-                    hsync_o <= H_SYNC_ACTIVE;
-                else
-                    hsync_o <= ~H_SYNC_ACTIVE;
-
-                if (base_h_counter >= BASE_H_TOTAL) begin
+                if (base_h_counter == BASE_H_TOTAL - 1) begin
                     base_h_counter <= 0;
                     res_h_counter <= 0;
                     pixel_double_counter <= 0;
-                    base_v_counter = base_v_counter + 1;
-                end
 
-                // VSYNC
-                if (base_v_counter >= BASE_V_ACTIVE + BASE_V_FPORCH
-                    && base_v_counter < BASE_V_ACTIVE + BASE_V_FPORCH + BASE_V_SYNC)
-                    vsync_o <= V_SYNC_ACTIVE;
+                    if (base_v_counter == BASE_V_TOTAL - 1) begin
+                        res_v_counter <= 0;
+                        base_v_counter <= 0;
+                    end
+                    else
+                        base_v_counter <= base_v_counter + 1;
+                end
                 else
-                    vsync_o <= ~V_SYNC_ACTIVE;
-
-                if (base_v_counter >= BASE_V_TOTAL) begin
-                    res_v_counter <= 0;
-                    base_v_counter <= 0;
-                end
+                    base_h_counter <= base_h_counter + 1;
             end
 
             // Fetch new line

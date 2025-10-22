@@ -1,56 +1,52 @@
-module wavg_pipe_m #(
-    parameter WORD_WIDTH = 32,
-
-    parameter SC_WIDTH = 32
-) (
+module wavg_pipe_m(
     input wire clk_i,
     input wire nrst_i,
 
-    input  wire [`STREAM_SIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] sstream_i,
-    output wire [`STREAM_SOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] sstream_o,
+    input  wire [`STREAM_SIPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] sstream_i,
+    output wire [`STREAM_SOPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] sstream_o,
 
-    input  wire [`STREAM_MIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] mstream_i,
-    output wire [`STREAM_MOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] mstream_o,
+    input  wire [`STREAM_MIPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] mstream_i,
+    output wire [`STREAM_MOPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] mstream_o,
 
-    input wire [WORD_WIDTH - 1:0] t0x,
-    input wire [WORD_WIDTH - 1:0] t0y,
-    input wire [WORD_WIDTH - 1:0] t1x,
-    input wire [WORD_WIDTH - 1:0] t1y,
-    input wire [WORD_WIDTH - 1:0] t2x,
-    input wire [WORD_WIDTH - 1:0] t2y,
+    input wire [`WORD_WIDTH - 1:0] t0x,
+    input wire [`WORD_WIDTH - 1:0] t0y,
+    input wire [`WORD_WIDTH - 1:0] t1x,
+    input wire [`WORD_WIDTH - 1:0] t1y,
+    input wire [`WORD_WIDTH - 1:0] t2x,
+    input wire [`WORD_WIDTH - 1:0] t2y,
 
-    input wire signed [WORD_WIDTH - 1:0] v0z,
-    input wire signed [WORD_WIDTH - 1:0] v1z,
-    input wire signed [WORD_WIDTH - 1:0] v2z
+    input wire signed [`WORD_WIDTH - 1:0] v0z,
+    input wire signed [`WORD_WIDTH - 1:0] v1z,
+    input wire signed [`WORD_WIDTH - 1:0] v2z
 );
 
-    reg signed [WORD_WIDTH - 1:0] m0a; reg signed [WORD_WIDTH - 1:0] m0b;
-    wire signed [WORD_WIDTH - 1:0] m0y;
-    mul_m #(WORD_WIDTH) mul0 ( .a_i(m0a), .b_i(m0b), .y_o(m0y) );
+    reg signed [`WORD_WIDTH - 1:0] m0a; reg signed [`WORD_WIDTH - 1:0] m0b;
+    wire signed [`WORD_WIDTH - 1:0] m0y;
+    mul_m #(`WORD_WIDTH) mul0 ( .a_i(m0a), .b_i(m0b), .y_o(m0y) );
 
-    reg signed [WORD_WIDTH - 1:0] m1a; reg signed [WORD_WIDTH - 1:0] m1b;
-    wire signed [WORD_WIDTH - 1:0] m1y;
-    mul_m #(WORD_WIDTH) mul1 ( .a_i(m1a), .b_i(m1b), .y_o(m1y) );
+    reg signed [`WORD_WIDTH - 1:0] m1a; reg signed [`WORD_WIDTH - 1:0] m1b;
+    wire signed [`WORD_WIDTH - 1:0] m1y;
+    mul_m #(`WORD_WIDTH) mul1 ( .a_i(m1a), .b_i(m1b), .y_o(m1y) );
 
-    reg signed [WORD_WIDTH - 1:0] a0a; reg signed [WORD_WIDTH - 1:0] a0b;
-    wire signed [WORD_WIDTH - 1:0] a0y;
-    add_m #(WORD_WIDTH) add0 ( .a_i(a0a), .b_i(a0b), .y_o(a0y) );
+    reg signed [`WORD_WIDTH - 1:0] a0a; reg signed [`WORD_WIDTH - 1:0] a0b;
+    wire signed [`WORD_WIDTH - 1:0] a0y;
+    add_m #(`WORD_WIDTH) add0 ( .a_i(a0a), .b_i(a0b), .y_o(a0y) );
 
-    reg signed [WORD_WIDTH - 1:0] temp;
+    reg signed [`WORD_WIDTH - 1:0] temp;
 
-    reg [SC_WIDTH * 2 + WORD_WIDTH * 3 - 1:0] in_data;
-    wire [SC_WIDTH - 1:0] posx, posy;
-    wire signed [WORD_WIDTH - 1:0] l0, l1, l2;
+    reg [`SC_WIDTH * 2 + `WORD_WIDTH * 3 - 1:0] in_data;
+    wire [`SC_WIDTH - 1:0] posx, posy;
+    wire signed [`WORD_WIDTH - 1:0] l0, l1, l2;
 
-    reg [SC_WIDTH * 2 + WORD_WIDTH * 3 - 1:0] out_data;
+    reg [`SC_WIDTH * 2 + `WORD_WIDTH * 3 - 1:0] out_data;
 
     reg last;
 
     assign { posx, posy, l0, l1, l2 } = in_data;
 
-    reg signed [WORD_WIDTH - 1:0] tx;
-    reg signed [WORD_WIDTH - 1:0] ty;
-    reg [WORD_WIDTH - 1:0] depth;
+    reg signed [`WORD_WIDTH - 1:0] tx;
+    reg signed [`WORD_WIDTH - 1:0] ty;
+    reg [`WORD_WIDTH - 1:0] depth;
 
     localparam STATE_READY = 4'b0000;
     localparam STATE_RUN0  = 4'b0001;
@@ -65,7 +61,7 @@ module wavg_pipe_m #(
 
     reg [3:0] state;
 
-    assign sstream_o[`STREAM_SO_READY(SC_WIDTH * 2 + WORD_WIDTH * 3)] = state == STATE_READY;
+    assign sstream_o[`STREAM_SO_READY(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] = state == STATE_READY;
 
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
@@ -78,12 +74,12 @@ module wavg_pipe_m #(
         else if (clk_i) begin
             case (state)
                 STATE_READY: begin
-                    if (sstream_i[`STREAM_SI_VALID(SC_WIDTH * 2 + WORD_WIDTH * 3)]) begin
+                    if (sstream_i[`STREAM_SI_VALID(`SC_WIDTH * 2 + `WORD_WIDTH * 3)]) begin
                         state <= STATE_RUN0;
 
-                        in_data <= sstream_i[`STREAM_SI_DATA(SC_WIDTH * 2 + WORD_WIDTH * 3)];
+                        in_data <= sstream_i[`STREAM_SI_DATA(`SC_WIDTH * 2 + `WORD_WIDTH * 3)];
 
-                        last <= sstream_i[`STREAM_SI_LAST(SC_WIDTH * 2 + WORD_WIDTH * 3)];
+                        last <= sstream_i[`STREAM_SI_LAST(`SC_WIDTH * 2 + `WORD_WIDTH * 3)];
                     end
                 end
 
@@ -176,7 +172,7 @@ module wavg_pipe_m #(
                 end
 
                 STATE_DONE: begin
-                    if (mstream_i[`STREAM_MI_READY(SC_WIDTH * 2 + WORD_WIDTH * 3)]) begin
+                    if (mstream_i[`STREAM_MI_READY(`SC_WIDTH * 2 + `WORD_WIDTH * 3)]) begin
                         state <= STATE_READY;
                     end
                 end
@@ -184,9 +180,9 @@ module wavg_pipe_m #(
         end
     end
 
-    assign mstream_o[`STREAM_MO_DATA(SC_WIDTH * 2 + WORD_WIDTH * 3)] = out_data;
-    assign mstream_o[`STREAM_MO_VALID(SC_WIDTH * 2 + WORD_WIDTH * 3)] = state == STATE_DONE;
-    assign mstream_o[`STREAM_MO_LAST(SC_WIDTH * 2 + WORD_WIDTH * 3)] = last;
+    assign mstream_o[`STREAM_MO_DATA(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] = out_data;
+    assign mstream_o[`STREAM_MO_VALID(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] = state == STATE_DONE;
+    assign mstream_o[`STREAM_MO_LAST(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] = last;
 
 
 endmodule

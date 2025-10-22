@@ -112,6 +112,9 @@ module rasterizer_m #(
     wire [`STREAM_MIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] wavg_streami;
     wire [`STREAM_MOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] wavg_streamo;
 
+    wire [`STREAM_MIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] wavg_fifo_streami;
+    wire [`STREAM_MOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] wavg_fifo_streamo;
+
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
             state <= STATE_READY;
@@ -175,7 +178,8 @@ module rasterizer_m #(
 
     assign busy_o = (state != STATE_READY && state != STATE_DONE) || bary_busy;
 
-    bary_pipe_m #(WORD_WIDTH, WIDTH, HEIGHT) bary_pipe(
+    // #(WORD_WIDTH, WIDTH, HEIGHT)
+    bary_pipe_m bary_pipe(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 
@@ -201,7 +205,7 @@ module rasterizer_m #(
         .v2z(v2z)
     );
 
-    bary_check_pipe_m #(WORD_WIDTH, SC_WIDTH) bary_check_pipe(
+    bary_check_pipe_m bary_check_pipe(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 
@@ -212,7 +216,7 @@ module rasterizer_m #(
         .mstream_o(filt_bary_streamo)
     );
 
-    wavg_pipe_m #(WORD_WIDTH, SC_WIDTH) wavg_pipe(
+    wavg_pipe_m wavg_pipe(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 
@@ -234,12 +238,23 @@ module rasterizer_m #(
         .v2z(v2z)
     );
 
-    mem_write_m #(WORD_WIDTH, SC_WIDTH, WIDTH, HEIGHT) mem_write(
+    stream_fifo_m #(`SC_WIDTH * 2 + `WORD_WIDTH * 3, 5) wavg_fifo_pipe(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 
         .sstream_i(wavg_streamo),
         .sstream_o(wavg_streami),
+
+        .mstream_i(wavg_fifo_streami),
+        .mstream_o(wavg_fifo_streamo)
+    );
+
+    mem_write_m mem_write(
+        .clk_i(clk_i),
+        .nrst_i(nrst_i),
+
+        .sstream_i(wavg_fifo_streamo),
+        .sstream_o(wavg_fifo_streami),
 
         .mport_i(mport_i),
         .mport_o(mport_o),

@@ -15,34 +15,56 @@ module rasterizer_tb();
         current_cycle = current_cycle + 1;
     end
 
+    localparam WORD_WIDTH = 32;
+    localparam WIDTH = 320;
+    localparam HEIGHT = 240;
+
+    localparam SC_WIDTH = $clog2(WIDTH > HEIGHT ? WIDTH : HEIGHT);
+
     wire [`BUS_MIPORT] mportai;
     wire [`BUS_MOPORT] mportao;
     wire [`BUS_MIPORT] mportbi;
     wire [`BUS_MOPORT] mportbo;
+    wire [`BUS_MIPORT] mportci;
+    wire [`BUS_MOPORT] mportco;
 
     wire [`BUS_SIPORT] sportai;
     wire [`BUS_SOPORT] sportao;
 
-    assign mportbo = mportao;
-    assign mportai = mportbi;
+    assign mportco = mportbo;
+    assign mportbi = mportci;
 
-    // word_stripe_cache_m #(20, 20) cache(
+    // assign mportbo = mportao;
+    // assign mportai = mportbi;
+
+    word_stripe_cache_m #(20, 20) cache(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .cached_mport_i(mportao),
+        .cached_mport_o(mportai),
+
+        .mport_i(mportbi),
+        .mport_o(mportbo)
+    );
+
+    // byte_write_stripe_cache_m #(20, 20) cache(
     //     .clk_i(clk),
     //     .nrst_i(nrst),
 
-    //     .cached_mport_i(mportao),
-    //     .cached_mport_o(mportai),
+    //     .cached_mport_i(mportbo),
+    //     .cached_mport_o(mportbi),
 
-    //     .mport_i(mportbi),
-    //     .mport_o(mportbo)
+    //     .mport_i(mportci),
+    //     .mport_o(mportco)
     // );
 
     busarb_m #(1, 1, 1) arbiter(
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .mports_i({ mportbo }),
-        .mports_o({ mportbi }),
+        .mports_i({ mportco }),
+        .mports_o({ mportci }),
 
         .sports_i({ sportao }),
         .sports_o({ sportai })
@@ -132,6 +154,41 @@ module rasterizer_tb();
         .v2z(v2z)
     );
 
+    stream_stat_m #(SC_WIDTH * 2) pos_stat(
+        .clk_i(clk),
+        
+        .mstreami_i(rasterizer.pos_streami),
+        .mstreamo_i(rasterizer.pos_streamo)
+    );
+
+    stream_stat_m #(SC_WIDTH * 2 + WORD_WIDTH * 3) bary_stat(
+        .clk_i(clk),
+        
+        .mstreami_i(rasterizer.bary_streami),
+        .mstreamo_i(rasterizer.bary_streamo)
+    );
+
+    stream_stat_m #(SC_WIDTH * 2 + WORD_WIDTH * 3) filt_bary_stat(
+        .clk_i(clk),
+        
+        .mstreami_i(rasterizer.filt_bary_streami),
+        .mstreamo_i(rasterizer.filt_bary_streamo)
+    );
+
+    stream_stat_m #(SC_WIDTH * 2 + WORD_WIDTH * 3) wavg_stat(
+        .clk_i(clk),
+        
+        .mstreami_i(rasterizer.wavg_streami),
+        .mstreamo_i(rasterizer.wavg_streamo)
+    );
+
+    stream_stat_m #(SC_WIDTH * 2 + WORD_WIDTH * 3) wavg_fifo_stat(
+        .clk_i(clk),
+        
+        .mstreami_i(rasterizer.wavg_fifo_streami),
+        .mstreamo_i(rasterizer.wavg_fifo_streamo)
+    );
+
     initial begin : MAIN
         integer i, j;
         integer x, y;
@@ -145,6 +202,12 @@ module rasterizer_tb();
         #30;
         nrst = 1;
         #30;
+
+        pos_stat.RESET();
+        bary_stat.RESET();
+        filt_bary_stat.RESET();
+        wavg_stat.RESET();
+        wavg_fifo_stat.RESET();
 
         for (x = 0; x < 320; x = x + 1) begin
             for (y = 0; y < 240; y = y + 1) begin : DB_FILL
@@ -252,107 +315,107 @@ module rasterizer_tb();
             wait(!clk);
         end
 
-        // for (i = 0; i < 200; i = i + 1) begin
-        //     color <= 8'b11000000;
+        for (i = 0; i < 200; i = i + 1) begin
+            color <= 8'b11000000;
 
-        //     v0x = ((i % 20) * 15) << `DECIMAL_POS;
-        //     v0y = (70 + (i / 20) * 15) << `DECIMAL_POS;
-        //     v0z = 0;
-        //     t0x = 0;
-        //     t0y = 0;
+            v0x = ((i % 20) * 15) << `DECIMAL_POS;
+            v0y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+            v0z = 0;
+            t0x = 0;
+            t0y = 0;
 
-        //     v1x = (10 + (i % 20) * 15) << `DECIMAL_POS;
-        //     v1y = (70 + (i / 20) * 15) << `DECIMAL_POS;
-        //     v1z = 0;
-        //     t1x = 10;
-        //     t1y = 0;
+            v1x = (10 + (i % 20) * 15) << `DECIMAL_POS;
+            v1y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+            v1z = 0;
+            t1x = 10;
+            t1y = 0;
 
-        //     v2x = ((i % 20) * 15) << `DECIMAL_POS;
-        //     v2y = (80 + (i / 20) * 15) << `DECIMAL_POS;
-        //     v2z = 0;
-        //     t2x = 0;
-        //     t2y = 10;
+            v2x = ((i % 20) * 15) << `DECIMAL_POS;
+            v2y = (80 + (i / 20) * 15) << `DECIMAL_POS;
+            v2z = 0;
+            t2x = 0;
+            t2y = 10;
 
-        //     wait(!clk);
-        //     run = 1;
+            wait(!clk);
+            run = 1;
 
-        //     wait(busy);
-        //     wait(!busy);
-        //     run = 0;
+            wait(busy);
+            wait(!busy);
+            run = 0;
 
-        //     for (j = 0; j < 10; j = j + 1) begin
-        //         wait(clk);
-        //         wait(!clk);
-        //     end
-        // end
+            for (j = 0; j < 10; j = j + 1) begin
+                wait(clk);
+                wait(!clk);
+            end
+        end
 
-        // for (i = 0; i < 200; i = i + 1) begin
-        //     color <= 8'b00111000;
+        for (i = 0; i < 200; i = i + 1) begin
+            color <= 8'b00111000;
 
-        //     v0x = (5 + (i % 20) * 15) << `DECIMAL_POS;
-        //     v0y = (70 + (i / 20) * 15) << `DECIMAL_POS;
-        //     v0z = 32'h40000000;
-        //     t0x = 0;
-        //     t0y = 0;
+            v0x = (5 + (i % 20) * 15) << `DECIMAL_POS;
+            v0y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+            v0z = 32'h40000000;
+            t0x = 0;
+            t0y = 0;
 
-        //     v1x = (5 + 10 + (i % 20) * 15) << `DECIMAL_POS;
-        //     v1y = (70 + (i / 20) * 15) << `DECIMAL_POS;
-        //     v1z = 32'h40000000;
-        //     t1x = 10;
-        //     t1y = 0;
+            v1x = (5 + 10 + (i % 20) * 15) << `DECIMAL_POS;
+            v1y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+            v1z = 32'h40000000;
+            t1x = 10;
+            t1y = 0;
 
-        //     v2x = (5 + (i % 20) * 15) << `DECIMAL_POS;
-        //     v2y = (80 + (i / 20) * 15) << `DECIMAL_POS;
-        //     v2z = 32'h40000000;
-        //     t2x = 0;
-        //     t2y = 10;
+            v2x = (5 + (i % 20) * 15) << `DECIMAL_POS;
+            v2y = (80 + (i / 20) * 15) << `DECIMAL_POS;
+            v2z = 32'h40000000;
+            t2x = 0;
+            t2y = 10;
 
-        //     wait(!clk);
-        //     run = 1;
+            wait(!clk);
+            run = 1;
 
-        //     wait(busy);
-        //     wait(!busy);
-        //     run = 0;
+            wait(busy);
+            wait(!busy);
+            run = 0;
 
-        //     for (j = 0; j < 10; j = j + 1) begin
-        //         wait(clk);
-        //         wait(!clk);
-        //     end
-        // end
+            for (j = 0; j < 10; j = j + 1) begin
+                wait(clk);
+                wait(!clk);
+            end
+        end
 
-        // for (i = 0; i < 200; i = i + 1) begin
-        //     color <= 8'b00000111;
+        for (i = 0; i < 200; i = i + 1) begin
+            color <= 8'b00000111;
 
-        //     v0x = (10 + (i % 20) * 15) << `DECIMAL_POS;
-        //     v0y = (70 + (i / 20) * 15) << `DECIMAL_POS;
-        //     v0z = 32'h40000000;
-        //     t0x = 0;
-        //     t0y = 0;
+            v0x = (10 + (i % 20) * 15) << `DECIMAL_POS;
+            v0y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+            v0z = 32'h40000000;
+            t0x = 0;
+            t0y = 0;
 
-        //     v1x = (10 + 10 + (i % 20) * 15) << `DECIMAL_POS;
-        //     v1y = (70 + (i / 20) * 15) << `DECIMAL_POS;
-        //     v1z = 32'h40000000;
-        //     t1x = 10;
-        //     t1y = 0;
+            v1x = (10 + 10 + (i % 20) * 15) << `DECIMAL_POS;
+            v1y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+            v1z = 32'h40000000;
+            t1x = 10;
+            t1y = 0;
 
-        //     v2x = (10 + (i % 20) * 15) << `DECIMAL_POS;
-        //     v2y = (80 + (i / 20) * 15) << `DECIMAL_POS;
-        //     v2z = 32'h40000000;
-        //     t2x = 0;
-        //     t2y = 10;
+            v2x = (10 + (i % 20) * 15) << `DECIMAL_POS;
+            v2y = (80 + (i / 20) * 15) << `DECIMAL_POS;
+            v2z = 32'h40000000;
+            t2x = 0;
+            t2y = 10;
 
-        //     wait(!clk);
-        //     run = 1;
+            wait(!clk);
+            run = 1;
 
-        //     wait(busy);
-        //     wait(!busy);
-        //     run = 0;
+            wait(busy);
+            wait(!busy);
+            run = 0;
 
-        //     for (j = 0; j < 10; j = j + 1) begin
-        //         wait(clk);
-        //         wait(!clk);
-        //     end
-        // end
+            for (j = 0; j < 10; j = j + 1) begin
+                wait(clk);
+                wait(!clk);
+            end
+        end
 
         $display("Elapsed %d clock cycles", current_cycle);
         $display("%d FPS at 10 MHz", 10000000.0 / current_cycle);
@@ -361,6 +424,23 @@ module rasterizer_tb();
         $display("%d FPS at 40 MHz", 40000000.0 / current_cycle);
         $display("%d FPS at 50 MHz", 50000000.0 / current_cycle);
         $display("%d FPS at 100 MHz", 100000000.0 / current_cycle);
+
+        $display("Pipeline info");
+
+        $display("Pos Stats");
+        pos_stat.PRINT_STATS();
+
+        $display("Bary Stats");
+        bary_stat.PRINT_STATS();
+
+        $display("Filt Bary Stats");
+        filt_bary_stat.PRINT_STATS();
+
+        $display("WAvg Stats");
+        wavg_stat.PRINT_STATS();
+
+        $display("WAvg FIFO Stats");
+        wavg_fifo_stat.PRINT_STATS();
 
         $display("Dumping image...");
 
@@ -372,7 +452,7 @@ module rasterizer_tb();
     end
 
     initial begin
-        #100000000;
+        #1000000000;
         $finish;
     end
 

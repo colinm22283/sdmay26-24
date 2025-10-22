@@ -93,10 +93,21 @@ always @ (*) begin
   mportai[`BUS_MI_DATA] = 32'h1C1C1C1C; // Green on every pixel
 end
 
+// ---- Instantiate DUT ----
+
+reg [7:0] enable_delay;
+wire enable;
+always @(posedge clock or negedge wb_rst_i)
+    if (~wb_rst_i)
+        enable_delay <= 0;
+    else
+        enable_delay <= {enable_delay[6:0], wb_rst_i};
+assign enable = enable_delay[7];
+
 vga_m #(0, 0) my_vga (
   .clk_i(wb_clk_i),
   .nrst_i(wb_rst_i),
-  .enable_i(1),
+  .enable_i(enable),
   .prescaler_i(2),
   .resolution_i(`VGA_RES_320x240),
   .base_h_active_i(`VGA_BASE_H_ACTIVE),
@@ -115,19 +126,24 @@ vga_m #(0, 0) my_vga (
   .vsync_o(io_out[23:23])
 );
 
-// set pin directions
-assign io_oeb[`MPRJ_IO_PADS-1:21] = {`MPRJ_IO_PADS-1-21 + 1{1'b1}};
-assign io_oeb[20] = 'b0;
-assign io_oeb[19:17] = {19-17 + 1{1'b1}};
-assign io_oeb[16] = 'b0;
-assign io_oeb[15:0] = {15-0 + 1{1'b1}};
+// debug
+assign io_oeb[21] = 1;
+assign io_out[21] = 1;
 
-assign io_out[`MPRJ_IO_PADS-1:21] = {`MPRJ_IO_PADS-1-21 + 1{1'b0}};
-assign io_out[19:17] = {19-17 + 1{1'b0}};
-assign io_out[15:0] = {15-0 + 1{1'b0}};
+// ---- Set pin directions ----
 
-assign la_data_out[127:0] = 0;
-assign user_irq = 3'b000;
+// IO output enable, output = low
+assign io_oeb[`MPRJ_IO_PADS-1:32] = {`MPRJ_IO_PADS-32{1'b1}};
+assign io_oeb[31:22] = 0;
+assign io_oeb[20:0] = {21{1'b1}};
+
+// IO output (pins 31-23 passed to VGA above)
+assign io_out[`MPRJ_IO_PADS-1:32] = 0;
+assign io_out[20:0] = 0;
+
+assign la_data_out[127:0] = 0; // Internal logic analyzer data output
+
+assign user_irq = 3'b000; // Interrupts, unused
 
 
 endmodule	// user_project_wrapper

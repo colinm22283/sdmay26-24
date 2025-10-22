@@ -37,6 +37,7 @@ void main() {
     reg_uart_enable = 1;
 
     // Set everything to user area output
+    reg_mprj_io_21 = GPIO_MODE_USER_STD_OUTPUT; // debug
     VGA_IO_R0 = GPIO_MODE_USER_STD_OUTPUT;
     VGA_IO_R1 = GPIO_MODE_USER_STD_OUTPUT;
     VGA_IO_R2 = GPIO_MODE_USER_STD_OUTPUT;

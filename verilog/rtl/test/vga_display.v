@@ -24,7 +24,7 @@ module vga_display_m (
     localparam V_SYNC = 3'd4;
     localparam V_BPORCH = 4'd13;
     localparam V_TOTAL = V_ACTIVE + V_FPORCH + V_SYNC + V_BPORCH;
-    localparam H_SYNC_ACTIVE = 1'b0;
+    localparam H_SYNC_ACTIVE = 1'b1;
     localparam V_SYNC_ACTIVE = 1'b1;
 
     reg [7:0] screen[479:0][639:0];

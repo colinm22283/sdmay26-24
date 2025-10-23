@@ -51,7 +51,7 @@ module vga_m #(
     assign base_h_total = base_h_active + base_h_fporch + base_h_sync + base_h_bporch;
     wire [9:0] base_v_total;
     assign base_v_total = base_v_active + base_v_fporch + base_v_sync + base_v_bporch;
-    localparam H_SYNC_ACTIVE = 1'b0;
+    localparam H_SYNC_ACTIVE = 1'b1;
     localparam V_SYNC_ACTIVE = 1'b1;
 
     reg [9:0] res_h_active;

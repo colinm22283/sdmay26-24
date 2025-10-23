@@ -27,3 +27,4 @@
 **/qrun.out
 **/transcript
 **/.nfs*
+**/fpga_config.ini

@@ -1,9 +1,12 @@
 `default_nettype none
 
+/*
+    Sample user project wrapper implementation for
+    the vga module. DOES NOT RUN during rtl testing
+    or fpga testing.
+*/
 module user_project_wrapper #(
-    /* verilator lint_off UNUSEDPARAM */
     parameter BITS = 32
-    /* verilator lint_on UNUSEDPARAM */
 ) (
 `ifdef USE_POWER_PINS
     inout vdda1,	// User area 1 3.3V supply
@@ -28,7 +31,6 @@ module user_project_wrapper #(
     output wbs_ack_o,
     output [31:0] wbs_dat_o,
 
-    /* verilator lint_off UNUSEDSIGNAL */
     // Logic Analyzer Signals
     input  [127:0] la_data_in,
     output [127:0] la_data_out,
@@ -50,65 +52,36 @@ module user_project_wrapper #(
 
     // User maskable interrupt signals
     output [2:0] user_irq
-    /* verilator lint_on UNUSEDSIGNAL */
 );
 
-/*--------------------------------------*/
-/* User project is instantiated  here   */
-/*--------------------------------------*/
+assign wbs_ack_o = 0;
+assign wbs_dat_o = 0;
 
-reg [31:0] wbs_dat_s; // Override prior definitions and make these regs.
-reg wbs_ack_s;
-
-assign wbs_dat_o = wbs_dat_s;
-assign wbs_ack_o = wbs_ack_s;
-
-localparam integer NUM_ADDRS = 2;
-
-wire [31:0] wbs_datN_o [NUM_ADDRS:0];
-wire wbs_ackN_o [NUM_ADDRS-1:0];
-reg wbs_stbN_i [NUM_ADDRS-1:0];
-
-`define address_map(n, address, mask)      \
-    wbs_stbN_i[n] = 0;                      \
-    if ((wbs_adr_i & mask) == address) begin \
-        wbs_dat_s = wbs_datN_o[n];          \
-        wbs_ack_s = wbs_ackN_o[n];          \
-        wbs_stbN_i[n] = wbs_stb_i;          \
-    end
-
-always @* begin
-    wbs_dat_s = 0;
-    wbs_ack_s = 0;
-
-    // Add entries here to allocate more address ranges
-    `address_map(0, 32'h30123400, 32'hFFFFFF00);
-end
-
-wire [`BUS_MIPORT] mportai;
-reg  [`BUS_MOPORT] mportao;
+reg [`BUS_MIPORT] mportai;
+wire  [`BUS_MOPORT] mportao;
 
 always @ (*) begin
   mportai[`BUS_MI_SEQSLV] = 1;
-  mportai[`BUS_MI_DATA] = 32'h1C1C1C1C; // Green on every pixel
+  mportai[`BUS_MI_DATA] = 32'hE0E0E0E0; // Green on every pixel, 0bRRRGGGBB
 end
 
 // ---- Instantiate DUT ----
 
 reg [7:0] enable_delay;
 wire enable;
-always @(posedge clock or negedge wb_rst_i)
-    if (~wb_rst_i)
+
+always @(posedge wb_clk_i or posedge wb_rst_i)
+    if (wb_rst_i)
         enable_delay <= 0;
-    else
-        enable_delay <= {enable_delay[6:0], wb_rst_i};
-assign enable = enable_delay[7];
+    else if (wb_clk_i && enable_delay != 200)
+        enable_delay <= enable_delay + 1;
+assign enable = enable_delay > 150;
 
 vga_m #(0, 0) my_vga (
   .clk_i(wb_clk_i),
-  .nrst_i(wb_rst_i),
+  .nrst_i(!wb_rst_i),
   .enable_i(enable),
-  .prescaler_i(2),
+  .prescaler_i(4),
   .resolution_i(`VGA_RES_320x240),
   .base_h_active_i(`VGA_BASE_H_ACTIVE),
   .base_h_fporch_i(`VGA_BASE_H_FPORCH),
@@ -121,25 +94,29 @@ vga_m #(0, 0) my_vga (
   .mport_i(mportai),
   .mport_o(mportao),
   .fb_i(0),
-  .pixel_o(io_out[31:24]),
-  .hsync_o(io_out[22:22]),
-  .vsync_o(io_out[23:23])
+  .pixel_o({io_out[26], io_out[25], io_out[24],
+            io_out[30], io_out[29], io_out[28],
+            io_out[31], io_out[27]}), // Remap standard 8 bit color to the correct IO
+  .hsync_o(io_out[23]),
+  .vsync_o(io_out[22])
 );
 
 // debug
-assign io_oeb[21] = 1;
-assign io_out[21] = 1;
+assign io_oeb[21] = 0;
+assign io_out[21] = my_vga.base_h_counter == 0 || my_vga.base_h_counter == (`VGA_BASE_H_ACTIVE + `VGA_BASE_H_FPORCH);
+assign io_oeb[20] = 0;
+assign io_out[20] = my_vga.base_v_counter == 0 || my_vga.base_v_counter == (`VGA_BASE_V_ACTIVE + `VGA_BASE_V_FPORCH);
 
 // ---- Set pin directions ----
 
 // IO output enable, output = low
 assign io_oeb[`MPRJ_IO_PADS-1:32] = {`MPRJ_IO_PADS-32{1'b1}};
 assign io_oeb[31:22] = 0;
-assign io_oeb[20:0] = {21{1'b1}};
+assign io_oeb[19:0] = {20{1'b1}};
 
 // IO output (pins 31-23 passed to VGA above)
 assign io_out[`MPRJ_IO_PADS-1:32] = 0;
-assign io_out[20:0] = 0;
+assign io_out[19:0] = 0;
 
 assign la_data_out[127:0] = 0; // Internal logic analyzer data output
 

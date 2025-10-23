@@ -14,16 +14,6 @@
 #define VGA_IO_HSYNC (reg_mprj_io_22)
 #define VGA_IO_VSYNC (reg_mprj_io_23)
 
-static inline void run_test() {
-    print("START TEST\n");
-
-    // The VGA module isn't wishbone-compatible and we don't have a wishbone-to-PKBus
-    // adapter yet. Just let it run for a while and let the verilog TB control everything
-    delay_ms(10000);
-
-    print("END TEST\n\n");
-}
-
 void main() {
     reg_gpio_mode1 = 1;
     reg_gpio_mode0 = 0;
@@ -37,6 +27,7 @@ void main() {
     reg_uart_enable = 1;
 
     // Set everything to user area output
+    reg_mprj_io_20 = GPIO_MODE_USER_STD_OUTPUT; // debug
     reg_mprj_io_21 = GPIO_MODE_USER_STD_OUTPUT; // debug
     VGA_IO_R0 = GPIO_MODE_USER_STD_OUTPUT;
     VGA_IO_R1 = GPIO_MODE_USER_STD_OUTPUT;
@@ -52,7 +43,13 @@ void main() {
     reg_mprj_xfer = 1;
     while (reg_mprj_xfer == 1);
 
-    run_test();
-
-    print("\n\nTESTS COMPLETE\n\n");
+    // The VGA module isn't wishbone-compatible and we don't have a wishbone-to-PKBus
+    // adapter yet. Just let it run for a while and let the verilog TB control everything
+    // Meanwhile, blinky
+    while(1) {
+      reg_gpio_out = 1;
+      delay_ms(1000);
+      reg_gpio_out = 0;
+      delay_ms(1000);
+    }
 }

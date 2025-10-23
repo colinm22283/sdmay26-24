@@ -75,7 +75,7 @@ module vga_m #(
     reg [7:0] line_cache[CACHE_WIDTH-1:0]; // 320x240 resolution, cache one line
     reg [9:0] line_cache_idx;
     reg fb;
-    localparam FB_READ_STATE_READY = 0;
+    localparam FB_READ_STATE_READY = 2'd0;
     localparam FB_READ_STATE_PREP = 2'd1;
     localparam FB_READ_STATE_READ = 2'd2;
     reg [1:0] fb_read_state;
@@ -87,7 +87,7 @@ module vga_m #(
 
     always @ (*) begin
         // Color output
-        if (in_active_area && enable_i && nrst_i)
+        if (in_active_area && enable_i)
             pixel_o <= line_cache[res_h_counter[8:0]];
         else
             pixel_o <= 0; // Pixel must be black during blanking time
@@ -224,7 +224,7 @@ module vga_m #(
             // Fetch new line
             case (fb_read_state)
             FB_READ_STATE_PREP: begin
-                if (!res_v_counter)
+                if (res_v_counter == 0)
                     mport_o[`BUS_MO_ADDR] <= fb ? FB1_ADDR : FB0_ADDR;
 
                 mport_o[`BUS_MO_RW] <= `BUS_READ;

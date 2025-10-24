@@ -1,7 +1,7 @@
 /*
     Simulated memory block acting as a PKBus master.
 */
-module bus_master #(
+module bus_master_m #(
     parameter SIZE = 1024
 ) (
     input wire clk_i,

@@ -1,4 +1,5 @@
 /.idea/
+/.vscode/
 /precheck_results/
 */tmp
 */*/tmp
@@ -26,5 +27,4 @@
 **/qrun.out
 **/transcript
 **/.nfs*
-**/run.log
-**/tests.xml
+**/fpga_config.ini

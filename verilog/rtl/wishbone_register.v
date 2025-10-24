@@ -2,6 +2,7 @@
     Generic configuration register connected to
     the Wishbone bus. Address must be specified here
     AND using `address_map in user_project_wrapper.
+    Address doesn't need to be set if size = 1.
 
     Allows you to select certain bits for read/write
     perms and set the register reset value. These
@@ -47,7 +48,7 @@ module wishbone_register #(
 
     // (wbs_adr_i - ADDRESS) = 0 should return reg_o[31:0]
     wire [`WORD_WIDTH-1:0] bit_offset;
-    assign bit_offset = {(wbs_adr_i - ADDRESS), 3'b000}; // Bit offset = byte offset * 8
+    assign bit_offset = (SIZE_WORDS == 1) ? 0 : {(wbs_adr_i - ADDRESS), 3'b000}; // Bit offset = byte offset * 8
     assign wbs_dat_o = reg_o[bit_offset +: `WORD_WIDTH-1] & access_read_mask_i;
 
     always @ (posedge wb_clk_i or posedge wb_rst_i) begin

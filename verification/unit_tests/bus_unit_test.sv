@@ -47,7 +47,7 @@ module bus_unit_test;
 
   wire bad_read;
 
-  bus_slave #(SLAVE_ADDR, MEM_SIZE) slave (
+  bus_slave_m #(SLAVE_ADDR, MEM_SIZE) slave (
     .clk_i(clk),
     .nrst_i(nrst),
 
@@ -57,7 +57,7 @@ module bus_unit_test;
     .bad_read_o(bad_read)
   );
 
-  bus_master #(MEM_SIZE) master (
+  bus_master_m #(MEM_SIZE) master (
     .clk_i(clk),
     .nrst_i(nrst),
 

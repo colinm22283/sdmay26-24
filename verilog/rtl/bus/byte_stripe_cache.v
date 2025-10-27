@@ -23,13 +23,15 @@ module byte_write_stripe_cache_m #(
     assign mport_o = cached_mport_i[`BUS_MO_SIZE] == `BUS_SIZE_BYTE ? mporto : cached_mport_i;
     assign cached_mport_o = cached_mport_i[`BUS_MO_SIZE] == `BUS_SIZE_BYTE ? cached_mporto : mport_i;
 
-    localparam STATE_READY      = 3'b000;
-    localparam STATE_REQ        = 3'b001;
-    localparam STATE_ACK        = 3'b010;
-    localparam STATE_CACHE_DUMP = 3'b011;
+    localparam STATE_READY      = 2'b00;
+    localparam STATE_REQ        = 2'b01;
+    localparam STATE_ACK        = 2'b10;
+    localparam STATE_CACHE_DUMP = 2'b11;
 
-    reg [2:0] state;
+    reg [1:0] state;
+    reg [2:0] dump_state;
 
+    reg [$clog2(STRIPE_SIZE + 1) - 1:0] buffer_index;
     reg [$clog2(STRIPE_SIZE) - 1:0] buffer_size;
     reg [`BUS_ADDR_PORT] buffer_addr;
 
@@ -38,16 +40,24 @@ module byte_write_stripe_cache_m #(
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
             state <= STATE_READY;
+            dump_state <= 0;
 
-            buffer_size <= 0;
-            buffer_addr <= 0;
+            buffer_index <= 0;
+            buffer_size  <= 0;
+            buffer_addr  <= 0;
+
+            mporto <= 0;
+            cached_mporto <= 0;
         end
         else if (clk_i) begin
             case (state)
                 STATE_READY: begin
                     if (cached_mporti[`BUS_MO_REQ]) begin
-                        if (cached_mporti[`BUS_MO_ADDR] - buffer_addr >= STRIPE_SIZE) begin
+                        if (cached_mporti[`BUS_MO_ADDR] != buffer_addr + buffer_size || buffer_size == STRIPE_SIZE) begin
                             state <= STATE_CACHE_DUMP;
+                            dump_state <= 0;
+
+                            buffer_index <= 0;
                         end
                         else begin
                             state <= STATE_REQ;
@@ -60,9 +70,9 @@ module byte_write_stripe_cache_m #(
                 STATE_REQ: begin
                     state <= STATE_ACK;
 
-                    buffer[cached_mporti[`BUS_MO_ADDR] - buffer_addr] <= cached_mporti[`BUS_MO_DATA];
+                    buffer[buffer_size] <= cached_mporti[`BUS_MO_DATA];
                     
-                    buffer_size <= cached_mporti[`BUS_MO_ADDR] - buffer_addr;
+                    buffer_size <= buffer_size + 1;
 
                     cached_mporto[`BUS_MI_ACK] <= 0;
                 end
@@ -72,6 +82,84 @@ module byte_write_stripe_cache_m #(
                 end
 
                 STATE_CACHE_DUMP: begin
+                    case (dump_state)
+                        0: begin
+                            if (buffer_size - buffer_index == 0) begin
+                                state <= STATE_READY;
+
+                                buffer_addr <= cached_mporti[`BUS_MO_ADDR];
+                                buffer_size <= 0;
+                            end
+                            else if (buffer_size - buffer_index >= 4) begin
+                                if (mporti[`BUS_MI_ACK]) begin
+                                    dump_state <= 2;
+
+                                    buffer_index <= buffer_index + 4;
+                                    buffer_addr  <= buffer_addr + 4;
+                                end
+
+                                mporto[`BUS_MO_DATA] <= {buffer[buffer_index], buffer[buffer_index + 1], buffer[buffer_index + 2], buffer[buffer_index + 3] };
+                                mporto[`BUS_MO_ADDR] <= buffer_addr;
+
+                                mporto[`BUS_MO_SIZE] <= `BUS_SIZE_STREAM;
+                                mporto[`BUS_MO_RW]   <= `BUS_WRITE;
+
+                                mporto[`BUS_MO_REQ]  <= 1;
+                            end
+                            else begin
+                                if (mporti[`BUS_MI_ACK]) dump_state <= 1;
+
+                                mporto[`BUS_MO_DATA] <= buffer[buffer_index];
+                                mporto[`BUS_MO_ADDR] <= buffer_addr;
+
+                                mporto[`BUS_MO_SIZE] <= `BUS_SIZE_BYTE;
+                                mporto[`BUS_MO_RW]   <= `BUS_WRITE;
+
+                                mporto[`BUS_MO_REQ]  <= 1;
+                            end
+                        end
+
+                        1: begin
+                            if (!mporti[`BUS_MI_ACK]) begin
+                                dump_state <= 0;
+
+                                mporto[`BUS_MO_REQ]  <= 0;
+
+                                buffer_index <= buffer_index + 1;
+                                buffer_addr  <= buffer_addr + 1;
+                            end
+                        end
+
+                        2: begin
+                            if (mporti[`BUS_MI_SEQSLV]) begin
+                                if (buffer_size - buffer_index < 4) begin
+                                    dump_state <= 4;
+
+                                    mporto[`BUS_MO_REQ]  <= 0;
+                                end
+                                else begin
+                                    dump_state <= 3;
+
+                                    mporto[`BUS_MO_DATA] <= {buffer[buffer_index + 3], buffer[buffer_index + 2], buffer[buffer_index + 1], buffer[buffer_index + 0] };
+
+                                    buffer_index <= buffer_index + 4;
+                                    buffer_addr  <= buffer_addr + 4;
+                                end
+                            end
+                        end
+
+                        3: begin
+                            if (!mporti[`BUS_MI_SEQSLV]) begin
+                                dump_state <= 2;
+                            end
+                        end
+
+                        4: begin
+                            if (!mporti[`BUS_MI_ACK]) begin
+                                dump_state <= 0;
+                            end
+                        end
+                    endcase
                 end
             endcase
         end

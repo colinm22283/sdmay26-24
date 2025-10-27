@@ -97,7 +97,7 @@
 `define SC_WIDTH ($clog2((`WIDTH) > (`HEIGHT) ? (`WIDTH) : (`HEIGHT)))
 
 `define WORD_WIDTH (32)
-`define DECIMAL_POS (17)
+`define DECIMAL_POS (10)
 
 `define WORD_SMAX (1 << (`WORD_WIDTH - 2))
 

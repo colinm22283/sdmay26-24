@@ -68,8 +68,7 @@ module bary_pipe_m(
 
     reg [`SC_WIDTH - 1:0] posx, posy;
 
-    reg signed [`WORD_WIDTH - 1:0] y1my2, x2mx1, x0mx2, y0my2, x2mx0, y2my0, x1mx0;
-    reg signed [`WORD_WIDTH - 1:0] y1py0, y2py1, y0py2;
+    reg signed [`WORD_WIDTH - 1:0] y1my0, y1my2, x2mx1, x0mx2, y0my2, x2mx0, y2my0, x1mx0;
 
     reg signed [`WORD_WIDTH - 1:0] temp1;
     reg signed [`WORD_WIDTH - 1:0] temp2;
@@ -92,6 +91,7 @@ module bary_pipe_m(
             posx <= 0;
             posy <= 0;
 
+            y1my0 <= 0;
             y1my2 <= 0;
             x2mx1 <= 0;
             y0my2 <= 0;
@@ -99,9 +99,6 @@ module bary_pipe_m(
             y2my0 <= 0;
             x0mx2 <= 0;
             x1mx0 <= 0;
-            y1py0 <= 0;
-            y2py1 <= 0;
-            y0py2 <= 0;
 
             l0 <= `WORD_SMAX;
             l1 <= `WORD_SMAX;
@@ -115,9 +112,6 @@ module bary_pipe_m(
 
                         s1a <= v1y;
                         s1b <= v2y;
-
-                        a1a <= v1y;
-                        a1b <= v0y;
                     end
 
                     init_o <= 0;
@@ -131,11 +125,6 @@ module bary_pipe_m(
 
                     s1a <= v0x;
                     s1b <= v2x;
-
-                    y1py0 <= a1y;
-
-                    a1a <= v2y;
-                    a1b <= v1y;
                 end
 
                 STATE_SETUP2: begin
@@ -148,11 +137,6 @@ module bary_pipe_m(
 
                     m1a <= y1my2;
                     m1b <= s1y;
-
-                    y2py1 <= a1y;
-
-                    a1a <= v0y;
-                    a1b <= v2y;
                 end
 
                 STATE_SETUP3: begin
@@ -164,11 +148,6 @@ module bary_pipe_m(
                     s1b <= v2y;
 
                     temp1 <= m1y;
-
-                    m1a <= x0mx2;
-                    m1b <= a1y;
-
-                    y0py2 <= a1y;
                 end
 
                 STATE_SETUP4: begin
@@ -179,8 +158,6 @@ module bary_pipe_m(
                     s1a <= v1x;
                     s1b <= v0x;
 
-                    temp2 <= m1y; // 0-2
-
                     m1a <= x2mx1;
                     m1b <= s1y;
                 end
@@ -190,47 +167,51 @@ module bary_pipe_m(
 
                     x1mx0 <= s1y;
 
-                    s1a <= v2x;
-                    s1b <= v0x;
+                    s1a <= v1y;
+                    s1b <= v0y;
 
                     a1a <= temp1;
                     a1b <= m1y;
 
                     m1a <= s1y;
-                    m1b <= y1py0;
+                    m1b <= y1my2;
                 end
 
                 STATE_SETUP6: begin
                     state <= STATE_SETUP7;
 
-                    x2mx0 <= s1y;
-
-                    s1a <= v2y;
-                    s1b <= v0y;
+                    y1my0 <= s1y;
                     
                     det_t <= a1y;
 
-                    a1a <= temp2;
-                    a1b <= m1y; // 1-0
+                    s1a <= v2x;
+                    s1b <= v0x;
 
-                    m1a <= x2mx1;
-                    m1b <= y2py1;
+                    a1b <= m1y;
+
+                    m1a <= s1y;
+                    m1b <= x2mx1;
                 end
 
                 STATE_SETUP7: begin
                     state <= STATE_SETUP8;
 
-                    y2my0 <= s1y;
-                    a1a <= a1y;
-                    a1b <= m1y; // 2-1
+                    x2mx0 <= s1y;
+
+                    s1a <= v2y;
+                    s1b <= v0y;
+
+                    a1a <= m1y;
                 end
 
                 STATE_SETUP8: begin
                     init_o <= 1;
 
+                    y2my0 <= s1y;
+
                     if (a1y < 0) state <= STATE_AWAIT_POS;
                     else begin
-                        state <= STATE_READY;
+                        state <= STATE_DONE;
 
                         discard_o <= 1;
                     end

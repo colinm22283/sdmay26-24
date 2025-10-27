@@ -122,6 +122,8 @@ module user_project_wrapper #(
         .spi_dqsm_o(spi_dqsmo)
     );
 
+    
+
     assign io_out = {spi_clk, spi_cs, spi_mosi, spi_dqsmo};
     assign {spi_miso, spi_dqsmi} = io_in;
 

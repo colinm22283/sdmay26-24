@@ -31,13 +31,10 @@ module rasterizer_tb();
     wire [`BUS_SIPORT] sportai;
     wire [`BUS_SOPORT] sportao;
 
-    assign mportco = mportbo;
-    assign mportbi = mportci;
-
     // assign mportbo = mportao;
     // assign mportai = mportbi;
 
-    word_stripe_cache_m #(20, 20) cache(
+    word_stripe_cache_m #(20, 16) word_cache(
         .clk_i(clk),
         .nrst_i(nrst),
 
@@ -48,16 +45,19 @@ module rasterizer_tb();
         .mport_o(mportbo)
     );
 
-    // byte_write_stripe_cache_m #(20, 20) cache(
-    //     .clk_i(clk),
-    //     .nrst_i(nrst),
+    // assign mportco = mportbo;
+    // assign mportbi = mportci;
 
-    //     .cached_mport_i(mportbo),
-    //     .cached_mport_o(mportbi),
+    byte_write_stripe_cache_m #(40) byte_cache(
+        .clk_i(clk),
+        .nrst_i(nrst),
 
-    //     .mport_i(mportci),
-    //     .mport_o(mportco)
-    // );
+        .cached_mport_i(mportbo),
+        .cached_mport_o(mportbi),
+
+        .mport_i(mportci),
+        .mport_o(mportco)
+    );
 
     busarb_m #(1, 1, 1) arbiter(
         .clk_i(clk),
@@ -227,23 +227,25 @@ module rasterizer_tb();
 
         for (x = 0; x < 320; x = x + 1) begin
             for (y = 0; y < 240; y = y + 1) begin
-                if (x % 5 == 4 && y % 5 == 4) begin
-                    spi_chip.mem[y * 320 + x] = 8'b00000010;
-                end
-                else if (y % 5 == 4 || x % 5 == 4) begin
-                    spi_chip.mem[y * 320 + x] = 8'b00000001;
-                end
-                else begin : EMPTY_FILL
-                    reg [2:0] r;
-                    reg [2:0] g;
-                    reg [1:0] b;
+                // if (x % 5 == 4 && y % 5 == 4) begin
+                //     spi_chip.mem[y * 320 + x] = 8'b00000010;
+                // end
+                // else if (y % 5 == 4 || x % 5 == 4) begin
+                //     spi_chip.mem[y * 320 + x] = 8'b00000001;
+                // end
+                // else begin : EMPTY_FILL
+                //     reg [2:0] r;
+                //     reg [2:0] g;
+                //     reg [1:0] b;
 
-                    r = x * 7 / 320;
-                    g = y * 7 / 320;
-                    b = 0;
+                //     r = x * 7 / 320;
+                //     g = y * 7 / 320;
+                //     b = 0;
 
-                    spi_chip.mem[y * 320 + x] = { b, g, r };
-                end
+                //     spi_chip.mem[y * 320 + x] = { b, g, r };
+                // end
+
+                spi_chip.mem[y * 320 + x] = 0;
             end
         end
 
@@ -310,111 +312,180 @@ module rasterizer_tb();
         wait(!busy);
         run = 0;
 
+        // for (i = 0; i < 10; i = i + 1) begin
+        //     wait(clk);
+        //     wait(!clk);
+        // end
+
+        // for (i = 0; i < 200; i = i + 1) begin
+        //     color <= 8'b11000000;
+
+        //     v0x = ((i % 20) * 15) << `DECIMAL_POS;
+        //     v0y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+        //     v0z = 0;
+        //     t0x = 0;
+        //     t0y = 0;
+
+        //     v1x = (10 + (i % 20) * 15) << `DECIMAL_POS;
+        //     v1y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+        //     v1z = 0;
+        //     t1x = 10;
+        //     t1y = 0;
+
+        //     v2x = ((i % 20) * 15) << `DECIMAL_POS;
+        //     v2y = (80 + (i / 20) * 15) << `DECIMAL_POS;
+        //     v2z = 0;
+        //     t2x = 0;
+        //     t2y = 10;
+
+        //     wait(!clk);
+        //     run = 1;
+
+        //     wait(busy);
+        //     wait(!busy);
+        //     run = 0;
+
+        //     for (j = 0; j < 10; j = j + 1) begin
+        //         wait(clk);
+        //         wait(!clk);
+        //     end
+        // end
+
+        // for (i = 0; i < 200; i = i + 1) begin
+        //     color <= 8'b00111000;
+
+        //     v0x = (5 + (i % 20) * 15) << `DECIMAL_POS;
+        //     v0y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+        //     v0z = 32'h40000000;
+        //     t0x = 0;
+        //     t0y = 0;
+
+        //     v1x = (5 + 10 + (i % 20) * 15) << `DECIMAL_POS;
+        //     v1y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+        //     v1z = 32'h40000000;
+        //     t1x = 10;
+        //     t1y = 0;
+
+        //     v2x = (5 + (i % 20) * 15) << `DECIMAL_POS;
+        //     v2y = (80 + (i / 20) * 15) << `DECIMAL_POS;
+        //     v2z = 32'h40000000;
+        //     t2x = 0;
+        //     t2y = 10;
+
+        //     wait(!clk);
+        //     run = 1;
+
+        //     wait(busy);
+        //     wait(!busy);
+        //     run = 0;
+
+        //     for (j = 0; j < 10; j = j + 1) begin
+        //         wait(clk);
+        //         wait(!clk);
+        //     end
+        // end
+
+        // for (i = 0; i < 200; i = i + 1) begin
+        //     color <= 8'b00000111;
+
+        //     v0x = (10 + (i % 20) * 15) << `DECIMAL_POS;
+        //     v0y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+        //     v0z = 32'h40000000;
+        //     t0x = 0;
+        //     t0y = 0;
+
+        //     v1x = (10 + 10 + (i % 20) * 15) << `DECIMAL_POS;
+        //     v1y = (70 + (i / 20) * 15) << `DECIMAL_POS;
+        //     v1z = 32'h40000000;
+        //     t1x = 10;
+        //     t1y = 0;
+
+        //     v2x = (10 + (i % 20) * 15) << `DECIMAL_POS;
+        //     v2y = (80 + (i / 20) * 15) << `DECIMAL_POS;
+        //     v2z = 32'h40000000;
+        //     t2x = 0;
+        //     t2y = 10;
+
+        //     wait(!clk);
+        //     run = 1;
+
+        //     wait(busy);
+        //     wait(!busy);
+        //     run = 0;
+
+        //     for (j = 0; j < 10; j = j + 1) begin
+        //         wait(clk);
+        //         wait(!clk);
+        //     end
+        // end
+
+        // for (i = 0; i < 10; i = i + 1) begin
+        //     wait(clk);
+        //     wait(!clk);
+        // end
+
+        // color <= 8'b00111111;
+
+        // v0x = 0 << `DECIMAL_POS;
+        // v0y = 0 << `DECIMAL_POS;
+        // v0z = 32'h40000000;
+        // t0x = 0;
+        // t0y = 0;
+
+        // v1x = 320 << `DECIMAL_POS;
+        // v1y = 0 << `DECIMAL_POS;
+        // v1z = 32'h40000000;
+        // t1x = 10;
+        // t1y = 0;
+
+        // v2x = 0 << `DECIMAL_POS;
+        // v2y = 240 << `DECIMAL_POS;
+        // v2z = 32'h40000000;
+        // t2x = 0;
+        // t2y = 10;
+
+        // wait(!clk);
+        // run = 1;
+
+        // wait(busy);
+        // wait(!busy);
+        // run = 0;
+
+        // for (i = 0; i < 10; i = i + 1) begin
+        //     wait(clk);
+        //     wait(!clk);
+        // end
+
+        // color <= 8'b11111000;
+
+        // v0x = 320 << `DECIMAL_POS;
+        // v0y = 240 << `DECIMAL_POS;
+        // v0z = 2 * 64'h80000000 / 3 + 10000;
+        // t0x = 0;
+        // t0y = 0;
+
+        // v1x = 0 << `DECIMAL_POS;
+        // v1y = 240 << `DECIMAL_POS;
+        // v1z = 2 * 64'h80000000 / 3 + 10000;
+        // t1x = 10;
+        // t1y = 0;
+
+        // v2x = 320 << `DECIMAL_POS;
+        // v2y = 0 << `DECIMAL_POS;
+        // v2z = 2 * 64'h80000000 / 3 + 10000;
+        // t2x = 0;
+        // t2y = 10;
+
+        // wait(!clk);
+        // run = 1;
+
+        // wait(busy);
+        // wait(!busy);
+        // run = 0;
+
         for (i = 0; i < 10; i = i + 1) begin
             wait(clk);
             wait(!clk);
-        end
-
-        for (i = 0; i < 200; i = i + 1) begin
-            color <= 8'b11000000;
-
-            v0x = ((i % 20) * 15) << `DECIMAL_POS;
-            v0y = (70 + (i / 20) * 15) << `DECIMAL_POS;
-            v0z = 0;
-            t0x = 0;
-            t0y = 0;
-
-            v1x = (10 + (i % 20) * 15) << `DECIMAL_POS;
-            v1y = (70 + (i / 20) * 15) << `DECIMAL_POS;
-            v1z = 0;
-            t1x = 10;
-            t1y = 0;
-
-            v2x = ((i % 20) * 15) << `DECIMAL_POS;
-            v2y = (80 + (i / 20) * 15) << `DECIMAL_POS;
-            v2z = 0;
-            t2x = 0;
-            t2y = 10;
-
-            wait(!clk);
-            run = 1;
-
-            wait(busy);
-            wait(!busy);
-            run = 0;
-
-            for (j = 0; j < 10; j = j + 1) begin
-                wait(clk);
-                wait(!clk);
-            end
-        end
-
-        for (i = 0; i < 200; i = i + 1) begin
-            color <= 8'b00111000;
-
-            v0x = (5 + (i % 20) * 15) << `DECIMAL_POS;
-            v0y = (70 + (i / 20) * 15) << `DECIMAL_POS;
-            v0z = 32'h40000000;
-            t0x = 0;
-            t0y = 0;
-
-            v1x = (5 + 10 + (i % 20) * 15) << `DECIMAL_POS;
-            v1y = (70 + (i / 20) * 15) << `DECIMAL_POS;
-            v1z = 32'h40000000;
-            t1x = 10;
-            t1y = 0;
-
-            v2x = (5 + (i % 20) * 15) << `DECIMAL_POS;
-            v2y = (80 + (i / 20) * 15) << `DECIMAL_POS;
-            v2z = 32'h40000000;
-            t2x = 0;
-            t2y = 10;
-
-            wait(!clk);
-            run = 1;
-
-            wait(busy);
-            wait(!busy);
-            run = 0;
-
-            for (j = 0; j < 10; j = j + 1) begin
-                wait(clk);
-                wait(!clk);
-            end
-        end
-
-        for (i = 0; i < 200; i = i + 1) begin
-            color <= 8'b00000111;
-
-            v0x = (10 + (i % 20) * 15) << `DECIMAL_POS;
-            v0y = (70 + (i / 20) * 15) << `DECIMAL_POS;
-            v0z = 32'h40000000;
-            t0x = 0;
-            t0y = 0;
-
-            v1x = (10 + 10 + (i % 20) * 15) << `DECIMAL_POS;
-            v1y = (70 + (i / 20) * 15) << `DECIMAL_POS;
-            v1z = 32'h40000000;
-            t1x = 10;
-            t1y = 0;
-
-            v2x = (10 + (i % 20) * 15) << `DECIMAL_POS;
-            v2y = (80 + (i / 20) * 15) << `DECIMAL_POS;
-            v2z = 32'h40000000;
-            t2x = 0;
-            t2y = 10;
-
-            wait(!clk);
-            run = 1;
-
-            wait(busy);
-            wait(!busy);
-            run = 0;
-
-            for (j = 0; j < 10; j = j + 1) begin
-                wait(clk);
-                wait(!clk);
-            end
         end
 
         $display("Elapsed %d clock cycles", current_cycle);
@@ -444,7 +515,7 @@ module rasterizer_tb();
 
         $display("Dumping image...");
 
-        `VGA_WRITE("output.bmp", spi_chip.mem, 0, 320, 240, `COLOR_TYPE_RGB332);
+        // `VGA_WRITE("output.bmp", spi_chip.mem, 0, 320, 240, `COLOR_TYPE_RGB332);
 
         // `VGA_WRITE("depth.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
 

@@ -83,10 +83,10 @@ module vga_wrapper_m #(
         .wbs_ack_o(wbs_ackN[0]),
         .wbs_dat_o(wbs_datN[0]),
 
-        access_read_mask_i(32'h000001FF),
-        access_write_mask_i(32'h000001FF),
-        reset_value_i(32'h00000042), // resolution = 320x240, prescaler = 1, disabled
-        reg_o({23'd0, resolution, prescaler, enable})
+        .access_read_mask_i(32'h000001FF),
+        .access_write_mask_i(32'h000001FF),
+        .reset_value_i(32'h00000042), // resolution = 320x240, prescaler = 1, disabled
+        .reg_o({23'd0, resolution, prescaler, enable})
     );
 
     wishbone_register #(1) htimings (
@@ -101,10 +101,10 @@ module vga_wrapper_m #(
         .wbs_ack_o(wbs_ackN[1]),
         .wbs_dat_o(wbs_datN[1]),
 
-        access_read_mask_i(32'h1FFFFFFF),
-        access_write_mask_i(32'h1FFFFFFF),
-        reset_value_i(32'h14204280), // 640 x 480 standard timings
-        reg_o({3'd0, base_h_bporch, base_h_sync, base_h_fporch, base_h_active})
+        .access_read_mask_i(32'h1FFFFFFF),
+        .access_write_mask_i(32'h1FFFFFFF),
+        .reset_value_i(32'h14204280), // 640 x 480 standard timings
+        .reg_o({3'd0, base_h_bporch, base_h_sync, base_h_fporch, base_h_active})
     );
 
     wishbone_register #(1) vtimings (
@@ -119,15 +119,15 @@ module vga_wrapper_m #(
         .wbs_ack_o(wbs_ackN[2]),
         .wbs_dat_o(wbs_datN[2]),
 
-        access_read_mask_i(32'h0007FFFF),
-        access_write_mask_i(32'h0007FFFF),
-        reset_value_i(32'h0006C7E0), // 640 x 480 standard timings
-        reg_o({13'd0, base_v_bporch, base_v_sync, base_v_fporch, base_v_active})
+        .access_read_mask_i(32'h0007FFFF),
+        .access_write_mask_i(32'h0007FFFF),
+        .reset_value_i(32'h0006C7E0), // 640 x 480 standard timings
+        .reg_o({13'd0, base_v_bporch, base_v_sync, base_v_fporch, base_v_active})
     );
 
     // Mux between the registers (similar to user_project_wrapper's addressing)
     wire [`WORD_WIDTH-1:0] word_offset;
-    assign word_offset = {2'b00, (wbs_adr_i & 32'h0000000F)}
+    assign word_offset = {2'b00, (wbs_adr_i & 32'h0000000F)};
     always @ (*) begin
         wbs_stbN[word_offset] = wbs_stb_i;
         wbs_ack_o = wbs_ackN[word_offset];

@@ -13,8 +13,8 @@
     register sizes are word increments.
 */
 module wishbone_register #(
-    parameter ADDRESS = 0,
-    parameter SIZE_WORDS = 1
+    parameter SIZE_WORDS = 1,
+    parameter ADDRESS = 0
 ) (
     // Wishbone
     input wire wb_clk_i,
@@ -25,14 +25,14 @@ module wishbone_register #(
     input wire [3:0] wbs_sel_i,
     input wire [`WORD_WIDTH-1:0] wbs_dat_i,
     input wire [`WORD_WIDTH-1:0] wbs_adr_i,
-    output reg wbs_ack_o,
-    output reg [`WORD_WIDTH-1:0] wbs_dat_o,
+    output wire wbs_ack_o,
+    output wire [`WORD_WIDTH-1:0] wbs_dat_o,
 
     // Register
     input wire [(SIZE_WORDS * `WORD_WIDTH)-1:0] access_read_mask_i,
     input wire [(SIZE_WORDS * `WORD_WIDTH)-1:0] access_write_mask_i,
     input wire [(SIZE_WORDS * `WORD_WIDTH)-1:0] reset_value_i,
-    output reg [(SIZE_WORDS * `WORD_WIDTH)-1:0] reg_o,
+    output reg [(SIZE_WORDS * `WORD_WIDTH)-1:0] reg_o
 );
 
     wire wbs_we;

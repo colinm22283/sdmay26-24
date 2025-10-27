@@ -17,6 +17,8 @@
 -v $(USER_PROJECT_VERILOG)/rtl/user_defines.v
 -v $(USER_PROJECT_VERILOG)/rtl/user_project_wrapper.v
 
+-v $(USER_PROJECT_VERILOG)/../library/wishbone_helper/verilog/rtl/wishbone_helper.v
+
 -v $(USER_PROJECT_VERILOG)/rtl/test/virtual_vga.v
 -v $(USER_PROJECT_VERILOG)/rtl/test/spi_chip.v
 -v $(USER_PROJECT_VERILOG)/rtl/test/stream_master.v
@@ -42,3 +44,4 @@
 
 -v $(USER_PROJECT_VERILOG)/rtl/spi_mem.v
 -v $(USER_PROJECT_VERILOG)/rtl/vga.v
+-v $(USER_PROJECT_VERILOG)/rtl/wishbone_register.v

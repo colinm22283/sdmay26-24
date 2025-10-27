@@ -71,7 +71,7 @@ module vga_wrapper_m #(
         .vsync_o(vsync_o)
     );
 
-    wishbone_register #(1) ctrl (
+    wishbone_register_m #(1) ctrl (
         .wb_clk_i(wb_clk_i),
         .wb_rst_i(wb_rst_i),
         .wbs_stb_i(wbs_stbN[0]),
@@ -89,7 +89,7 @@ module vga_wrapper_m #(
         .reg_o({23'd0, resolution, prescaler, enable})
     );
 
-    wishbone_register #(1) htimings (
+    wishbone_register_m #(1) htimings (
         .wb_clk_i(wb_clk_i),
         .wb_rst_i(wb_rst_i),
         .wbs_stb_i(wbs_stbN[1]),
@@ -107,7 +107,7 @@ module vga_wrapper_m #(
         .reg_o({3'd0, base_h_bporch, base_h_sync, base_h_fporch, base_h_active})
     );
 
-    wishbone_register #(1) vtimings (
+    wishbone_register_m #(1) vtimings (
         .wb_clk_i(wb_clk_i),
         .wb_rst_i(wb_rst_i),
         .wbs_stb_i(wbs_stbN[2]),

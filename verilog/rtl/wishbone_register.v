@@ -12,7 +12,8 @@
     have to be in 32-bit (word) sizes. The only allowed
     register sizes are word increments.
 */
-module wishbone_register #(
+module wishbone_register_m #(
+    parameter RESET_VALUE = 32'h0,
     parameter SIZE_WORDS = 1,
     parameter ADDRESS = 0
 ) (
@@ -31,7 +32,6 @@ module wishbone_register #(
     // Register
     input wire [(SIZE_WORDS * `WORD_WIDTH)-1:0] access_read_mask_i,
     input wire [(SIZE_WORDS * `WORD_WIDTH)-1:0] access_write_mask_i,
-    input wire [(SIZE_WORDS * `WORD_WIDTH)-1:0] reset_value_i,
     output reg [(SIZE_WORDS * `WORD_WIDTH)-1:0] reg_o
 );
 
@@ -53,7 +53,7 @@ module wishbone_register #(
 
     always @ (posedge wb_clk_i or posedge wb_rst_i) begin
         if (wb_rst_i) begin // Wishbone rst is positive
-            reg_o <= reset_value_i;
+            reg_o <= RESET_VALUE;
         end
         else if (wb_clk_i) begin
             if (wbs_we) begin

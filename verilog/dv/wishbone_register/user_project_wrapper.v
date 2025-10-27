@@ -91,7 +91,7 @@ end
 
 // Baseline
 wire [31:0] reg0_0;
-wishbone_register #(1) reg0 (
+wishbone_register_m #(32'h01010101, 1) reg0 (
     .wb_clk_i(wb_clk_i),
     .wb_rst_i(wb_rst_i),
     .wbs_stb_i(wbs_stbN_i[0]),
@@ -105,13 +105,12 @@ wishbone_register #(1) reg0 (
 
     .access_read_mask_i(32'hFFFFFFFF),
     .access_write_mask_i(32'hFFFFFFFF),
-    .reset_value_i(32'h01010101),
     .reg_o(reg0_0)
 );
 
 // Write mask
 wire [31:0] reg1_0;
-wishbone_register #(1) reg1 (
+wishbone_register_m #(32'h01010101, 1) reg1 (
     .wb_clk_i(wb_clk_i),
     .wb_rst_i(wb_rst_i),
     .wbs_stb_i(wbs_stbN_i[1]),
@@ -125,13 +124,12 @@ wishbone_register #(1) reg1 (
 
     .access_read_mask_i(32'hFFFFFFFF),
     .access_write_mask_i(32'hFFFF0000),
-    .reset_value_i(32'h01010101),
     .reg_o(reg1_0)
 );
 
 // Read mask
 wire [31:0] reg2_0;
-wishbone_register #(1) reg2 (
+wishbone_register_m #(32'h01010101, 1) reg2 (
     .wb_clk_i(wb_clk_i),
     .wb_rst_i(wb_rst_i),
     .wbs_stb_i(wbs_stbN_i[2]),
@@ -145,7 +143,6 @@ wishbone_register #(1) reg2 (
 
     .access_read_mask_i(32'h0000FFFF),
     .access_write_mask_i(32'hFFFFFFFF),
-    .reset_value_i(32'h01010101),
     .reg_o(reg2_0)
 );
 

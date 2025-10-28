@@ -10,11 +10,7 @@ module vga_tb();
         #10;
     end
 
-    reg [7:0] buffer [(320 * 240) - 1:0];
-
-    initial begin : MAIN_1
-        integer i, j;
-
+    initial begin
 		$dumpfile("vga.vcd");
 		$dumpvars(0, vga_tb);
 
@@ -23,18 +19,8 @@ module vga_tb();
         nrst = 1;
         #30;
 
-        for (i = 0; i < 240; i = i + 1) begin
-            for (j = 0; j < 320; j = j + 1) begin
-                buffer[i * 320 + j] = i * j;
-            end
-        end
-
-        `VGA_WRITE("test.bmp", buffer, 0, 320, 240, `COLOR_TYPE_RGB332);
-
-        #1000000;
+        #1000;
         $finish;
     end
-
-    
 
 endmodule

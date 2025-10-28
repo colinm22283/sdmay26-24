@@ -15,4 +15,4 @@ FAIL_IF_STR_EQUAL(a,b)
 FAIL_UNLESS_STR_EQUAL(a,b)
 ```
 
-After writing your tests, you may want to run them! This is done by running ``cf_run_svunit [name_of_unit_test.sv]`` or ``cf_run_svunit_waves [name_of_unit_test.sv] [name_of_test]`` (if you want waveforms).
+After writing your tests, you may want to run them! This is done by running ``cf_run_svunit [name_of_unit_test.sv]`` or ``cf_run_svunit_waves [name_of_unit_test.sv]`` (if you want waveforms).

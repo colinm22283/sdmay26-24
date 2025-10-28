@@ -27,10 +27,10 @@ cf_run_svunit() {
 }
 
 # Run test and output waves to WLF file
-# Usage: cf_run_svunit_waves [name_of_unit_test.sv] [name_of_test]
-# Ex: cf_run_svunit_waves vga_unit_test.sv vga_ut
+# Usage: cf_run_svunit_waves [name_of_unit_test.sv]
+# Ex: cf_run_svunit_waves vga_unit_test.sv
 cf_run_svunit_waves() {
     cd ${UNIT_TEST_PATH}
-    runSVUnit -s questa -f rtl.f -r "-voptargs=+acc" -r "-do \"add log sim:/testrunner/__ts/$2/*\"" -t "$1"
+    runSVUnit -s questa -f rtl.f -r "-voptargs=+acc" -r "-do \"add log -r sim:/testrunner/*\"" -t "$1"
     cd - >/dev/null
 }

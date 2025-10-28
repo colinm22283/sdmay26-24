@@ -87,9 +87,9 @@ module user_project_wrapper #(
 
     wire clk, nrst;
     assign clk = wb_clk_i;
-    // assign nrst = !wb_rst_i;
-
     assign nrst = la_data_in[0] && !wb_rst_i;
+
+    wire debug;
 
     wire [`BUS_MIPORT] mportai;
     wire [`BUS_MOPORT] mportao;
@@ -138,6 +138,8 @@ module user_project_wrapper #(
         .spi_dqsm_en_o(spi_dqsm_en)
     );
 
+    assign debug = spi_mem.latency_count == 0;
+
     wire [2:0] red;
     wire [2:0] green;
     wire [1:0] blue;
@@ -148,7 +150,7 @@ module user_project_wrapper #(
         .clk_i(clk),
         .nrst_i(nrst),
         .enable_i(la_data_in[1]),
-        .prescaler_i(2),
+        .prescaler_i(1),
         .resolution_i(`VGA_RES_320x240),
         .base_h_active_i(`VGA_BASE_H_ACTIVE),
         .base_h_fporch_i(`VGA_BASE_H_FPORCH),
@@ -169,6 +171,8 @@ module user_project_wrapper #(
     reg [7:0] state;
 
     reg [31:0] addr;
+
+    reg [31:0] timer;
 
     always @(posedge clk, negedge nrst) begin
         if (!nrst) begin
@@ -204,11 +208,15 @@ module user_project_wrapper #(
 
                         if (addr == 320 * 50) addr <= 0;
                         else addr <= addr + 1;
+
+                        timer <= 0;
                     end
                 end
 
                 2: begin
-                    state <= 0;
+                    if (timer == 25000000) state <= 0;
+
+                    timer <= timer + 1;
                 end
             endcase
         end
@@ -223,8 +231,9 @@ module user_project_wrapper #(
 
         io_out[11:8] <= spi_mosi;
         io_out[7]    <= spi_cs;
-        io_out[12]    <= spi_clk;
-        io_out[13]    <= spi_dqsmo;
+        io_out[12]   <= spi_clk;
+        io_out[13]   <= spi_dqsmo;
+        io_out[15]   <= debug;
 
         io_out[26:24] <= red;
         io_out[30:28] <= green;

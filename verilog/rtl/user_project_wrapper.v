@@ -44,48 +44,56 @@ module user_project_wrapper #(
 `endif
 
     // Wishbone Slave ports (WB MI A)
-    input wb_clk_i,
-    input wb_rst_i,
-    input wbs_stb_i,
-    input wbs_cyc_i,
-    input wbs_we_i,
-    input [3:0] wbs_sel_i,
-    input [31:0] wbs_dat_i,
-    input [31:0] wbs_adr_i,
-    output wbs_ack_o,
-    output [31:0] wbs_dat_o,
+    input  wire wb_clk_i,
+    input  wire wb_rst_i,
+    input  wire wbs_stb_i,
+    input  wire wbs_cyc_i,
+    input  wire wbs_we_i,
+    input  wire [3:0] wbs_sel_i,
+    input  wire [31:0] wbs_dat_i,
+    input  wire [31:0] wbs_adr_i,
+    output wire wbs_ack_o,
+    output wire [31:0] wbs_dat_o,
 
     // Logic Analyzer Signals
-    input  [127:0] la_data_in,
-    output [127:0] la_data_out,
-    input  [127:0] la_oenb,
+    input  wire [127:0] la_data_in,
+    output wire [127:0] la_data_out,
+    input  wire [127:0] la_oenb,
 
     // IOs
-    input  [`MPRJ_IO_PADS-1:0] io_in,
-    output [`MPRJ_IO_PADS-1:0] io_out,
-    output [`MPRJ_IO_PADS-1:0] io_oeb,
+    input  wire [`MPRJ_IO_PADS-1:0] io_in,
+    output reg  [`MPRJ_IO_PADS-1:0] io_out,
+    output reg  [`MPRJ_IO_PADS-1:0] io_oeb,
 
     // Analog (direct connection to GPIO pad---use with caution)
     // Note that analog I/O is not available on the 7 lowest-numbered
     // GPIO pads, and so the analog_io indexing is offset from the
     // GPIO indexing by 7 (also upper 2 GPIOs do not have analog_io).
-    inout [`MPRJ_IO_PADS-10:0] analog_io,
+    inout wire [`MPRJ_IO_PADS-10:0] analog_io,
 
     // Independent clock (on independent integer divider)
-    input   user_clock2,
+    input wire user_clock2,
 
     // User maskable interrupt signals
-    output [2:0] user_irq
+    output wire [2:0] user_irq
 );
 
+    assign wbs_ack_o = 0;
+    assign wbs_dat_o = 0;
+
+    assign la_data_out = 0;
+
+    assign user_irq = 0;
+
+    wire clk, nrst;
+    assign clk = wb_clk_i;
+    assign nrst = !wb_rst_i;
+
     wire [`BUS_MIPORT] mportai;
-    wire [`BUS_MOPORT] mportao;
+    reg  [`BUS_MOPORT] mportao;
 
     wire [`BUS_SIPORT] sportai;
     wire [`BUS_SOPORT] sportao;
-
-    assign mportao = la_data_in[0+:`BUS_SIPORT_SIZE];
-    assign la_data_out[0+:`BUS_SOPORT_SIZE] = mportai;
 
     busarb_m #(1, 1, 1) arbiter(
         .clk_i(clk),
@@ -101,11 +109,15 @@ module user_project_wrapper #(
     wire spi_clk;
     wire spi_cs;
     wire [3:0] spi_mosi;
-    wire [3:0] spi_miso;
-    wire spi_dqsmi;
+    reg  [3:0] spi_miso;
+    reg  spi_dqsmi;
     wire spi_dqsmo;
+    wire [3:0] spi_sio_en;
+    wire spi_dqsm_en;
 
-    reg [7:0] test_mem[1023:0];
+    wire debug;
+
+    assign debug = spi_dqsm_en;
 
     spi_mem_m #(0, 1024) spi_mem(
         .clk_i(clk),
@@ -119,13 +131,81 @@ module user_project_wrapper #(
         .spi_mosi_o(spi_mosi),
         .spi_miso_i(spi_miso),
         .spi_dqsm_i(spi_dqsmi),
-        .spi_dqsm_o(spi_dqsmo)
+        .spi_dqsm_o(spi_dqsmo),
+
+        .spi_sio_en_o(spi_sio_en),
+        .spi_dqsm_en_o(spi_dqsm_en)
     );
 
-    
+    reg [7:0] state;
 
-    assign io_out = {spi_clk, spi_cs, spi_mosi, spi_dqsmo};
-    assign {spi_miso, spi_dqsmi} = io_in;
+    always @(posedge clk, negedge nrst) begin
+        if (!nrst) begin
+            state <= 0;
+
+            mportao <= 0;
+        end
+        else if (clk) begin
+            case (state)
+                0: begin
+                    if (mportai[`BUS_MI_ACK]) state <= 1;
+
+                    mportao[`BUS_MO_ADDR] <= 10;
+                    mportao[`BUS_MO_DATA] <= 1;
+                    mportao[`BUS_MO_SIZE] <= `BUS_SIZE_BYTE;
+                    mportao[`BUS_MO_RW]   <= `BUS_WRITE;
+                    mportao[`BUS_MO_REQ]  <= 1;
+                end
+
+                1: begin
+                    if (!mportai[`BUS_MI_ACK]) begin
+                        state <= 2;
+
+                        mportao[`BUS_MO_REQ]  <= 0;
+                    end
+                end
+
+                2: begin
+                    if (mportai[`BUS_MI_ACK]) state <= 3;
+
+                    mportao[`BUS_MO_ADDR] <= 10;
+                    mportao[`BUS_MO_SIZE] <= `BUS_SIZE_BYTE;
+                    mportao[`BUS_MO_RW]   <= `BUS_READ;
+                    mportao[`BUS_MO_REQ]  <= 1;
+                end
+
+                3: begin
+                    if (!mportai[`BUS_MI_ACK]) begin
+                        state <= 4;
+
+                        mportao[`BUS_MO_REQ]  <= 0;
+                    end
+                end
+
+                4: begin
+                    state <= 0;
+                end
+            endcase
+        end
+    end
+
+    always @(*) begin
+        io_oeb <= 0;
+        io_out <= 0;
+
+        io_oeb[27:24] <= spi_sio_en;
+        io_oeb[30]    <= spi_dqsm_en;
+
+        io_out[27:24] <= spi_mosi;
+        io_out[28]    <= spi_cs;
+        io_out[29]    <= spi_clk;
+        io_out[30]    <= spi_dqsmo;
+
+        io_out[31]    <= debug;
+
+        spi_miso  <= io_in[27:24];
+        spi_dqsmi <= io_in[30];
+    end
 
 endmodule	// user_project_wrapper
 

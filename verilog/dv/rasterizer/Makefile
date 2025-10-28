@@ -28,4 +28,6 @@ include $(MCW_ROOT)/verilog/dv/make/var.makefile
 include $(MCW_ROOT)/verilog/dv/make/cpu.makefile
 include $(MCW_ROOT)/verilog/dv/make/sim.makefile
 
+LIBRARY_DIR := $(PWDD)/../../../library
+include $(LIBRARY_DIR)/firmware_vexriscv/verilog/dv/make/lib-overrides.makefile
 

@@ -14,3 +14,23 @@ export SALT_LICENSE_SERVER=1717@io.ece.iastate.edu
 # Sets up search paths
 RTL_PATH=$(realpath $(pwd)/../verilog/rtl)
 echo +incdir+${RTL_PATH} > ./unit_tests/rtl.f
+
+# Sets up unit test path
+export UNIT_TEST_PATH=$(pwd)/unit_tests
+
+# Run test
+# Usage: cf_run_svunit [name_of_unit_test.sv]
+cf_run_svunit() {
+    cd ${UNIT_TEST_PATH}
+    runSVUnit -s questa -f rtl.f -t "$1"
+    cd - >/dev/null
+}
+
+# Run test and output waves to WLF file
+# Usage: cf_run_svunit_waves [name_of_unit_test.sv] [name_of_test]
+# Ex: cf_run_svunit_waves vga_unit_test.sv vga_ut
+cf_run_svunit_waves() {
+    cd ${UNIT_TEST_PATH}
+    runSVUnit -s questa -f rtl.f -r "-voptargs=+acc" -r "-do \"add log sim:/testrunner/__ts/$2/*\"" -t "$1"
+    cd - >/dev/null
+}

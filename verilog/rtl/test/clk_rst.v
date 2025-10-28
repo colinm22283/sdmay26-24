@@ -1,15 +1,15 @@
 module clk_rst_m #(
-  parameter CLK_PER = 10,
+  parameter CLK_PER = 20,
   parameter RESET_PER = 30
 ) (
   output reg clk_o,
   output reg nrst_o
 );
 
+  integer current_cycle;
+
   initial begin
-    nrst_o = 0;
-    #RESET_PER;
-    nrst_o = 1;
+    RESET();
   end
 
   initial forever begin
@@ -17,10 +17,14 @@ module clk_rst_m #(
     #(CLK_PER / 2);
     clk_o = 1;
     #(CLK_PER / 2);
+
+    current_cycle = current_cycle + 1;
   end
 
   task RESET;
   begin
+    current_cycle = 0;
+
     nrst_o = 0;
     #RESET_PER;
     nrst_o = 1;

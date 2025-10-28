@@ -1,17 +1,9 @@
-module mem_write_m #(
-    parameter WORD_WIDTH = 32,
-    parameter SC_WIDTH = 32,
-
-    parameter WIDTH = 320,
-    parameter HEIGHT = 240,
-
-    parameter WORD_SMAX = 1 << (WORD_WIDTH - 2)
-) (
+module mem_write_m(
     input wire clk_i,
     input wire nrst_i,
 
-    input  wire [`STREAM_SIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] sstream_i,
-    output wire [`STREAM_SOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] sstream_o,
+    input  wire [`STREAM_SIPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] sstream_i,
+    output wire [`STREAM_SOPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] sstream_o,
 
     input  wire [`BUS_MIPORT] mport_i,
     output reg  [`BUS_MOPORT] mport_o,
@@ -19,9 +11,9 @@ module mem_write_m #(
     input wire [7:0] color_i
 );
 
-    reg [SC_WIDTH - 1:0] posx, posy;
-    reg [WORD_WIDTH - 1:0] tx, ty;
-    reg [WORD_WIDTH - 1:0] depth;
+    reg [`SC_WIDTH - 1:0] posx, posy;
+    reg [`WORD_WIDTH - 1:0] tx, ty;
+    reg [`WORD_WIDTH - 1:0] depth;
 
     reg [7:0] state;
 
@@ -34,10 +26,10 @@ module mem_write_m #(
         else if (clk_i) begin
             case (state)
                 0: begin
-                    if (sstream_i[`STREAM_SI_VALID(SC_WIDTH * 2 + WORD_WIDTH * 3)]) begin
-                        state <= 3;
+                    if (sstream_i[`STREAM_SI_VALID(`SC_WIDTH * 2 + `WORD_WIDTH * 3)]) begin
+                        state <= 1;
 
-                        { posx, posy, tx, ty, depth } <= sstream_i[`STREAM_SI_DATA(SC_WIDTH * 2 + WORD_WIDTH * 3)];
+                        { posx, posy, tx, ty, depth } <= sstream_i[`STREAM_SI_DATA(`SC_WIDTH * 2 + `WORD_WIDTH * 3)];
                     end
                 end
 
@@ -45,10 +37,10 @@ module mem_write_m #(
                     if (mport_i[`BUS_MI_ACK]) begin
                         state <= 2;
 
-                        $display("(%d, %d): 0x%h", posx, posy, 4 * (posy * WIDTH + posx));
+                        $display("(%d, %d): 0x%h", posx, posy, 4 * (posy * `WIDTH + posx));
                     end
 
-                    mport_o[`BUS_MO_ADDR] <= `ADDR_DEPTH_BUFFER + 4 * (posy * WIDTH + posx);
+                    mport_o[`BUS_MO_ADDR] <= `ADDR_DEPTH_BUFFER + 4 * (posy * `WIDTH + posx);
 
                     mport_o[`BUS_MO_RW]   <= `BUS_READ;
                     mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_WORD;
@@ -71,10 +63,10 @@ module mem_write_m #(
                     if (mport_i[`BUS_MI_ACK]) begin
                         state <= 4;
 
-                        $display("(%d, %d): 0x%h", posx, posy, 4 * (posy * WIDTH + posx));
+                        $display("(%d, %d): 0x%h", posx, posy, 4 * (posy * `WIDTH + posx));
                     end
 
-                    mport_o[`BUS_MO_ADDR] <= `ADDR_DEPTH_BUFFER + 4 * (posy * WIDTH + posx);
+                    mport_o[`BUS_MO_ADDR] <= `ADDR_DEPTH_BUFFER + 4 * (posy * `WIDTH + posx);
                     mport_o[`BUS_MO_DATA] <= depth;
 
                     mport_o[`BUS_MO_RW]   <= `BUS_WRITE;
@@ -97,7 +89,7 @@ module mem_write_m #(
                         state <= 6;
                     end
 
-                    mport_o[`BUS_MO_ADDR] <= posy * WIDTH + posx;
+                    mport_o[`BUS_MO_ADDR] <= posy * `WIDTH + posx;
                     mport_o[`BUS_MO_DATA] <= color_i;
 
                     mport_o[`BUS_MO_RW]   <= `BUS_WRITE;
@@ -117,6 +109,6 @@ module mem_write_m #(
         end
     end
 
-    assign sstream_o[`STREAM_SO_READY(SC_WIDTH * 2 + WORD_WIDTH * 3)] = state == 0;
+    assign sstream_o[`STREAM_SO_READY(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] = state == 0;
 
 endmodule

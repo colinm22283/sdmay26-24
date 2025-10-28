@@ -1,12 +1,4 @@
-module bary_pipe_m #(
-    parameter WORD_WIDTH = 32,
-    parameter WIDTH = 320,
-    parameter HEIGHT = 240,
-
-    parameter WORD_SMAX = 1 << (WORD_WIDTH - 2),
-
-    parameter SC_WIDTH = $clog2(WIDTH > HEIGHT ? WIDTH : HEIGHT)
-) (
+module bary_pipe_m(
     input wire clk_i,
     input wire nrst_i,
 
@@ -15,21 +7,21 @@ module bary_pipe_m #(
     output reg discard_o,
     output wire busy_o,
 
-    input  wire [`STREAM_SIPORT(SC_WIDTH * 2)] sstream_i,
-    output wire [`STREAM_SOPORT(SC_WIDTH * 2)] sstream_o,
+    input  wire [`STREAM_SIPORT(`SC_WIDTH * 2)] sstream_i,
+    output wire [`STREAM_SOPORT(`SC_WIDTH * 2)] sstream_o,
 
-    input  wire [`STREAM_MIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] mstream_i,
-    output reg  [`STREAM_MOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] mstream_o,
+    input  wire [`STREAM_MIPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] mstream_i,
+    output reg  [`STREAM_MOPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] mstream_o,
 
-    input wire signed [WORD_WIDTH - 1:0] v0x,
-    input wire signed [WORD_WIDTH - 1:0] v0y,
-    input wire signed [WORD_WIDTH - 1:0] v0z,
-    input wire signed [WORD_WIDTH - 1:0] v1x,
-    input wire signed [WORD_WIDTH - 1:0] v1y,
-    input wire signed [WORD_WIDTH - 1:0] v1z,
-    input wire signed [WORD_WIDTH - 1:0] v2x,
-    input wire signed [WORD_WIDTH - 1:0] v2y,
-    input wire signed [WORD_WIDTH - 1:0] v2z
+    input wire signed [`WORD_WIDTH - 1:0] v0x,
+    input wire signed [`WORD_WIDTH - 1:0] v0y,
+    input wire signed [`WORD_WIDTH - 1:0] v0z,
+    input wire signed [`WORD_WIDTH - 1:0] v1x,
+    input wire signed [`WORD_WIDTH - 1:0] v1y,
+    input wire signed [`WORD_WIDTH - 1:0] v1z,
+    input wire signed [`WORD_WIDTH - 1:0] v2x,
+    input wire signed [`WORD_WIDTH - 1:0] v2y,
+    input wire signed [`WORD_WIDTH - 1:0] v2z
 );
 
     localparam STATE_READY     = 5'b00000;
@@ -58,37 +50,32 @@ module bary_pipe_m #(
 
     reg last;
 
-    reg  signed [WORD_WIDTH - 1:0] a1a; reg  signed [WORD_WIDTH - 1:0] a1b;
-    wire signed [WORD_WIDTH - 1:0] a1y;
-    add_m #(WORD_WIDTH) add1( .a_i(a1a), .b_i(a1b), .y_o(a1y) );
+    reg  signed [`WORD_WIDTH - 1:0] a1a; reg  signed [`WORD_WIDTH - 1:0] a1b;
+    wire signed [`WORD_WIDTH - 1:0] a1y;
+    add_m #(`WORD_WIDTH) add1( .a_i(a1a), .b_i(a1b), .y_o(a1y) );
 
-    reg  signed [WORD_WIDTH - 1:0] s1a; reg  signed [WORD_WIDTH - 1:0] s1b;
-    wire signed [WORD_WIDTH - 1:0] s1y;
-    sub_m #(WORD_WIDTH) sub1( .a_i(s1a), .b_i(s1b), .y_o(s1y) );
+    reg  signed [`WORD_WIDTH - 1:0] s1a; reg  signed [`WORD_WIDTH - 1:0] s1b;
+    wire signed [`WORD_WIDTH - 1:0] s1y;
+    sub_m #(`WORD_WIDTH) sub1( .a_i(s1a), .b_i(s1b), .y_o(s1y) );
 
-    reg  signed [WORD_WIDTH - 1:0] m1a; reg  signed [WORD_WIDTH - 1:0] m1b;
-    wire signed [WORD_WIDTH - 1:0] m1y;
-    mul_m #(WORD_WIDTH) mul1( .a_i(m1a), .b_i(m1b), .y_o(m1y) );
+    reg  signed [`WORD_WIDTH - 1:0] m1a; reg  signed [`WORD_WIDTH - 1:0] m1b;
+    wire signed [`WORD_WIDTH - 1:0] m1y;
+    mul_m #(`WORD_WIDTH) mul1( .a_i(m1a), .b_i(m1b), .y_o(m1y) );
 
-    wire signed [WORD_WIDTH - 1:0] i1a;
-    wire signed [WORD_WIDTH - 1:0] i1y;
-    inv_m #(WORD_WIDTH) inv1( .a_i(i1a), .y_o(i1y) );
+    reg  signed [`WORD_WIDTH - 1:0] d1a, d1b;
+    wire signed [`WORD_WIDTH - 1:0] d1y;
+    div_m #(`WORD_WIDTH) div1( .a_i(d1a), .b_i(d1b), .y_o(d1y) );
 
-    reg [SC_WIDTH - 1:0] posx, posy;
+    reg [`SC_WIDTH - 1:0] posx, posy;
 
-    reg signed [WORD_WIDTH - 1:0] y1my2, x2mx1, x0mx2, y0my2, x2mx0, y2my0, x1mx0;
-    reg signed [WORD_WIDTH - 1:0] y1py0, y2py1, y0py2;
+    reg signed [`WORD_WIDTH - 1:0] y1my0, y1my2, x2mx1, x0mx2, y0my2, x2mx0, y2my0, x1mx0;
 
-    reg signed [WORD_WIDTH - 1:0] temp1;
-    reg signed [WORD_WIDTH - 1:0] temp2;
+    reg signed [`WORD_WIDTH - 1:0] temp1;
+    reg signed [`WORD_WIDTH - 1:0] temp2;
 
-    reg signed [WORD_WIDTH - 1:0] det_t;
+    reg signed [`WORD_WIDTH - 1:0] det_t;
 
-    reg signed [WORD_WIDTH - 1:0] inv_det_t;
-
-    reg signed [WORD_WIDTH - 1:0] l0, l1,l2;
-
-    assign i1a = det_t;
+    reg signed [`WORD_WIDTH - 1:0] l0, l1,l2;
 
     assign busy_o = state != STATE_READY && state != STATE_DONE;
 
@@ -104,6 +91,7 @@ module bary_pipe_m #(
             posx <= 0;
             posy <= 0;
 
+            y1my0 <= 0;
             y1my2 <= 0;
             x2mx1 <= 0;
             y0my2 <= 0;
@@ -111,15 +99,10 @@ module bary_pipe_m #(
             y2my0 <= 0;
             x0mx2 <= 0;
             x1mx0 <= 0;
-            y1py0 <= 0;
-            y2py1 <= 0;
-            y0py2 <= 0;
 
-            inv_det_t <= 0;
-
-            l0 <= WORD_SMAX;
-            l1 <= WORD_SMAX;
-            l2 <= WORD_SMAX;
+            l0 <= `WORD_SMAX;
+            l1 <= `WORD_SMAX;
+            l2 <= `WORD_SMAX;
         end
         else if (clk_i) begin
             case (state)
@@ -129,9 +112,6 @@ module bary_pipe_m #(
 
                         s1a <= v1y;
                         s1b <= v2y;
-
-                        a1a <= v1y;
-                        a1b <= v0y;
                     end
 
                     init_o <= 0;
@@ -145,11 +125,6 @@ module bary_pipe_m #(
 
                     s1a <= v0x;
                     s1b <= v2x;
-
-                    y1py0 <= a1y;
-
-                    a1a <= v2y;
-                    a1b <= v1y;
                 end
 
                 STATE_SETUP2: begin
@@ -162,11 +137,6 @@ module bary_pipe_m #(
 
                     m1a <= y1my2;
                     m1b <= s1y;
-
-                    y2py1 <= a1y;
-
-                    a1a <= v0y;
-                    a1b <= v2y;
                 end
 
                 STATE_SETUP3: begin
@@ -178,11 +148,6 @@ module bary_pipe_m #(
                     s1b <= v2y;
 
                     temp1 <= m1y;
-
-                    m1a <= x0mx2;
-                    m1b <= a1y;
-
-                    y0py2 <= a1y;
                 end
 
                 STATE_SETUP4: begin
@@ -193,8 +158,6 @@ module bary_pipe_m #(
                     s1a <= v1x;
                     s1b <= v0x;
 
-                    temp2 <= m1y; // 0-2
-
                     m1a <= x2mx1;
                     m1b <= s1y;
                 end
@@ -204,72 +167,74 @@ module bary_pipe_m #(
 
                     x1mx0 <= s1y;
 
-                    s1a <= v2x;
-                    s1b <= v0x;
+                    s1a <= v1y;
+                    s1b <= v0y;
 
                     a1a <= temp1;
                     a1b <= m1y;
 
                     m1a <= s1y;
-                    m1b <= y1py0;
+                    m1b <= y1my2;
                 end
 
                 STATE_SETUP6: begin
                     state <= STATE_SETUP7;
 
-                    x2mx0 <= s1y;
-
-                    s1a <= v2y;
-                    s1b <= v0y;
+                    y1my0 <= s1y;
                     
                     det_t <= a1y;
 
-                    a1a <= temp2;
-                    a1b <= m1y; // 1-0
+                    s1a <= v2x;
+                    s1b <= v0x;
 
-                    m1a <= x2mx1;
-                    m1b <= y2py1;
+                    a1b <= m1y;
+
+                    m1a <= s1y;
+                    m1b <= x2mx1;
                 end
 
                 STATE_SETUP7: begin
                     state <= STATE_SETUP8;
 
-                    y2my0 <= s1y;
-                    a1a <= a1y;
-                    a1b <= m1y; // 2-1
-                    
-                    inv_det_t <= i1y;
+                    x2mx0 <= s1y;
+
+                    s1a <= v2y;
+                    s1b <= v0y;
+
+                    a1a <= m1y;
                 end
 
                 STATE_SETUP8: begin
                     init_o <= 1;
 
+                    y2my0 <= s1y;
+
                     if (a1y < 0) state <= STATE_AWAIT_POS;
                     else begin
-                        state <= STATE_READY;
+                        state <= STATE_DONE;
 
                         discard_o <= 1;
                     end
                 end
 
                 STATE_AWAIT_POS: begin : AWAIT_POS
-                    reg [SC_WIDTH * 2 - 1:0] input_data;
-                    reg [WORD_WIDTH - 1:0] posx_extended, posy_extended;
+                    reg [`SC_WIDTH * 2 - 1:0] input_data;
+                    reg [`WORD_WIDTH - 1:0] posx_extended, posy_extended;
 
-                    input_data = sstream_i[`STREAM_SI_DATA(SC_WIDTH * 2)];
+                    input_data = sstream_i[`STREAM_SI_DATA(`SC_WIDTH * 2)];
 
-                    posx = input_data[SC_WIDTH * 1+:SC_WIDTH];
-                    posy = input_data[SC_WIDTH * 0+:SC_WIDTH];
+                    posx = input_data[`SC_WIDTH * 1+:`SC_WIDTH];
+                    posy = input_data[`SC_WIDTH * 0+:`SC_WIDTH];
                     posx_extended = posx;
                     posy_extended = posy;
                 
-                    if (sstream_i[`STREAM_SI_VALID(SC_WIDTH * 2)]) begin
+                    if (sstream_i[`STREAM_SI_VALID(`SC_WIDTH * 2)]) begin
                         state <= STATE_RUN1;
 
-                        last <= sstream_i[`STREAM_SI_LAST(SC_WIDTH * 2)];
+                        last <= sstream_i[`STREAM_SI_LAST(`SC_WIDTH * 2)];
                     end
 
-                    s1a <= posx_extended << `DECIMAL_POS;
+                    s1a <= $signed(posx_extended << `DECIMAL_POS);
                     s1b <= v2x;
 
                     temp1 <= posy_extended << `DECIMAL_POS;
@@ -310,14 +275,14 @@ module bary_pipe_m #(
 
                     a1a <= m1y;
 
-                    m1a <= a1y;
-                    m1b <= inv_det_t;
+                    d1a <= a1y;
+                    d1b <= det_t;
                 end
 
                 STATE_RUN5: begin
                     state <= STATE_RUN6;
                     
-                    l0 <= m1y;
+                    l0 <= d1y;
 
                     m1a <= x0mx2;
                     m1b <= s1y;
@@ -335,35 +300,35 @@ module bary_pipe_m #(
                 STATE_RUN7: begin
                     state <= STATE_RUN8;
 
-                    m1a <= a1y;
-                    m1b <= inv_det_t;
+                    d1a <= a1y;
+                    d1b <= det_t;
                 end
 
                 STATE_RUN8: begin
                     state <= STATE_RUN9;
 
-                    l1 <= m1y;
+                    l1 <= d1y;
 
                     s1a <= s1y;
-                    s1b <= m1y;
+                    s1b <= d1y;
                 end
 
                 STATE_RUN9: begin
                     state <= STATE_COMPLETE;
 
-                    mstream_o[`STREAM_MO_VALID(SC_WIDTH * 2 + WORD_WIDTH * 3)] <= 1;
+                    mstream_o[`STREAM_MO_VALID(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] <= 1;
 
-                    mstream_o[`STREAM_MO_DATA(SC_WIDTH * 2 + WORD_WIDTH * 3)] <= { posx, posy, l0, l1, s1y };
+                    mstream_o[`STREAM_MO_DATA(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] <= { posx, posy, l0, l1, s1y };
 
                     l2 <= s1y;
                 end
 
                 STATE_COMPLETE: begin
-                    if (mstream_i[`STREAM_MI_READY(SC_WIDTH * 2 + WORD_WIDTH * 3)]) begin
+                    if (mstream_i[`STREAM_MI_READY(`SC_WIDTH * 2 + `WORD_WIDTH * 3)]) begin
                         if (last) state <= STATE_DONE;
                         else state <= STATE_AWAIT_POS;
 
-                        mstream_o[`STREAM_MO_VALID(SC_WIDTH * 2 + WORD_WIDTH * 3)] <= 0;
+                        mstream_o[`STREAM_MO_VALID(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] <= 0;
                     end
                 end
 
@@ -375,6 +340,6 @@ module bary_pipe_m #(
         end
     end
 
-    assign sstream_o[`STREAM_SO_READY(SC_WIDTH * 2)] = state == STATE_AWAIT_POS;
+    assign sstream_o[`STREAM_SO_READY(`SC_WIDTH * 2)] = state == STATE_AWAIT_POS;
 
 endmodule

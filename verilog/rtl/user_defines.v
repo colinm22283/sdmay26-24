@@ -91,8 +91,15 @@
 
 `endif // __USER_DEFINES_H
 
+`define WIDTH (320)
+`define HEIGHT (200)
+
+`define SC_WIDTH ($clog2((`WIDTH) > (`HEIGHT) ? (`WIDTH) : (`HEIGHT)))
+
 `define WORD_WIDTH (32)
-`define DECIMAL_POS (16)
+`define DECIMAL_POS (10)
+
+`define WORD_SMAX (1 << (`WORD_WIDTH - 2))
 
 `define BUS_ADDR_SIZE (32)
 `define BUS_ADDR_PORT (`BUS_ADDR_SIZE - 1):0

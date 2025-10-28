@@ -9,7 +9,7 @@ module busarb_2_2(
     output reg  [(`BUS_SIPORT_SIZE * 4) - 1:0] sports_o
 );
 
-    busarb_m #(4, 4, 1) arbiter(
+    busarb_m #(4, 4, 4) arbiter(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 

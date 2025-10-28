@@ -1,25 +1,19 @@
-module bary_check_pipe_m #(
-    parameter WORD_WIDTH = 32,
-
-    parameter SC_WIDTH = 32,
-
-    parameter WORD_SMAX = 1 << (WORD_WIDTH - 2)
-) (
+module bary_check_pipe_m(
     input wire clk_i,
     input wire nrst_i,
 
-    input  wire [`STREAM_SIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] sstream_i,
-    output wire [`STREAM_SOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] sstream_o,
+    input  wire [`STREAM_SIPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] sstream_i,
+    output wire [`STREAM_SOPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] sstream_o,
 
-    input  wire [`STREAM_MIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] mstream_i,
-    output reg  [`STREAM_MOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] mstream_o
+    input  wire [`STREAM_MIPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] mstream_i,
+    output reg  [`STREAM_MOPORT(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] mstream_o
 );
 
-    wire [2 * SC_WIDTH + 3 * WORD_WIDTH - 1:0] in_data;
-    wire [SC_WIDTH - 1:0] posx, posy;
-    wire signed [WORD_WIDTH - 1:0] l0, l1, l2;
+    wire [2 * `SC_WIDTH + 3 * `WORD_WIDTH - 1:0] in_data;
+    wire [`SC_WIDTH - 1:0] posx, posy;
+    wire signed [`WORD_WIDTH - 1:0] l0, l1, l2;
 
-    assign in_data = sstream_i[`STREAM_SI_DATA(SC_WIDTH * 2 + WORD_WIDTH * 3)];
+    assign in_data = sstream_i[`STREAM_SI_DATA(`SC_WIDTH * 2 + `WORD_WIDTH * 3)];
     assign { posx, posy, l0, l1, l2 } = in_data;
 
     assign sstream_o = mstream_i;

@@ -72,6 +72,7 @@
                                 reg [31:0] abs; \
                                 if ($signed(color) < 0) abs = -$signed(color); \
                                 else abs = color; \
+                                abs = color; \
                                 r = abs[31:24]; \
                                 g = r; \
                                 b = r; \

@@ -6,11 +6,30 @@ module word_stripe_cache_m #(
     input wire nrst_i,
 
     input  wire [`BUS_MOPORT] cached_mport_i,
-    output reg  [`BUS_MIPORT] cached_mport_o,
+    output wire [`BUS_MIPORT] cached_mport_o,
 
     input  wire [`BUS_MIPORT] mport_i,
-    output reg  [`BUS_MOPORT] mport_o
+    output wire [`BUS_MOPORT] mport_o
 );
+
+
+    wire [`BUS_MOPORT] cached_mporti;
+    reg [`BUS_MIPORT] cached_mporto;
+
+    wire [`BUS_MIPORT] mporti;
+    reg [`BUS_MOPORT] mporto;
+
+    assign mporti = cached_mport_i[`BUS_MO_SIZE] == `BUS_SIZE_WORD ? mport_i : 0;
+    assign cached_mporti = cached_mport_i[`BUS_MO_SIZE] == `BUS_SIZE_WORD ? cached_mport_i : 0;
+
+    assign mport_o = cached_mport_i[`BUS_MO_SIZE] == `BUS_SIZE_WORD ? mporto : cached_mport_i;
+    assign cached_mport_o = cached_mport_i[`BUS_MO_SIZE] == `BUS_SIZE_WORD ? cached_mporto : mport_i;
+
+    // assign mporti = mport_i;
+    // assign cached_mporti = cached_mport_i;
+
+    // assign mport_o = mporto;
+    // assign cached_mport_o = cached_mporto;
 
     localparam STATE_READY       = 3'b000;
     localparam STATE_WRITE       = 3'b001;
@@ -40,8 +59,8 @@ module word_stripe_cache_m #(
         if (!nrst_i) begin
             state <= STATE_READY;
 
-            cached_mport_o <= 0;
-            mport_o <= 0;
+            cached_mporto <= 0;
+            mporto <= 0;
 
             write_stripe_addr  <= 0;
             write_stripe_size  <= 0;
@@ -62,34 +81,34 @@ module word_stripe_cache_m #(
                         write_stripe_index <= 0;
                     end
                     else begin
-                        if (cached_mport_i[`BUS_MO_REQ]) begin
-                            if (cached_mport_i[`BUS_MO_RW] == `BUS_READ) begin
-                                if (cached_mport_i[`BUS_MO_SIZE] != `BUS_SIZE_WORD) begin
+                        if (cached_mporti[`BUS_MO_REQ]) begin
+                            if (cached_mporti[`BUS_MO_RW] == `BUS_READ) begin
+                                if (cached_mporti[`BUS_MO_SIZE] != `BUS_SIZE_WORD) begin
                                     state <= STATE_PASSTHROUGH;
                                 end
                                 else begin
                                     if (
-                                        cached_mport_i[`BUS_MO_ADDR] - read_stripe_addr >= READ_STRIPE_SIZE * 4
+                                        cached_mporti[`BUS_MO_ADDR] - read_stripe_addr >= READ_STRIPE_SIZE * 4
                                     ) begin
                                         state <= STATE_READ_PREP;
                                         
-                                        read_stripe_addr <= cached_mport_i[`BUS_MO_ADDR];
+                                        read_stripe_addr <= cached_mporti[`BUS_MO_ADDR];
                                         read_stripe_index <= 0;
                                     end
                                     else begin
                                         state <= STATE_READ;
 
-                                        cached_mport_o[`BUS_MI_ACK] <= 1;
+                                        cached_mporto[`BUS_MI_ACK] <= 1;
                                     end
                                 end
                             end
                             else begin
-                                if (cached_mport_i[`BUS_MO_SIZE] != `BUS_SIZE_WORD) begin
+                                if (cached_mporti[`BUS_MO_SIZE] != `BUS_SIZE_WORD) begin
                                     state <= STATE_PASSTHROUGH;
                                 end
                                 else begin
                                     if (
-                                        cached_mport_i[`BUS_MO_ADDR] != write_stripe_addr + (write_stripe_size * 4) &&
+                                        cached_mporti[`BUS_MO_ADDR] != write_stripe_addr + (write_stripe_size * 4) &&
                                         write_stripe_size != 0
                                     ) begin
                                         state <= STATE_WRITE_FLUSH;
@@ -99,9 +118,9 @@ module word_stripe_cache_m #(
                                     else begin
                                         state <= STATE_WRITE;
 
-                                        if (write_stripe_size == 0) write_stripe_addr <= cached_mport_i[`BUS_MO_ADDR];
+                                        if (write_stripe_size == 0) write_stripe_addr <= cached_mporti[`BUS_MO_ADDR];
 
-                                        cached_mport_o[`BUS_MI_ACK] <= 1;
+                                        cached_mporto[`BUS_MI_ACK] <= 1;
                                     end
                                 end
                             end
@@ -112,7 +131,7 @@ module word_stripe_cache_m #(
                 STATE_WRITE: begin
                     state <= STATE_DONE;
 
-                    write_stripe[write_stripe_size] <= cached_mport_i[`BUS_MO_DATA];
+                    write_stripe[write_stripe_size] <= cached_mporti[`BUS_MO_DATA];
 
                     write_stripe_size <= write_stripe_size + 1;
                 end
@@ -120,22 +139,22 @@ module word_stripe_cache_m #(
                 STATE_WRITE_FLUSH: begin
                     case (write_stripe_state)
                         0: begin
-                            if (mport_i[`BUS_MI_ACK]) begin
+                            if (mporti[`BUS_MI_ACK]) begin
                                 write_stripe_state <= 1;
 
                                 write_stripe_index <= write_stripe_index + 1;
                             end
 
-                            mport_o[`BUS_MO_ADDR] <= write_stripe_addr;
-                            mport_o[`BUS_MO_DATA] <= write_stripe[write_stripe_index];
-                            mport_o[`BUS_MO_RW]   <= `BUS_WRITE;
-                            mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_STREAM;
+                            mporto[`BUS_MO_ADDR] <= write_stripe_addr;
+                            mporto[`BUS_MO_DATA] <= write_stripe[write_stripe_index];
+                            mporto[`BUS_MO_RW]   <= `BUS_WRITE;
+                            mporto[`BUS_MO_SIZE] <= `BUS_SIZE_STREAM;
 
-                            mport_o[`BUS_MO_REQ] <= 1;
+                            mporto[`BUS_MO_REQ] <= 1;
                         end
 
                         1: begin
-                            if (mport_i[`BUS_MI_SEQSLV]) begin
+                            if (mporti[`BUS_MI_SEQSLV]) begin
                                 if (write_stripe_index == write_stripe_size) begin
                                     write_stripe_state <= 3;
                                 end
@@ -143,7 +162,7 @@ module word_stripe_cache_m #(
                                     write_stripe_state <= 2;
 
                                     $display("Attempt write 0x%h", write_stripe[write_stripe_index]);
-                                    mport_o[`BUS_MO_DATA] <= write_stripe[write_stripe_index];
+                                    mporto[`BUS_MO_DATA] <= write_stripe[write_stripe_index];
                                 end
                             end
                         end
@@ -155,12 +174,12 @@ module word_stripe_cache_m #(
                         end
 
                         3: begin
-                            if (!mport_i[`BUS_MI_ACK]) begin
+                            if (!mporti[`BUS_MI_ACK]) begin
                                 state <= STATE_READY;
                                 write_stripe_state <= 0;
                             end
 
-                            mport_o[`BUS_MO_REQ] <= 0;
+                            mporto[`BUS_MO_REQ] <= 0;
 
                             write_stripe_size <= 0;
                         end
@@ -170,29 +189,29 @@ module word_stripe_cache_m #(
                 STATE_READ: begin
                     state <= STATE_DONE;
 
-                    cached_mport_o[`BUS_MO_DATA] <= read_stripe[(cached_mport_i[`BUS_MO_ADDR] - read_stripe_addr) / 4];
+                    cached_mporto[`BUS_MO_DATA] <= read_stripe[(cached_mporti[`BUS_MO_ADDR] - read_stripe_addr) / 4];
                 end
 
                 STATE_READ_PREP: begin
                     case (read_stripe_state)
                         0: begin
-                            if (mport_i[`BUS_MI_ACK]) begin
+                            if (mporti[`BUS_MI_ACK]) begin
                                 read_stripe_state <= 1;
                             end
 
-                            mport_o[`BUS_MO_ADDR] <= read_stripe_addr;
-                            mport_o[`BUS_MO_RW]   <= `BUS_READ;
-                            mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_STREAM;
+                            mporto[`BUS_MO_ADDR] <= read_stripe_addr;
+                            mporto[`BUS_MO_RW]   <= `BUS_READ;
+                            mporto[`BUS_MO_SIZE] <= `BUS_SIZE_STREAM;
 
-                            mport_o[`BUS_MO_REQ] <= 1;
+                            mporto[`BUS_MO_REQ] <= 1;
                         end
 
                         1: begin
-                            if (mport_i[`BUS_MI_SEQSLV]) begin
+                            if (mporti[`BUS_MI_SEQSLV]) begin
                                 if (read_stripe_index == READ_STRIPE_SIZE - 1) begin
                                     read_stripe_state <= 3;
 
-                                    mport_o[`BUS_MO_REQ] <= 0;
+                                    mporto[`BUS_MO_REQ] <= 0;
                                 end
                                 else begin
                                     read_stripe_state <= 2;
@@ -200,18 +219,18 @@ module word_stripe_cache_m #(
                                     read_stripe_index <= read_stripe_index + 1;
                                 end
 
-                                read_stripe[read_stripe_index] <= mport_i[`BUS_MI_DATA];
+                                read_stripe[read_stripe_index] <= mporti[`BUS_MI_DATA];
                             end
                         end
 
                         2: begin
-                            if (!mport_i[`BUS_MI_SEQSLV]) begin
+                            if (!mporti[`BUS_MI_SEQSLV]) begin
                                 read_stripe_state <= 1;
                             end
                         end
 
                         3: begin
-                            if (!mport_i[`BUS_MI_ACK]) begin
+                            if (!mporti[`BUS_MI_ACK]) begin
                                 state <= STATE_READY;
 
                                 read_stripe_state <= 0;
@@ -221,18 +240,18 @@ module word_stripe_cache_m #(
                 end
 
                 STATE_DONE: begin
-                    if (!cached_mport_i[`BUS_MO_REQ]) state <= STATE_READY;
+                    if (!cached_mporti[`BUS_MO_REQ]) state <= STATE_READY;
 
-                    cached_mport_o[`BUS_MI_ACK] <= 0;
+                    cached_mporto[`BUS_MI_ACK] <= 0;
                 end
 
                 STATE_PASSTHROUGH: begin
-                    if (!cached_mport_i[`BUS_MO_REQ]) begin
+                    if (!cached_mporti[`BUS_MO_REQ]) begin
                         state <= STATE_READY;
                     end
 
-                    cached_mport_o <= mport_i;
-                    mport_o <= cached_mport_i;
+                    cached_mporto <= mporti;
+                    mporto <= cached_mporti;
                 end
             endcase
         end

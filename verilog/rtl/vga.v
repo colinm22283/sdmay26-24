@@ -1,3 +1,141 @@
+module vga_wrapper_m #(
+    parameter FB0_ADDR = 0,
+    parameter FB1_ADDR = 0
+) (
+    // Wishbone
+    input wire wb_clk_i,
+    input wire wb_rst_i,
+    input wire wbs_stb_i,
+    input wire wbs_cyc_i,
+    input wire wbs_we_i,
+    input wire [3:0] wbs_sel_i,
+    input wire [`WORD_WIDTH-1:0] wbs_dat_i,
+    input wire [`WORD_WIDTH-1:0] wbs_adr_i,
+    output reg wbs_ack_o,
+    output reg [`WORD_WIDTH-1:0] wbs_dat_o,
+
+    // PKBus
+    input wire [`BUS_MIPORT] mport_i, // For pixel data only
+    output reg [`BUS_MOPORT] mport_o,
+
+    // Special, from cores or rasterizer
+    input wire fb_i,
+
+    // GPIO
+    output reg [7:0] pixel_o,
+    output reg hsync_o,
+    output reg vsync_o
+);
+
+    localparam NUM_REGS = 3;
+
+    wire [NUM_REGS-1:0] wbs_stbN;
+    wire [NUM_REGS-1:0] wbs_ackN;
+    wire [`WORD_WIDTH-1:0] wbs_datN [NUM_REGS-1:0];
+
+    wire enable;
+    wire [3:0] prescaler;
+    wire [3:0] resolution;
+    wire [9:0] base_h_active;
+    wire [4:0] base_h_fporch;
+    wire [6:0] base_h_sync;
+    wire [6:0] base_h_bporch;
+    wire [8:0] base_v_active;
+    wire [2:0] base_v_fporch;
+    wire [2:0] base_v_sync;
+    wire [3:0] base_v_bporch;
+
+    vga_m #(FB0_ADDR, FB1_ADDR) vga (
+        .clk_i(wb_clk_i),
+        .nrst_i(!wb_rst_i),
+
+        .enable_i(enable),
+        .prescaler_i(prescaler),
+        .resolution_i(resolution),
+        .base_h_active_i(base_h_active),
+        .base_h_fporch_i(base_h_fporch),
+        .base_h_sync_i(base_h_sync),
+        .base_h_bporch_i(base_h_bporch),
+        .base_v_active_i(base_v_active),
+        .base_v_fporch_i(base_v_fporch),
+        .base_v_sync_i(base_v_sync),
+        .base_v_bporch_i(base_v_bporch),
+
+        .mport_i(mport_i),
+        .mport_o(mport_o),
+
+        .fb_i(fb_i),
+
+        .pixel_o(pixel_o),
+        .hsync_o(hsync_o),
+        .vsync_o(vsync_o)
+    );
+
+    wishbone_register_m #(1) ctrl (
+        .wb_clk_i(wb_clk_i),
+        .wb_rst_i(wb_rst_i),
+        .wbs_stb_i(wbs_stbN[0]),
+        .wbs_cyc_i(wbs_cyc_i),
+        .wbs_we_i(wbs_we_i),
+        .wbs_sel_i(wbs_sel_i),
+        .wbs_dat_i(wbs_dat_i),
+        .wbs_adr_i(wbs_adr_i),
+        .wbs_ack_o(wbs_ackN[0]),
+        .wbs_dat_o(wbs_datN[0]),
+
+        .access_read_mask_i(32'h000001FF),
+        .access_write_mask_i(32'h000001FF),
+        .reset_value_i(32'h00000042), // resolution = 320x240, prescaler = 1, disabled
+        .reg_o({23'd0, resolution, prescaler, enable})
+    );
+
+    wishbone_register_m #(1) htimings (
+        .wb_clk_i(wb_clk_i),
+        .wb_rst_i(wb_rst_i),
+        .wbs_stb_i(wbs_stbN[1]),
+        .wbs_cyc_i(wbs_cyc_i),
+        .wbs_we_i(wbs_we_i),
+        .wbs_sel_i(wbs_sel_i),
+        .wbs_dat_i(wbs_dat_i),
+        .wbs_adr_i(wbs_adr_i),
+        .wbs_ack_o(wbs_ackN[1]),
+        .wbs_dat_o(wbs_datN[1]),
+
+        .access_read_mask_i(32'h1FFFFFFF),
+        .access_write_mask_i(32'h1FFFFFFF),
+        .reset_value_i(32'h14204280), // 640 x 480 standard timings
+        .reg_o({3'd0, base_h_bporch, base_h_sync, base_h_fporch, base_h_active})
+    );
+
+    wishbone_register_m #(1) vtimings (
+        .wb_clk_i(wb_clk_i),
+        .wb_rst_i(wb_rst_i),
+        .wbs_stb_i(wbs_stbN[2]),
+        .wbs_cyc_i(wbs_cyc_i),
+        .wbs_we_i(wbs_we_i),
+        .wbs_sel_i(wbs_sel_i),
+        .wbs_dat_i(wbs_dat_i),
+        .wbs_adr_i(wbs_adr_i),
+        .wbs_ack_o(wbs_ackN[2]),
+        .wbs_dat_o(wbs_datN[2]),
+
+        .access_read_mask_i(32'h0007FFFF),
+        .access_write_mask_i(32'h0007FFFF),
+        .reset_value_i(32'h0006C7E0), // 640 x 480 standard timings
+        .reg_o({13'd0, base_v_bporch, base_v_sync, base_v_fporch, base_v_active})
+    );
+
+    // Mux between the registers (similar to user_project_wrapper's addressing)
+    wire [`WORD_WIDTH-1:0] word_offset;
+    assign word_offset = {2'b00, (wbs_adr_i & 32'h0000000F)};
+    always @ (*) begin
+        wbs_stbN[word_offset] = wbs_stb_i;
+        wbs_ack_o = wbs_ackN[word_offset];
+        wbs_dat_o = wbs_datN[word_offset];
+    end
+
+endmodule
+
 /*
     320x240 @ 60Hz (6MHz pixel clock) VGA output module.
     Does line doubling/pixel doubling to get smaller

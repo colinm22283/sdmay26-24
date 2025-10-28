@@ -49,7 +49,7 @@ module wishbone_register_m #(
     // (wbs_adr_i - ADDRESS) = 0 should return reg_o[31:0]
     wire [`WORD_WIDTH-1:0] bit_offset;
     assign bit_offset = (SIZE_WORDS == 1) ? 0 : {(wbs_adr_i - ADDRESS), 3'b000}; // Bit offset = byte offset * 8
-    assign wbs_dat_o = reg_o[bit_offset +: `WORD_WIDTH-1] & access_read_mask_i;
+    assign wbs_dat_o = reg_o[bit_offset +: `WORD_WIDTH] & access_read_mask_i;
 
     always @ (posedge wb_clk_i or posedge wb_rst_i) begin
         if (wb_rst_i) begin // Wishbone rst is positive
@@ -57,7 +57,7 @@ module wishbone_register_m #(
         end
         else if (wb_clk_i) begin
             if (wbs_we) begin
-                reg_o[bit_offset +: `WORD_WIDTH-1] <= wbs_dat_i & access_write_mask_i;
+                reg_o[bit_offset +: `WORD_WIDTH] <= wbs_dat_i & access_write_mask_i;
             end
         end
     end

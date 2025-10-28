@@ -117,8 +117,6 @@ module user_project_wrapper #(
 
     wire debug;
 
-    assign debug = spi_dqsm_en;
-
     spi_mem_m #(0, 1024) spi_mem(
         .clk_i(clk),
         .nrst_i(nrst),
@@ -139,14 +137,20 @@ module user_project_wrapper #(
 
     reg [7:0] state;
 
+    assign debug = state[0];
+
     always @(posedge clk, negedge nrst) begin
         if (!nrst) begin
-            state <= 0;
+            state <= 100;
 
             mportao <= 0;
         end
         else if (clk) begin
             case (state)
+                100: begin
+                    if (la_data_in[0]) state <= 0;
+                end
+
                 0: begin
                     if (mportai[`BUS_MI_ACK]) state <= 1;
 
@@ -193,18 +197,18 @@ module user_project_wrapper #(
         io_oeb <= 0;
         io_out <= 0;
 
-        io_oeb[27:24] <= spi_sio_en;
-        io_oeb[30]    <= spi_dqsm_en;
+        io_oeb[11:8] <= spi_sio_en;
+        io_oeb[13]    <= spi_dqsm_en;
 
-        io_out[27:24] <= spi_mosi;
-        io_out[28]    <= spi_cs;
-        io_out[29]    <= spi_clk;
-        io_out[30]    <= spi_dqsmo;
+        io_out[11:8] <= spi_mosi;
+        io_out[7]    <= spi_cs;
+        io_out[12]    <= spi_clk;
+        io_out[13]    <= spi_dqsmo;
 
-        io_out[31]    <= debug;
+        io_out[15]    <= debug;
 
-        spi_miso  <= io_in[27:24];
-        spi_dqsmi <= io_in[30];
+        spi_miso  <= io_in[11:8];
+        spi_dqsmi <= io_in[13];
     end
 
 endmodule	// user_project_wrapper

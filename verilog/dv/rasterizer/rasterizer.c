@@ -55,14 +55,14 @@ static inline void init_io() {
     while (reg_mprj_xfer == 1);
 }
 
-#define MEM_IO_CTRL_SCK   (reg_mprj_io_29)
-#define MEM_IO_CTRL_CS    (reg_mprj_io_28)
-#define MEM_IO_CTRL_DQSM  (reg_mprj_io_30)
-#define MEM_IO_CTRL_DEBUG (reg_mprj_io_31)
-#define MEM_IO_CTRL_SIO0  (reg_mprj_io_24)
-#define MEM_IO_CTRL_SIO1  (reg_mprj_io_25)
-#define MEM_IO_CTRL_SIO2  (reg_mprj_io_26)
-#define MEM_IO_CTRL_SIO3  (reg_mprj_io_27)
+#define MEM_IO_CTRL_SCK   (reg_mprj_io_12)
+#define MEM_IO_CTRL_CS    (reg_mprj_io_7)
+#define MEM_IO_CTRL_DQSM  (reg_mprj_io_13)
+#define MEM_IO_CTRL_DEBUG (reg_mprj_io_15)
+#define MEM_IO_CTRL_SIO0  (reg_mprj_io_8)
+#define MEM_IO_CTRL_SIO1  (reg_mprj_io_9)
+#define MEM_IO_CTRL_SIO2  (reg_mprj_io_10)
+#define MEM_IO_CTRL_SIO3  (reg_mprj_io_11)
 
 void main() {
     reg_gpio_mode1 = 1;
@@ -76,8 +76,8 @@ void main() {
 
     reg_uart_enable = 1;
 
-    MEM_IO_CTRL_SCK   = GPIO_MODE_USER_STD_OUTPUT;
-    MEM_IO_CTRL_CS    = GPIO_MODE_USER_STD_OUTPUT;
+    MEM_IO_CTRL_SCK  = GPIO_MODE_USER_STD_OUTPUT;
+    MEM_IO_CTRL_CS   = GPIO_MODE_USER_STD_OUTPUT;
 
     MEM_IO_CTRL_DQSM = GPIO_MODE_USER_STD_BIDIRECTIONAL;
 
@@ -90,6 +90,11 @@ void main() {
 
     reg_mprj_xfer = 1;
     while (reg_mprj_xfer == 1);
+
+    set_la_dir(0, true);
+    set_la_data(0, true);
+
+    delay_ms(1000);
 
     while (1) {
         reg_gpio_out   = 1; // LED on

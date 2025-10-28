@@ -1,19 +1,11 @@
 module rasterizer_tb();
 
-    integer current_cycle;
-    initial current_cycle = 0;
+    wire clk, nrst;
 
-    reg clk;
-    reg nrst;
-
-    initial forever begin
-        clk <= 1;
-        #10;
-        clk <= 0;
-        #10;
-
-        current_cycle = current_cycle + 1;
-    end
+    clk_rst_m clk_rst(
+        .clk_o(clk),
+        .nrst_o(nrst)
+    );
 
     localparam WORD_WIDTH = 32;
     localparam WIDTH = 320;
@@ -34,7 +26,7 @@ module rasterizer_tb();
     // assign mportbo = mportao;
     // assign mportai = mportbi;
 
-    word_stripe_cache_m #(20, 16) word_cache(
+    word_stripe_cache_m #(20, 20) word_cache(
         .clk_i(clk),
         .nrst_i(nrst),
 
@@ -198,10 +190,7 @@ module rasterizer_tb();
 
         run = 0;
 
-        nrst = 0;
-        #30;
-        nrst = 1;
-        #30;
+        clk_rst.RESET();
 
         pos_stat.RESET();
         bary_stat.RESET();
@@ -278,10 +267,7 @@ module rasterizer_tb();
         wait(!busy);
         run = 0;
 
-        for (i = 0; i < 10; i = i + 1) begin
-            wait(clk);
-            wait(!clk);
-        end
+        clk_rst.WAIT_CYCLES(10);
 
         // `VGA_WRITE("depth1.bmp", spi_chip.mem, `ADDR_DEPTH_BUFFER, 320, 240, `COLOR_TYPE_GSW);
 
@@ -483,18 +469,15 @@ module rasterizer_tb();
         // wait(!busy);
         // run = 0;
 
-        for (i = 0; i < 10; i = i + 1) begin
-            wait(clk);
-            wait(!clk);
-        end
-
-        $display("Elapsed %d clock cycles", current_cycle);
-        $display("%d FPS at 10 MHz", 10000000.0 / current_cycle);
-        $display("%d FPS at 20 MHz", 20000000.0 / current_cycle);
-        $display("%d FPS at 30 MHz", 30000000.0 / current_cycle);
-        $display("%d FPS at 40 MHz", 40000000.0 / current_cycle);
-        $display("%d FPS at 50 MHz", 50000000.0 / current_cycle);
-        $display("%d FPS at 100 MHz", 100000000.0 / current_cycle);
+        clk_rst.WAIT_CYCLES(10);
+    
+        $display("Elapsed %d clock cycles", clk_rst.current_cycle);
+        $display("%d FPS at 10 MHz", 10000000.0 / clk_rst.current_cycle);
+        $display("%d FPS at 20 MHz", 20000000.0 / clk_rst.current_cycle);
+        $display("%d FPS at 30 MHz", 30000000.0 / clk_rst.current_cycle);
+        $display("%d FPS at 40 MHz", 40000000.0 / clk_rst.current_cycle);
+        $display("%d FPS at 50 MHz", 50000000.0 / clk_rst.current_cycle);
+        $display("%d FPS at 100 MHz", 100000000.0 / clk_rst.current_cycle);
 
         $display("Pipeline info");
 

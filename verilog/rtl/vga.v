@@ -29,7 +29,7 @@ module vga_wrapper_m #(
 
     localparam NUM_REGS = 3;
 
-    wire [NUM_REGS-1:0] wbs_stbN;
+    reg  [NUM_REGS-1:0] wbs_stbN;
     wire [NUM_REGS-1:0] wbs_ackN;
     wire [`WORD_WIDTH-1:0] wbs_datN [NUM_REGS-1:0];
 

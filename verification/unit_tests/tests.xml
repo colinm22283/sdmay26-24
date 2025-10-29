@@ -1,8 +1,8 @@
 <testsuites>
   <testsuite name="__ts">
-    <testcase classname="bary_pipe_m_ut" name="bary_setup">
+    <testcase classname="busarb_m_ut" name="simple">
     </testcase>
-    <testcase classname="bary_pipe_m_ut" name="main">
+    <testcase classname="busarb_m_ut" name="high_usage">
     </testcase>
   </testsuite>
 </testsuites>

@@ -46,7 +46,7 @@ module ram_m #(
 
     reg [1:0] state;
 
-    reg [2:0] byte_count;
+    reg [5:0] byte_count;
 
     always @(posedge clk_i, negedge nrst_i) begin
 		if (!nrst_i) begin
@@ -64,8 +64,8 @@ module ram_m #(
 
 						case (size)
 							2'b00: byte_count <= 1 - 1;
-							2'b01: byte_count <= 2 - 1;
-							2'b10: byte_count <= 4 - 1;
+							2'b01: byte_count <= 4 - 1;
+							2'b10: byte_count <= 12 - 1;
 							2'b11: byte_count <= 8 - 1;
 						endcase
 					end

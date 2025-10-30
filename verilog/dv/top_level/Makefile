@@ -14,28 +14,23 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# ---- Test patterns for project striVe ----
+PWDD := $(shell pwd)
+BLOCKS := $(shell basename $(PWDD))
 
-.SUFFIXES:
-.SILENT: clean all
+# ---- Include Partitioned Makefiles ----
 
+CONFIG = caravel_user_project
 
-PATTERNS = io_ports la_test1 la_test2 wb_port mprj_stimulus spi_mem bus vga rasterizer wishbone_register top_level
+include $(MCW_ROOT)/verilog/dv/make/env.makefile
+include $(MCW_ROOT)/verilog/dv/make/var.makefile
+include $(MCW_ROOT)/verilog/dv/make/cpu.makefile
+include $(MCW_ROOT)/verilog/dv/make/sim.makefile
 
-all:  ${PATTERNS}
+# ---- Include RISC-V Deps ----
 
-	for i in ${PATTERNS}; do \
-		( cd $$i && make -f Makefile $${i}.vcd &> verify.log && grep Monitor verify.log) ; \
-	done
+LIBRARY_DIR := $(PWDD)/../../../library
+include $(LIBRARY_DIR)/firmware_vexriscv/verilog/dv/make/lib-overrides.makefile
 
-DV_PATTERNS = $(foreach dv, $(PATTERNS), verify-$(dv))
-$(DV_PATTERNS): verify-% :
-	cd $* && make
+# ---- Include Firmware Files ----
 
-clean:  ${PATTERNS}
-	for i in ${PATTERNS}; do \
-		( cd $$i && \rm  -f *.elf *.hex *.bin *.vvp *.log *.vcd *.lst *.hexe ) ; \
-	done
-	rm -rf *.log
-
-.PHONY: clean all
+include $(PWDD)/../firmware/Makefile

@@ -19,412 +19,275 @@ module spi_mem_m #(
     output reg        spi_dqsm_en_o
 );
 
-    localparam CMD_READ          = 8'h0A;
-    localparam CMD_READ_WRAPPED  = 8'h08;
-    localparam CMD_WRITE         = 8'h02;
+    localparam LATENCY_COUNT = 7;
+
+    localparam CMD_READ          = 8'hA0;
+    localparam CMD_READ_WRAPPED  = 8'h80;
+    localparam CMD_WRITE         = 8'h20;
     localparam CMD_WRITE_WRAPPED = 8'h00;
 
-    localparam LATENCY_COUNT     = 7;
-    localparam PRE_CYCLES        = 0;
+    localparam STATE_READY         = 5'h00;
+    localparam STATE_COMMAND       = 5'h01;
+    localparam STATE_COMMAND_WAIT  = 5'h02;
+    localparam STATE_ADDRESS       = 5'h03;
+    localparam STATE_READ_LATENCY  = 5'h04;
+    localparam STATE_READ_WAIT     = 5'h05;
+    localparam STATE_READ          = 5'h06;
+    localparam STATE_READ_DELAY    = 5'h07;
+    localparam STATE_WRITE_LATENCY = 5'h08;
+    localparam STATE_WRITE         = 5'h09;
+    localparam STATE_WRITE_DELAY   = 5'h0A;
+    localparam STATE_DONE          = 5'h0B;
 
-    wire [`BUS_ADDR_PORT] rel_addr;
-    assign rel_addr = sport_i[`BUS_SI_ADDR] - ADDRESS;
+    wire [`BUS_DATA_PORT] data_in;
+    reg [`BUS_DATA_PORT] out_data;
+    reg seqslv;
+    assign data_in = sport_i[`BUS_SI_DATA];
 
-    wire [25:0] ext_addr;
-    assign ext_addr = rel_addr;
+    reg [4:0] state;
 
-    wire [31:0] cmd_addr = {
+    reg [7:0] command;
+
+    reg [2:0]  address_nibble;
+    reg [22:0] address;
+
+    wire [31:0] full_address;
+    assign full_address = {
         3'b000,
-        ext_addr[25:10],
+        address[22:10],
         1'b0,
-        ext_addr[9:0],
+        address[9:0],
         5'b00000
     };
 
-    localparam STATE_READY       = 4'b0000;
-    localparam STATE_SETUP       = 4'b0001;
-    localparam STATE_CMD         = 4'b0010;
-    localparam STATE_CMD_WAIT    = 4'b0011;
-    localparam STATE_ADDR        = 4'b0100;
-    localparam STATE_LATENCY     = 4'b0101;
-    localparam STATE_READ_PREP   = 4'b0110;
-    localparam STATE_READ        = 4'b0111;
-    localparam STATE_READ_WAIT   = 4'b1000;
-    localparam STATE_WRITE       = 4'b1010;
-    localparam STATE_WRITE_WAIT  = 4'b1011;
-    localparam STATE_WRITE_DELAY = 4'b1100;
-    localparam STATE_DONE        = 4'b1101;
+    reg [4:0] latency;
 
-    reg  [15:0] read_buf_upper;
-    reg  [15:0] read_buf_lower;
-    wire [31:0] read_buf;
+    reg data_nibble;
+    reg [1:0] data_byte;
 
-    assign read_buf = {
-        read_buf_upper[15:12],
-        read_buf_lower[15:12],
-        read_buf_upper[11:8],
-        read_buf_lower[11:8],
-        read_buf_upper[7:4],
-        read_buf_lower[7:4],
-        read_buf_upper[3:0],
-        read_buf_lower[3:0]
-    };
+    reg [`BUS_DATA_PORT] data_buf;
+    reg data_ready;
 
-    reg [31:0] write_buf;
+    reg spi_clk;
 
-    reg [3:0] state;
-
-    reg       clock_enable;
-    reg [2:0] current_nibble;
-
-    reg [$clog2(PRE_CYCLES) - 1:0] pre_cycle;
-    reg       current_dqsm;
-
-    reg [$clog2(LATENCY_COUNT) - 1:0] latency_count;
-
-    reg [2:0] read_byte;
-    reg [2:0] read_word;
-    reg       word_ready;
-
-    reg [2:0] write_byte;
-    reg [2:0] write_word;
+    reg delayed_dqsm;
+    reg [3:0] delayed_miso;
 
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
-            sport_o[`BUS_SO_DATA] <= 0;
-            sport_o[`BUS_SO_SEQSLV] <= 0;
-
             state <= STATE_READY;
 
-            clock_enable <= 0;
-            current_nibble  <= 0;
+            spi_mosi_o <= 0;
+            spi_dqsm_o <= 0;
 
-            pre_cycle <= 0;
-            current_dqsm <= 0;
+            out_data <= 0;
+            seqslv   <= 0;
 
-            latency_count <= 0;
+            command <= 0;
 
-            read_word <= 0;
+            address_nibble <= 7;
+            address <= 0;
 
-            write_byte <= 0;
-            write_word <= 0;
+            latency <= 0;
+
+            data_nibble <= 0;
+            data_byte   <= 0;
+
+            data_buf <= 0;
+            data_ready <= 0;
         end
-        else if (clk_i) begin : CLOCK
+        else if (clk_i) begin
+            seqslv <= 0;
+
             case (state)
                 STATE_READY: begin
-                    clock_enable <= 0;
-                    current_nibble  <= 0;
-
-                    pre_cycle <= 0;
-
-                    read_word <= 0;
-
-                    write_byte <= 0;
-                    write_word <= 0;
-
                     if (
                         sport_i[`BUS_SI_REQ] &&
-                        rel_addr < SIZE
+                        !spi_clk &&
+                        sport_i[`BUS_SI_ADDR] - ADDRESS < SIZE
                     ) begin
-                        state <= STATE_SETUP;
+                        state <= STATE_COMMAND;
+
+                        address_nibble <= 7;
+                        address <= sport_i[`BUS_SI_ADDR] - ADDRESS;
+
+                        if (sport_i[`BUS_SI_RW] == `BUS_READ) command = CMD_READ;
+                        else command = CMD_WRITE;
+
+                        spi_mosi_o <= command[4+:4];
                     end
                 end
 
-                STATE_SETUP: begin
-                    state <= STATE_CMD;
-                end
+                STATE_COMMAND: begin
+                    if (!spi_clk) begin
+                        state <= STATE_COMMAND_WAIT;
 
-                STATE_CMD: begin : COMMAND
-                    reg [7:0] command;
-
-                    state <= STATE_CMD_WAIT;
-
-                    if (sport_i[`BUS_SI_RW] == `BUS_READ) command = CMD_READ;
-                    else command = CMD_WRITE;
-
-                    clock_enable <= 1;
-
-                    if (current_nibble[0]) spi_mosi_o <= command[7:4];
-                    else spi_mosi_o <= command[3:0];
-                end
-
-                STATE_CMD_WAIT: begin
-                    if (current_nibble[0]) begin
-                        state <= STATE_ADDR;
-                        current_nibble[0] <= 0;
-                    end
-                    else begin
-                        state <= STATE_CMD;
-                        current_nibble[0] <= 1;
+                        spi_mosi_o <= command[0+:4];
                     end
                 end
 
-                STATE_ADDR: begin
-                    spi_mosi_o <= cmd_addr[28 - current_nibble * 4 +: 4];
+                STATE_COMMAND_WAIT: begin
+                    state <= STATE_ADDRESS;
 
-                    if (current_nibble == 7) begin
-                        state <= STATE_LATENCY;
-
-                        if (sport_i[`BUS_SI_RW] == `BUS_READ) latency_count <= LATENCY_COUNT - 3;
-                        else latency_count <= LATENCY_COUNT - 4;
-
-                        current_nibble <= 0;
-                    end
-                    else begin
-                        state <= STATE_ADDR;
-                        current_nibble <= current_nibble + 1;
-                    end
+                    spi_mosi_o <= full_address[address_nibble * 4+:4];
                 end
 
-                STATE_LATENCY: begin
-                    spi_mosi_o <= 0;
+                STATE_ADDRESS: begin
+                    if (address_nibble == 0) begin
 
-                    if (sport_i[`BUS_SI_RW] == `BUS_WRITE) begin
-                        if (spi_clk_o) begin
-                            if (latency_count == 0) begin
-                                state <= STATE_WRITE;
+                        if (sport_i[`BUS_SI_RW] == `BUS_READ) begin
+                            state <= STATE_READ_LATENCY;
 
-                                write_buf <= sport_i[`BUS_SI_DATA];
-                            end
-                            else begin
-                                latency_count <= latency_count - 1;
-                            end
+                            latency <= LATENCY_COUNT - 2;
+                        end
+                        else begin
+                            state <= STATE_WRITE_LATENCY;
+
+                            latency <= LATENCY_COUNT - 3;
                         end
                     end
-                    else begin
-                        if (spi_clk_o) begin
-                            if (latency_count == 0) begin
-                                if (spi_dqsm_i) begin
-                                    state <= STATE_READ_PREP;
 
-                                    current_dqsm <= 1;
-                                end
+                    spi_mosi_o <= full_address[address_nibble * 4+:4];
 
-                                latency_count <= LATENCY_COUNT - 1;
-                            end
-                            else begin
-                                latency_count <= latency_count - 1;
-                            end
-                        end
-                    end
+                    address_nibble <= address_nibble - 1;
                 end
 
-                STATE_READ_PREP: begin
-                    if (spi_dqsm_i) state <= STATE_READ;
-                end
-
-                STATE_READ: begin
-                    case (sport_i[`BUS_SI_SIZE])
-                        `BUS_SIZE_BYTE: begin
-                            if (read_byte == 1) begin
-                                state <= STATE_DONE;
-
-                                sport_o[`BUS_SO_DATA] <= read_buf[7:0];
-                            end
-                        end
-                        
-                        `BUS_SIZE_WORD: begin
-                            if (word_ready) begin
-                                state <= STATE_DONE;
-
-                                sport_o[`BUS_SO_DATA] <= {
-                                    read_buf[3 * 8 +: 8],
-                                    read_buf[2 * 8 +: 8],
-                                    read_buf[1 * 8 +: 8],
-                                    read_buf[0 * 8 +: 8]
-                                };
-                            end
-                        end
-
-                        `BUS_SIZE_TWORD: begin
-                            if (word_ready) begin
+                STATE_READ_LATENCY: begin
+                    if (!spi_clk_o) begin
+                        if (latency == 0) begin
+                            if (delayed_dqsm) begin
                                 state <= STATE_READ_WAIT;
 
-                                sport_o[`BUS_SO_DATA] <= {
-                                    read_buf[3 * 8 +: 8],
-                                    read_buf[2 * 8 +: 8],
-                                    read_buf[1 * 8 +: 8],
-                                    read_buf[0 * 8 +: 8]
-                                };
-                                sport_o[`BUS_SO_SEQSLV] <= 1;
-                            end
-                            else begin
-                                sport_o[`BUS_SO_SEQSLV] <= 0;
-                            end
-                        end
+                                data_nibble <= 1;
+                                data_byte   <= 0;
 
-                        `BUS_SIZE_STREAM: begin
-                            if (word_ready) begin
-                                state <= STATE_READ_WAIT;
-
-                                sport_o[`BUS_SO_DATA] <= {
-                                    read_buf[3 * 8 +: 8],
-                                    read_buf[2 * 8 +: 8],
-                                    read_buf[1 * 8 +: 8],
-                                    read_buf[0 * 8 +: 8]
-                                };
-                                sport_o[`BUS_SO_SEQSLV] <= 1;
+                                data_buf    <= 0;
+                                data_ready <= 0;
                             end
-                            else begin
-                                sport_o[`BUS_SO_SEQSLV] <= 0;
-                            end
+                            else latency <= LATENCY_COUNT - 1;
                         end
-                    endcase
+                        else begin
+                            latency <= latency - 1;
+                        end
+                    end
                 end
 
                 STATE_READ_WAIT: begin
-                    case (sport_i[`BUS_SI_SIZE])
-                        default: begin
-                            if (read_word == 2) begin
-                                state <= STATE_DONE;
-                            end
-                            else begin
-                                state <= STATE_READ;
-
-                                read_word <= read_word + 1;
-                            end
-                        end
-                        
-                        `BUS_SIZE_STREAM: begin
-                            if (!sport_i[`BUS_SI_REQ]) begin
-                                state <= STATE_DONE;
-                            end
-                            else begin
-                                state <= STATE_READ;
-
-                                read_word <= read_word + 1;
-                            end
-                        end
-                    endcase
-
+                    state <= STATE_READ;
                 end
 
-                STATE_WRITE: begin : WRITE
-                    reg [`BUS_DATA_PORT] in_data;
+                STATE_READ: begin
+                    data_ready <= 0;
 
-                    in_data = sport_i[`BUS_SI_DATA];
+                    data_buf[data_byte * 8 + data_nibble * 4+:4] <= delayed_miso;
 
-                    case (sport_i[`BUS_SI_SIZE])
-                        `BUS_SIZE_BYTE: begin
-                            if (current_nibble[0]) begin
-                                state <= STATE_DONE;
-
-                                spi_mosi_o <= in_data[3:0];
+                    if (data_nibble == 0) begin
+                        case (sport_i[`BUS_SI_SIZE])
+                            `BUS_SIZE_BYTE: begin
+                                state <= STATE_READ_DELAY;
                             end
-                            else begin
-                                spi_mosi_o <= in_data[7:4];
 
-                                current_nibble[0] <= 1;
-                            end
-                        end
-                        
-                        `BUS_SIZE_WORD: begin
-                            if (current_nibble[0]) begin
-                                if (write_byte == 3) begin
-                                    state <= STATE_WRITE_DELAY;
+                            `BUS_SIZE_WORD: begin
+                                if (data_byte == 3) begin
+                                    state <= STATE_READ_DELAY;
                                 end
-
-                                spi_mosi_o <= in_data[write_byte * 8+:4];
-
-                                write_byte <= write_byte + 1;
-
-                                current_nibble[0] <= 0;
                             end
-                            else begin
-                                spi_mosi_o <= in_data[write_byte * 8 + 4+:4];
-
-                                current_nibble[0] <= 1;
+                            
+                            `BUS_SIZE_TWORD: begin
                             end
-                        end
 
-                        `BUS_SIZE_TWORD: begin
-                            if (current_nibble[0]) begin
-                                if (write_byte == 3) begin
-                                    if (write_word == 2) state <= STATE_WRITE_DELAY;
-                                    else begin
-                                        state <= STATE_WRITE;
-
-                                        write_byte <= 0;
-                                        write_word <= write_word + 1;
+                            `BUS_SIZE_STREAM: begin
+                                if (data_byte == 3) begin
+                                    if (sport_i[`BUS_SI_SEQMST]) begin
+                                        state <= STATE_READ_DELAY;
                                     end
-                                        
-                                    write_buf <= in_data;
-                                end
-                                else if (write_byte == 1) begin
-                                    sport_o[`BUS_SO_SEQSLV] <= 1;
-
-                                    write_byte <= write_byte + 1;
-                                end
-                                else begin
-                                    sport_o[`BUS_SO_SEQSLV] <= 0;
-
-                                    write_byte <= write_byte + 1;
-                                end
-
-                                spi_mosi_o <= write_buf[write_byte * 8+:4];
-
-                                current_nibble[0] <= 0;
-                            end
-                            else begin
-                                spi_mosi_o <= write_buf[write_byte * 8 + 4+:4];
-
-                                current_nibble[0] <= 1;
-                            end
-                        end
-
-                        `BUS_SIZE_STREAM: begin
-                            if (current_nibble[0]) begin
-                                if (write_byte == 3) begin
-                                    if (!sport_i[`BUS_SI_REQ]) state <= STATE_WRITE_DELAY;
                                     else begin
-                                        state <= STATE_WRITE;
-
-                                        write_byte <= 0;
-                                        write_word <= write_word + 1;
+                                        data_ready <= 1;
                                     end
-                                        
-                                    write_buf <= in_data;
                                 end
-                                else if (write_byte == 1) begin
-                                    sport_o[`BUS_SO_SEQSLV] <= 1;
-
-                                    write_byte <= write_byte + 1;
-                                end
-                                else begin
-                                    sport_o[`BUS_SO_SEQSLV] <= 0;
-
-                                    write_byte <= write_byte + 1;
-                                end
-
-                                spi_mosi_o <= write_buf[write_byte * 8+:4];
-
-                                current_nibble[0] <= 0;
                             end
-                            else begin
-                                spi_mosi_o <= write_buf[write_byte * 8 + 4+:4];
+                        endcase
 
-                                current_nibble[0] <= 1;
-                            end
-                        end
+                        data_byte <= data_byte + 1;
+                    end
 
-                    endcase
+                    if (data_ready) begin
+                        seqslv <= 1;
+
+                        out_data <= data_buf;
+                    end
+
+                    data_nibble <= !data_nibble;
                 end
 
-                STATE_WRITE_WAIT: begin
+                STATE_READ_DELAY: begin
+                    state <= STATE_DONE;
+
+                    out_data <= data_buf;
+                end
+
+                STATE_WRITE_LATENCY: begin
+                    if (!spi_clk_o) begin
+                        if (latency == 0) begin
+                            if (!spi_dqsm_i) begin
+                                state <= STATE_WRITE;
+
+                                data_nibble <= 0;
+                                data_byte   <= 0;
+
+                                data_buf   <= data_in;
+                                data_ready <= 0;
+
+                                spi_mosi_o <= data_in[7:4];
+                            end
+                            else latency <= LATENCY_COUNT - 1;
+                        end
+                        else begin
+                            latency <= latency - 1;
+                        end
+                    end
+                end
+
+                STATE_WRITE: begin
+                    if (data_nibble == 0) begin
+                        case (sport_i[`BUS_SI_SIZE])
+                            `BUS_SIZE_BYTE: begin
+                                state <= STATE_WRITE_DELAY;
+                            end
+
+                            `BUS_SIZE_WORD: begin
+                                if (data_byte == 3) state <= STATE_WRITE_DELAY;
+                            end
+
+                            // TODO: blah
+
+                            `BUS_SIZE_STREAM: begin
+                                if (data_byte == 2) begin
+                                    if (!sport_i[`BUS_SI_SEQMST]) begin
+                                        seqslv <= 1;
+                                    end
+                                end
+                                else if (data_byte == 3) begin
+                                    if (sport_i[`BUS_SI_SEQMST]) state <= STATE_WRITE_DELAY;
+                                    else data_buf <= data_in;
+                                end    
+                            end
+                        endcase
+
+                        data_byte <= (data_byte + 1) % 4;
+                    end
+
+                    spi_mosi_o <= data_buf[data_byte * 8 + data_nibble * 4+:4];
+
+                    data_nibble <= !data_nibble;
                 end
 
                 STATE_WRITE_DELAY: begin
                     state <= STATE_DONE;
-
-                    clock_enable <= 0;
                 end
-                
+
                 STATE_DONE: begin
                     if (!sport_i[`BUS_SI_REQ]) state <= STATE_READY;
-
-                    sport_o[`BUS_SO_SEQSLV] <= 0;
-
-                    clock_enable <= 0;
                 end
             endcase
         end
@@ -432,96 +295,52 @@ module spi_mem_m #(
 
     always @(negedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin
-            spi_clk_o <= 0;
-
-            read_buf_upper <= 0;
-
-            read_buf_lower <= 0;
-
-            read_byte <= 0;
-            word_ready   <= 0;
+            spi_clk <= 0;
+            delayed_dqsm <= 0;
+            delayed_miso <= 0;
         end
         else if (!clk_i) begin
-            if (clock_enable) begin
-                spi_clk_o = !spi_clk_o;
+            spi_clk <= !spi_clk;
 
-                if (!spi_clk_o) begin
-                    case (state)
-                        default: begin
-                            read_buf_upper <= 0;
-                        end
-
-                        STATE_READ, STATE_READ_WAIT: begin
-                            read_buf_upper[read_byte * 4 +: 4] <= spi_miso_i;
-                        end
-
-                        STATE_DONE: ;
-                    endcase
-                end
-                else begin
-                    case (state)
-                        default: begin
-                            read_buf_lower <= 0;
-
-                            read_byte <= 0;
-                            word_ready   <= 0;
-                        end
-
-                        STATE_READ, STATE_READ_WAIT: begin
-                            read_buf_lower[read_byte * 4 +: 4] <= spi_miso_i;
-
-                            if (read_byte == 3) begin
-                                read_byte <= 0;
-                                word_ready   <= 1;
-                            end
-                            else begin
-                                read_byte <= read_byte + 1;
-                                word_ready   <= 0;
-                            end
-                        end
-
-                        STATE_DONE: ;
-                    endcase
-                end
-            end
-            else spi_clk_o = 0;
+            delayed_dqsm <= spi_dqsm_i;
+            delayed_miso <= spi_miso_i;
         end
     end
-    
+
     always @(*) begin
+        sport_o[`BUS_SO_DATA] <= out_data;
+        sport_o[`BUS_SO_SEQSLV] <= seqslv;
+
         case (state)
             STATE_READY, STATE_DONE: begin
                 sport_o[`BUS_SO_ACK] <= 0;
-                
+
                 spi_cs_o <= 1;
+                spi_clk_o <= 0;
             end
 
             default: begin
                 sport_o[`BUS_SO_ACK] <= 1;
+                
                 spi_cs_o <= 0;
+                spi_clk_o <= spi_clk;
             end
         endcase
 
         case (state)
-            STATE_READ, STATE_READ_WAIT, STATE_READ_PREP, STATE_LATENCY: begin
-                spi_sio_en_o <= 4'b1111;
+            STATE_READ_LATENCY, STATE_READ_WAIT, STATE_READ, STATE_WRITE_LATENCY: begin
                 spi_dqsm_en_o <= 1;
             end
 
             default: begin
-                spi_sio_en_o <= 4'b0000;
                 spi_dqsm_en_o <= 0;
             end
         endcase
 
         case (state)
-            // STATE_CMD, STATE_CMD_WAIT, STATE_ADDR: begin
-                // spi_dqsm_o <= 1;
-            // end
+            STATE_WRITE, STATE_WRITE_DELAY: spi_dqsm_o <= 0;
 
-            default: begin
-                spi_dqsm_o <= 0;
-            end
+            default: spi_dqsm_o <= 1;
         endcase
     end
 

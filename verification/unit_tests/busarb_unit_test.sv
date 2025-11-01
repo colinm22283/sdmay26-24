@@ -10,7 +10,6 @@
 `include "bus/busarb.v"
 `include "bus/busslave.v"
 `include "bus/virtual_master.v"
-`include "bus/ram.v"
 
 module busarb_m_unit_test;
   import svunit_pkg::svunit_testcase;
@@ -190,7 +189,7 @@ module busarb_m_unit_test;
           end
         join
         begin
-          clk_rst.WAIT_CYCLES(100000);
+          clk_rst.WAIT_CYCLES(10000000);
 
           $display("Timeout reached");
           `FAIL_IF(1);

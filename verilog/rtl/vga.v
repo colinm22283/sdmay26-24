@@ -29,7 +29,7 @@ module vga_wrapper_m #(
 
     localparam NUM_REGS = 3;
 
-    reg  [NUM_REGS-1:0] wbs_stbN;
+    reg [NUM_REGS-1:0] wbs_stbN;
     wire [NUM_REGS-1:0] wbs_ackN;
     wire [`WORD_WIDTH-1:0] wbs_datN [NUM_REGS-1:0];
 
@@ -216,6 +216,7 @@ module vga_m #(
     localparam FB_READ_STATE_READY = 2'd0;
     localparam FB_READ_STATE_PREP = 2'd1;
     localparam FB_READ_STATE_READ = 2'd2;
+    localparam FB_READ_STATE_WAIT = 2'd3;
     reg [1:0] fb_read_state;
 
     wire [`BUS_DATA_SIZE-1:0] pixel_data_in;
@@ -311,81 +312,91 @@ module vga_m #(
                 fb <= fb_i;                               // Keep this up to date
                 fb_read_state <= FB_READ_STATE_PREP;
             end
-            else if (prescaler_counter == prescaler - 1) begin
-                prescaler_counter <= 0;
+            else begin
+                if (prescaler_counter == prescaler - 1) begin
+                    prescaler_counter <= 0;
 
-                // Output pixels
-                if (in_active_area) begin
-                    if (pixel_double_counter == resolution - 1) begin
-                        pixel_double_counter <= 0;
+                    // Output pixels
+                    if (in_active_area) begin
+                        if (pixel_double_counter == resolution - 1) begin
+                            pixel_double_counter <= 0;
 
-                        if (res_h_counter == res_h_active - 1) begin
-                            res_h_counter <= 0;
-                            if (line_double_counter == resolution - 1) begin
-                                line_double_counter <= 0;
-                                if (res_v_counter == res_v_active - 1)
-                                    res_v_counter <= 0;
+                            if (res_h_counter == res_h_active - 1) begin
+                                res_h_counter <= 0;
+                                if (line_double_counter == resolution - 1) begin
+                                    line_double_counter <= 0;
+                                    if (res_v_counter == res_v_active - 1)
+                                        res_v_counter <= 0;
+                                    else
+                                        res_v_counter <= res_v_counter + 1;
+
+                                    fb <= fb_i;
+                                    fb_read_state <= FB_READ_STATE_PREP;
+                                end
                                 else
-                                    res_v_counter <= res_v_counter + 1;
-
-                                fb <= fb_i;
-                                fb_read_state <= FB_READ_STATE_PREP;
+                                    line_double_counter <= line_double_counter + 1; // Handle line doubling
                             end
                             else
-                                line_double_counter <= line_double_counter + 1; // Handle line doubling
+                                res_h_counter <= res_h_counter + 1;
                         end
                         else
-                            res_h_counter <= res_h_counter + 1;
+                            pixel_double_counter <= pixel_double_counter + 1; // Handle pixel doubling
+                    end
+
+                    if (base_h_counter == base_h_total - 1) begin
+                        base_h_counter <= 0;
+                        res_h_counter <= 0;
+                        pixel_double_counter <= 0;
+
+                        if (base_v_counter == base_v_total - 1) begin
+                            res_v_counter <= 0;
+                            base_v_counter <= 0;
+                        end
+                        else
+                            base_v_counter <= base_v_counter + 1;
                     end
                     else
-                        pixel_double_counter <= pixel_double_counter + 1; // Handle pixel doubling
-                end
-
-                if (base_h_counter == base_h_total - 1) begin
-                    base_h_counter <= 0;
-                    res_h_counter <= 0;
-                    pixel_double_counter <= 0;
-
-                    if (base_v_counter == base_v_total - 1) begin
-                        res_v_counter <= 0;
-                        base_v_counter <= 0;
-                    end
-                    else
-                        base_v_counter <= base_v_counter + 1;
+                        base_h_counter <= base_h_counter + 1;
                 end
                 else
-                    base_h_counter <= base_h_counter + 1;
-            end
-            else
-                prescaler_counter <= prescaler_counter + 1;
+                    prescaler_counter <= prescaler_counter + 1;
 
-            // Fetch new line
-            case (fb_read_state)
-            FB_READ_STATE_PREP: begin
-                if (res_v_counter == 0)
-                    mport_o[`BUS_MO_ADDR] <= fb ? FB1_ADDR : FB0_ADDR;
+                // Fetch new line
+                case (fb_read_state)
+                FB_READ_STATE_PREP: begin
+                    if (res_v_counter == 0)
+                        mport_o[`BUS_MO_ADDR] <= fb ? FB1_ADDR : FB0_ADDR;
 
-                mport_o[`BUS_MO_RW] <= `BUS_READ;
-                mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_STREAM;
-                mport_o[`BUS_MO_REQ]  <= 1;
-                fb_read_state <= FB_READ_STATE_READ;
-            end
-            FB_READ_STATE_READ: begin
-                if (mport_i[`BUS_MI_SEQSLV]) begin
-                    line_cache[line_cache_idx]     <= pixel_data_in[7:0];
-                    line_cache[line_cache_idx + 1] <= pixel_data_in[15:8];
-                    line_cache[line_cache_idx + 2] <= pixel_data_in[23:16];
-                    line_cache[line_cache_idx + 3] <= pixel_data_in[31:24];
-                    mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + 4;
-                    line_cache_idx <= line_cache_idx + 4;
-                    if (line_cache_idx >= res_h_active - 4) begin
-                        fb_read_state <= FB_READ_STATE_READY;
-                        line_cache_idx <= 0;
-                        mport_o[`BUS_MO_REQ] <= 0;
+                    mport_o[`BUS_MO_RW] <= `BUS_READ;
+                    mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_STREAM;
+                    mport_o[`BUS_MO_REQ]  <= 1;
+                    fb_read_state <= FB_READ_STATE_READ;
+                end
+                FB_READ_STATE_READ: begin
+                    if (mport_i[`BUS_MI_SEQSLV]) begin
+                        fb_read_state <= FB_READ_STATE_WAIT;
+
+                        line_cache[line_cache_idx]     <= pixel_data_in[7:0];
+                        line_cache[line_cache_idx + 1] <= pixel_data_in[15:8];
+                        line_cache[line_cache_idx + 2] <= pixel_data_in[23:16];
+                        line_cache[line_cache_idx + 3] <= pixel_data_in[31:24];
+                        // mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + 4;
+                        line_cache_idx <= line_cache_idx + 4;
+                        if (line_cache_idx >= res_h_active - 4) begin
+                            fb_read_state <= FB_READ_STATE_READY;
+                            line_cache_idx <= 0;
+                            mport_o[`BUS_MO_REQ] <= 0;
+                            mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + res_h_active;
+                        end
                     end
                 end
+                FB_READ_STATE_WAIT: begin
+                    if (!mport_i[`BUS_MI_SEQSLV]) begin
+                        fb_read_state <= FB_READ_STATE_READ;
+                    end
+                end
+                endcase
             end
-            endcase
         end
     end
 

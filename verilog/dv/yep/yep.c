@@ -83,11 +83,13 @@ void main() {
 
     reg_wb_enable = 1;
 
-    init_io();
-
     set_la_dir(0, true);
+    set_la_dir(1, true);
 
     set_la_data(0, false);
+    set_la_data(1, false);
+
+    init_io();
 
     reg_uart_enable = 1;
 
@@ -114,21 +116,12 @@ void main() {
     VGA_IO_HSYNC = GPIO_MODE_USER_STD_OUTPUT;
     VGA_IO_VSYNC = GPIO_MODE_USER_STD_OUTPUT;
 
-    reg_mprj_io_16 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_17 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_18 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_19 = GPIO_MODE_USER_STD_OUTPUT;
-
-    reg_mprj_io_20 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_21 = GPIO_MODE_USER_STD_OUTPUT;
-    reg_mprj_io_22 = GPIO_MODE_USER_STD_OUTPUT;
-
     reg_mprj_xfer = 1;
     while (reg_mprj_xfer == 1);
 
-    delay_ms(1000);
-
     set_la_data(0, true);
+    delay_ms(1000);
+    set_la_data(1, true);
 
     delay_ms(1000);
 

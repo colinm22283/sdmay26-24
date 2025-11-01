@@ -87,12 +87,13 @@ module user_project_wrapper #(
 
     wire clk, nrst;
     assign clk = wb_clk_i;
-    assign nrst = la_data_in[0] && !wb_rst_i;
+    assign nrst = la_data_in[0];
 
-    wire debug;
+    wire [3:0] debug;
+    wire [2:0] debug2;
 
     wire [`BUS_MIPORT] mportai;
-    wire [`BUS_MOPORT] mportao;
+    reg  [`BUS_MOPORT] mportao;
 
     wire [`BUS_MIPORT] mportbi;
     reg  [`BUS_MOPORT] mportbo;
@@ -124,8 +125,8 @@ module user_project_wrapper #(
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .sport_i({ sportai }),
-        .sport_o({ sportao }),
+        .sport_i(sportai),
+        .sport_o(sportao),
 
         .spi_clk_o(spi_clk),
         .spi_cs_o(spi_cs),
@@ -138,35 +139,41 @@ module user_project_wrapper #(
         .spi_dqsm_en_o(spi_dqsm_en)
     );
 
-    assign debug = spi_mem.latency_count == 0;
-
     wire [2:0] red;
     wire [2:0] green;
     wire [1:0] blue;
     wire hsync;
     wire vsync;
 
-    vga_m #(0, 0) my_vga (
-        .clk_i(clk),
-        .nrst_i(nrst),
-        .enable_i(la_data_in[1]),
-        .prescaler_i(1),
-        .resolution_i(`VGA_RES_320x240),
-        .base_h_active_i(`VGA_BASE_H_ACTIVE),
-        .base_h_fporch_i(`VGA_BASE_H_FPORCH),
-        .base_h_sync_i(`VGA_BASE_H_SYNC),
-        .base_h_bporch_i(`VGA_BASE_H_BPORCH),
-        .base_v_active_i(`VGA_BASE_V_ACTIVE),
-        .base_v_fporch_i(`VGA_BASE_V_FPORCH),
-        .base_v_sync_i(`VGA_BASE_V_SYNC),
-        .base_v_bporch_i(`VGA_BASE_V_BPORCH),
-        .mport_i(mportai),
-        .mport_o(mportao),
-        .fb_i(0),
-        .pixel_o({ red, green, blue }), // Remap standard 8 bit color to the correct IO
-        .hsync_o(hsync),
-        .vsync_o(vsync)
-    );
+    reg enable;
+
+    // vga_m #(0, 0) my_vga (
+    //     .clk_i(clk),
+    //     .nrst_i(nrst),
+    //     .enable_i(enable),
+    //     .prescaler_i(4'b0001),
+    //     .resolution_i(`VGA_RES_320x240),
+    //     .base_h_active_i(`VGA_BASE_H_ACTIVE),
+    //     .base_h_fporch_i(`VGA_BASE_H_FPORCH),
+    //     .base_h_sync_i(`VGA_BASE_H_SYNC),
+    //     .base_h_bporch_i(`VGA_BASE_H_BPORCH),
+    //     .base_v_active_i(`VGA_BASE_V_ACTIVE),
+    //     .base_v_fporch_i(`VGA_BASE_V_FPORCH),
+    //     .base_v_sync_i(`VGA_BASE_V_SYNC),
+    //     .base_v_bporch_i(`VGA_BASE_V_BPORCH),
+    //     .mport_i(mportai),
+    //     .mport_o(mportao),
+    //     .fb_i(0),
+    //     .pixel_o({ red, green, blue }), // Remap standard 8 bit color to the correct IO
+    //     .hsync_o(hsync),
+    //     .vsync_o(vsync)
+    // );
+
+    assign debug[1:0] = arbiter.state[0];
+    assign debug[2] = arbiter.master_handled[0];
+    assign debug[3] = arbiter.master_handled[1];
+
+    assign debug2 = spi_mem.state[2:0];
 
     reg [7:0] state;
 
@@ -180,28 +187,32 @@ module user_project_wrapper #(
 
             mportbo <= 0;
 
-            addr  <= 0;
+            addr  <= 0; 
+
+            timer <= 0;
+
+            enable <= 0;
         end
         else if (clk) begin
             case (state)
                 100: begin
-                    if (la_data_in[1]) begin
-                        state <= 0;
-                    end
+                    state <= 2;
+
+                    timer <= 0;
                 end
 
                 0: begin
-                    if (mportai[`BUS_MI_ACK]) state <= 1;
+                    if (mportbi[`BUS_MI_ACK]) state <= 1;
 
                     mportbo[`BUS_MO_ADDR] <= addr;
-                    mportbo[`BUS_MO_DATA] <= addr[7:0];
+                    mportbo[`BUS_MO_DATA] <= 8'b11100000;
                     mportbo[`BUS_MO_SIZE] <= `BUS_SIZE_BYTE;
                     mportbo[`BUS_MO_RW]   <= `BUS_WRITE;
                     mportbo[`BUS_MO_REQ]  <= 1;
                 end
 
                 1: begin
-                    if (!mportai[`BUS_MI_ACK]) begin
+                    if (!mportbi[`BUS_MI_ACK]) begin
                         state <= 2;
 
                         mportbo[`BUS_MO_REQ]  <= 0;
@@ -214,9 +225,67 @@ module user_project_wrapper #(
                 end
 
                 2: begin
-                    if (timer == 25000000) state <= 0;
+                    if (timer == 500) begin
+                        state <= 0;
+                        
+                        enable <= 1;
+                    end
 
                     timer <= timer + 1;
+                end
+            endcase
+        end
+    end
+
+    reg [7:0] state2;
+    reg [7:0] pos;
+
+    always @(posedge clk, negedge nrst) begin
+        if (!nrst) begin
+            state2 <= 0;
+
+            mportao <= 0;
+
+            pos <= 0;
+        end
+        else if (clk) begin
+            case (state2)
+                0: begin
+                    if (mportai[`BUS_MI_ACK]) state2 <= 1;
+
+                    mportao[`BUS_MO_ADDR] <= 0;
+                    mportao[`BUS_MO_DATA] <= 8'b11100000;
+                    mportao[`BUS_MO_SIZE] <= `BUS_SIZE_STREAM;
+                    mportao[`BUS_MO_RW]   <= `BUS_READ;
+                    mportao[`BUS_MO_REQ]  <= 1;
+                end
+
+                1: begin
+                    if (mportai[`BUS_MI_SEQSLV]) begin
+                        if (pos != 200) state2 <= 2;
+                        else state2 <= 3;
+                    end
+                end
+
+                2: begin
+                    if (!mportai[`BUS_MI_SEQSLV]) begin
+                        state2 <= 1;
+
+                        pos <= pos + 1;
+                    end
+                end
+
+                3: begin
+                    state2 <= 4;
+
+                    pos <= 1;
+
+                    mportao[`BUS_MO_REQ] <= 0;
+                end
+
+                4: begin
+                    if (pos == 0) state2 <= 0;
+                    else pos <= pos - 1;
                 end
             endcase
         end
@@ -233,7 +302,10 @@ module user_project_wrapper #(
         io_out[7]    <= spi_cs;
         io_out[12]   <= spi_clk;
         io_out[13]   <= spi_dqsmo;
-        io_out[15]   <= debug;
+        
+        io_out[19:16]   <= debug;
+        
+        io_out[22:20]   <= debug2;
 
         io_out[26:24] <= red;
         io_out[30:28] <= green;

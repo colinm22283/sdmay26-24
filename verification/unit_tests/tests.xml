@@ -1,8 +1,6 @@
 <testsuites>
   <testsuite name="__ts">
-    <testcase classname="busarb_m_ut" name="simple">
-    </testcase>
-    <testcase classname="busarb_m_ut" name="high_usage">
+    <testcase classname="spi_mem_m_ut" name="single_byte">
     </testcase>
   </testsuite>
 </testsuites>

@@ -216,7 +216,7 @@ module vga_m #(
     localparam FB_READ_STATE_READY = 2'd0;
     localparam FB_READ_STATE_PREP = 2'd1;
     localparam FB_READ_STATE_READ = 2'd2;
-    localparam FB_READ_STATE_WAIT = 2'd3;
+    localparam FB_READ_STATE_DONE = 2'd3;
     reg [1:0] fb_read_state;
 
     wire [`BUS_DATA_SIZE-1:0] pixel_data_in;
@@ -363,38 +363,43 @@ module vga_m #(
 
                 // Fetch new line
                 case (fb_read_state)
-                FB_READ_STATE_PREP: begin
-                    if (res_v_counter == 0)
-                        mport_o[`BUS_MO_ADDR] <= fb ? FB1_ADDR : FB0_ADDR;
+                    FB_READ_STATE_PREP: begin
+                        if (res_v_counter == 0)
+                            mport_o[`BUS_MO_ADDR] <= fb ? FB1_ADDR : FB0_ADDR;
 
-                    mport_o[`BUS_MO_RW] <= `BUS_READ;
-                    mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_STREAM;
-                    mport_o[`BUS_MO_REQ]  <= 1;
-                    fb_read_state <= FB_READ_STATE_READ;
-                end
-                FB_READ_STATE_READ: begin
-                    if (mport_i[`BUS_MI_SEQSLV]) begin
-                        fb_read_state <= FB_READ_STATE_WAIT;
+                        mport_o[`BUS_MO_RW] <= `BUS_READ;
+                        mport_o[`BUS_MO_SIZE] <= `BUS_SIZE_STREAM;
+                        mport_o[`BUS_MO_REQ]  <= 1;
+                        if (mport_i[`BUS_MI_ACK]) fb_read_state <= FB_READ_STATE_READ;
+                    end
+                    FB_READ_STATE_READ: begin
+                        if (mport_i[`BUS_MI_SEQSLV]) begin
+                            line_cache[line_cache_idx]     <= pixel_data_in[7:0];
+                            line_cache[line_cache_idx + 1] <= pixel_data_in[15:8];
+                            line_cache[line_cache_idx + 2] <= pixel_data_in[23:16];
+                            line_cache[line_cache_idx + 3] <= pixel_data_in[31:24];
+                            // mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + 4;
+                            line_cache_idx <= line_cache_idx + 4;
 
-                        line_cache[line_cache_idx]     <= pixel_data_in[7:0];
-                        line_cache[line_cache_idx + 1] <= pixel_data_in[15:8];
-                        line_cache[line_cache_idx + 2] <= pixel_data_in[23:16];
-                        line_cache[line_cache_idx + 3] <= pixel_data_in[31:24];
-                        // mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + 4;
-                        line_cache_idx <= line_cache_idx + 4;
-                        if (line_cache_idx >= res_h_active - 4) begin
-                            fb_read_state <= FB_READ_STATE_READY;
+                            if (line_cache_idx >= res_h_active - 8) begin
+                                mport_o[`BUS_MO_SEQMST] <= 1;
+                            end
+                        end
+
+                        if (!mport_i[`BUS_MI_ACK]) begin
+                            fb_read_state <= FB_READ_STATE_DONE;
                             line_cache_idx <= 0;
-                            mport_o[`BUS_MO_REQ] <= 0;
-                            mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + res_h_active;
                         end
                     end
-                end
-                FB_READ_STATE_WAIT: begin
-                    if (!mport_i[`BUS_MI_SEQSLV]) begin
-                        fb_read_state <= FB_READ_STATE_READ;
+                    FB_READ_STATE_DONE: begin
+                        // if (!mport_i[`BUS_MI_ACK]) begin
+                        fb_read_state <= FB_READ_STATE_READY;
+
+                        mport_o[`BUS_MO_REQ] <= 0;
+                        mport_o[`BUS_MO_SEQMST] <= 0;
+                        mport_o[`BUS_MO_ADDR] <= mport_o[`BUS_MO_ADDR] + res_h_active;
+                        // end
                     end
-                end
                 endcase
             end
         end

@@ -10,6 +10,8 @@ To flash the FPGA or taped out chip during bringup: `make verify-top_level-flash
   - `defs.h`: Definitions for Caravel registers
   - `stub.h, stub.c`: Provided utility functions
 - `../firmware/`: uGPU common defs
-- `scripts/`: Python utilities
+- `assets/`: Test models to render with
+  - `teapot.obj`: Utah Teapot, 6320 triangles. [Source](https://graphics.stanford.edu/courses/cs148-10-summer/as3/code/as3/teapot.obj)
 - `lib/`: C libraries
+- `scripts/`: Python utilities
 - `src/`: C sources

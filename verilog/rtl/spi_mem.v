@@ -19,7 +19,7 @@ module spi_mem_m #(
     output reg        spi_dqsm_en_o
 );
 
-    localparam LATENCY_COUNT = 7;
+    localparam LATENCY_COUNT = 5;
 
     localparam CMD_READ          = 8'hA0;
     localparam CMD_READ_WRAPPED  = 8'h80;
@@ -38,11 +38,15 @@ module spi_mem_m #(
     localparam STATE_WRITE         = 5'h09;
     localparam STATE_WRITE_DELAY   = 5'h0A;
     localparam STATE_DONE          = 5'h0B;
+    localparam STATE_READY_DELAY   = 5'h0C;
 
     wire [`BUS_DATA_PORT] data_in;
     reg [`BUS_DATA_PORT] out_data;
     reg seqslv;
     assign data_in = sport_i[`BUS_SI_DATA];
+
+    wire [`BUS_ADDR_PORT] bus_addr;
+    assign bus_addr = sport_i[`BUS_SI_ADDR] - ADDRESS;
 
     reg [4:0] state;
 
@@ -54,13 +58,14 @@ module spi_mem_m #(
     wire [31:0] full_address;
     assign full_address = {
         3'b000,
-        address[22:10],
-        1'b0,
-        address[9:0],
+        address[21:9],
+        2'b00,
+        address[8:0],
         5'b00000
     };
 
     reg [4:0] latency;
+    reg has_2lc;
 
     reg data_nibble;
     reg [1:0] data_byte;
@@ -78,7 +83,6 @@ module spi_mem_m #(
             state <= STATE_READY;
 
             spi_mosi_o <= 0;
-            spi_dqsm_o <= 0;
 
             out_data <= 0;
             seqslv   <= 0;
@@ -89,6 +93,7 @@ module spi_mem_m #(
             address <= 0;
 
             latency <= 0;
+            has_2lc <= 0;
 
             data_nibble <= 0;
             data_byte   <= 0;
@@ -103,19 +108,22 @@ module spi_mem_m #(
                 STATE_READY: begin
                     if (
                         sport_i[`BUS_SI_REQ] &&
-                        !spi_clk &&
-                        sport_i[`BUS_SI_ADDR] - ADDRESS < SIZE
+                        spi_clk
                     ) begin
-                        state <= STATE_COMMAND;
-
-                        address_nibble <= 7;
-                        address <= sport_i[`BUS_SI_ADDR] - ADDRESS;
-
-                        if (sport_i[`BUS_SI_RW] == `BUS_READ) command = CMD_READ;
-                        else command = CMD_WRITE;
-
-                        spi_mosi_o <= command[4+:4];
+                        state <= STATE_READY_DELAY;
                     end
+                end
+
+                STATE_READY_DELAY: begin
+                    state <= STATE_COMMAND;
+
+                    address_nibble <= 7;
+                    address <= sport_i[`BUS_SI_ADDR] - ADDRESS;
+
+                    if (sport_i[`BUS_SI_RW] == `BUS_READ) command = CMD_READ;
+                    else command = CMD_WRITE;
+
+                    spi_mosi_o <= command[4+:4];
                 end
 
                 STATE_COMMAND: begin
@@ -130,11 +138,12 @@ module spi_mem_m #(
                     state <= STATE_ADDRESS;
 
                     spi_mosi_o <= full_address[address_nibble * 4+:4];
+
+                    has_2lc <= spi_dqsm_i;
                 end
 
                 STATE_ADDRESS: begin
                     if (address_nibble == 0) begin
-
                         if (sport_i[`BUS_SI_RW] == `BUS_READ) begin
                             state <= STATE_READ_LATENCY;
 
@@ -143,7 +152,7 @@ module spi_mem_m #(
                         else begin
                             state <= STATE_WRITE_LATENCY;
 
-                            latency <= LATENCY_COUNT - 3;
+                            latency <= LATENCY_COUNT - 2;
                         end
                     end
 
@@ -229,7 +238,7 @@ module spi_mem_m #(
                 STATE_WRITE_LATENCY: begin
                     if (!spi_clk_o) begin
                         if (latency == 0) begin
-                            if (!spi_dqsm_i) begin
+                            if (!has_2lc) begin
                                 state <= STATE_WRITE;
 
                                 data_nibble <= 0;
@@ -240,7 +249,11 @@ module spi_mem_m #(
 
                                 spi_mosi_o <= data_in[7:4];
                             end
-                            else latency <= LATENCY_COUNT - 1;
+                            else begin
+                                latency <= LATENCY_COUNT - 2;
+
+                                has_2lc <= 0;
+                            end
                         end
                         else begin
                             latency <= latency - 1;
@@ -293,13 +306,16 @@ module spi_mem_m #(
         end
     end
 
-    always @(negedge clk_i, negedge nrst_i) begin
+    wire nclk;
+    assign nclk = !clk_i;
+
+    always @(posedge nclk, negedge nrst_i) begin
         if (!nrst_i) begin
             spi_clk <= 0;
             delayed_dqsm <= 0;
             delayed_miso <= 0;
         end
-        else if (!clk_i) begin
+        else if (nclk) begin
             spi_clk <= !spi_clk;
 
             delayed_dqsm <= spi_dqsm_i;
@@ -319,6 +335,13 @@ module spi_mem_m #(
                 spi_clk_o <= 0;
             end
 
+            STATE_READY_DELAY: begin
+                sport_o[`BUS_SO_ACK] <= 1;
+                
+                spi_cs_o <= 0;
+                spi_clk_o <= 0;
+            end
+
             default: begin
                 sport_o[`BUS_SO_ACK] <= 1;
                 
@@ -328,12 +351,22 @@ module spi_mem_m #(
         endcase
 
         case (state)
-            STATE_READ_LATENCY, STATE_READ_WAIT, STATE_READ, STATE_WRITE_LATENCY: begin
+            STATE_READY_DELAY, STATE_COMMAND, STATE_COMMAND_WAIT, STATE_ADDRESS, STATE_READ_LATENCY, STATE_READ_WAIT, STATE_READ, STATE_READ_DELAY, STATE_WRITE_LATENCY: begin
                 spi_dqsm_en_o <= 1;
             end
 
             default: begin
                 spi_dqsm_en_o <= 0;
+            end
+        endcase
+
+        case (state)
+            STATE_READ_WAIT, STATE_READ, STATE_READ_DELAY: begin
+                spi_sio_en_o <= 4'hF;
+            end
+
+            default: begin
+                spi_sio_en_o <= 4'h0;
             end
         endcase
 

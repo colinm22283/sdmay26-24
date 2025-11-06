@@ -26,10 +26,10 @@ module spi_chip_m #(
     reg [7:0] command;
 
     reg [31:0] full_address;
-    wire [25:0] address;
+    wire [24:0] address;
     assign address = {
         full_address[28:16],
-        full_address[14:5]
+        full_address[13:5]
     };
 
     initial begin
@@ -153,6 +153,9 @@ module spi_chip_m #(
             else if (command == CMD_WRITE) begin : WRITE
                 integer addr;
                 reg [7:0] write_data;
+
+                // wait(!clk_i);
+                // wait(clk_i);
 
                 addr = address;
 

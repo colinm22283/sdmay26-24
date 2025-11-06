@@ -90,6 +90,13 @@ module spi_mem_tb();
         $finish;
     end
 
+    initial begin : MAIN_2
+        master.WRITE_STREAM(0, 3, 32'hFFFFFFFF);
+        master.READ_STREAM(0, 3);
+
+        $finish;
+    end
+
     initial begin
         #1000000;
         $finish;

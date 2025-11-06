@@ -210,6 +210,8 @@ module vga_m #(
     assign in_active_area = base_h_counter < base_h_active && base_v_counter < base_v_active;
 
     localparam CACHE_WIDTH = 9'd320;
+    // localparam CACHE_WIDTH = 9'd160;
+    // localparam CACHE_WIDTH = 9'd80;
     reg [7:0] line_cache[CACHE_WIDTH-1:0]; // 320x240 resolution, cache one line
     reg [9:0] line_cache_idx;
     reg fb;
@@ -227,6 +229,8 @@ module vga_m #(
     always @ (*) begin
         // Color output
         if (in_active_area && enable_i)
+            // pixel_o <= line_cache[res_h_counter[8:2]];
+            // pixel_o <= line_cache[res_h_counter[8:1]];
             pixel_o <= line_cache[res_h_counter[8:0]];
         else
             pixel_o <= 0; // Pixel must be black during blanking time
@@ -307,10 +311,8 @@ module vga_m #(
                 resolution <= resolution_i;
                 pixel_double_counter <= 0;                // Make sure the first pixel gets outputted
                 line_double_counter <= 0;
-                for (i = 0; i < CACHE_WIDTH; i = i+1)
-                    line_cache[i] <= 0;
                 fb <= fb_i;                               // Keep this up to date
-                fb_read_state <= FB_READ_STATE_PREP;
+                fb_read_state <= FB_READ_STATE_READY;
             end
             else begin
                 if (prescaler_counter == prescaler - 1) begin

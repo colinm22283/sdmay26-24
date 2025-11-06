@@ -1,6 +1,6 @@
 <testsuites>
   <testsuite name="__ts">
-    <testcase classname="spi_mem_m_ut" name="single_byte">
+    <testcase classname="div_pipe_m_ut" name="simple">
     </testcase>
   </testsuite>
 </testsuites>

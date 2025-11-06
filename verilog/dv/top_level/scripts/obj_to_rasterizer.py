@@ -81,14 +81,12 @@ def view_matrix(position, rotation) -> np.ndarray:
 
 def perspective_matrix(fov_degrees, z_near, z_far) -> np.ndarray:
     s = 1 / math.tan(0.5 * fov_degrees * math.pi / 180)
-    m33 = z_far * (z_far - z_near) / (z_near - z_far)
-    m34 = z_far * z_near * (z_far - z_near) / (z_near - z_far)
 
     return np.array(
-        [[s, 0,   0,   0],
-         [0, s,   0,   0],
-         [0, 0, m33, m34],
-         [0, 0,  -1,   0]]
+        [[s, 0,      0,               0],
+         [0, s,      0,               0],
+         [0, 0, -z_far, -z_far * z_near],
+         [0, 0,     -1,               0]]
     )
 
 def screen_matrix(display_width, display_height) -> np.ndarray:

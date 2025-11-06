@@ -25,7 +25,7 @@ COLOR = -1 # Color in range [0-255], -1 for random
 
 CAMERA_POS = [0, 0, 50] # Position in x, y, z
 CAMERA_ROTATION = [0, 0, 0] # Rotation around x, y, z axes in radians. 0, 0, 0 is straight up pointing towards -Z.
-CAMERA_FOV = 45 # In degrees
+CAMERA_FOV = 90 # In degrees
 
 # Clip space depth limits: remove objects closer to the camera than ZNEAR and further than ZFAR.
 # ZNEAR maps to depth 0, ZFAR is the initial value of the depth buffer.
@@ -67,27 +67,42 @@ def rotation_matrix(axis, angle_radians) -> np.ndarray:
              [                      0,                        0, 0, 1]]
         )
 
-def perspective_matrix(fov_degrees, z_near, z_far, display_width, display_height) -> np.ndarray:
-    f = math.tan(0.5 * fov_degrees * math.pi / 180)
-
-    return np.array(
-        [[display_width * f,                  0,  0,       0],
-         [                0, display_height * f,  0,       0],
-         [                0,                  0,  1, -z_near],
-         [                0,                  0, -1,       0]]
-    )
-
 def view_matrix(position, rotation) -> np.ndarray:
     cam_rotation = rotation_matrix('x', rotation[0]) \
                  @ rotation_matrix('y', rotation[1]) \
                  @ rotation_matrix('z', rotation[2])
     camera_matrix = np.array(
-        [[cam_rotation[0][0], cam_rotation[0][1], cam_rotation[0][2], position[0]],
-         [cam_rotation[1][0], cam_rotation[1][1], cam_rotation[1][2], position[1]],
-         [cam_rotation[2][0], cam_rotation[2][1], cam_rotation[2][2], position[2]],
+        [[cam_rotation[0][0], cam_rotation[0][1],  cam_rotation[0][2], position[0]],
+         [cam_rotation[1][0], cam_rotation[1][1],  cam_rotation[1][2], position[1]],
+         [cam_rotation[2][0], cam_rotation[2][1],  cam_rotation[2][2], position[2]],
          [                 0,                  0,                  0,           1]]
     )
     return np.linalg.inv(camera_matrix)
+
+def perspective_matrix(fov_degrees, z_near, z_far) -> np.ndarray:
+    s = 1 / math.tan(0.5 * fov_degrees * math.pi / 180)
+
+    return np.array(
+        [[s, 0,                       0,                                0],
+         [0, s,                       0,                                0],
+         [0, 0, -z_far/(z_far - z_near), -z_far * z_near/(z_far - z_near)],
+         [0, 0,                      -1,                                0]]
+    )
+
+def screen_matrix(display_width, display_height) -> np.ndarray:
+    # Turn screen coordinates (centered on the camera's z axis and the z_near plane)
+    # into raster coordinates (origin at the top left of screen, y axis points down).
+    # The rasterizer takes in a homogeneous vector that's in screen coordinates (once
+    # turned back into a 3vec).
+    half_width = display_width / 2
+    half_height = display_height / 2
+
+    return np.array(
+        [[half_width, 0, 0, half_width],
+         [0, -half_height, 0, half_height],
+         [0, 0, 1, 0],
+         [0, 0, 0, 1]]
+    )
 
 def vertex_to_fixed_point(vertex: np.ndarray) -> List[int]:
     signed_integer_part = [(0x100000000 + int(i)) & 0xFFFFFFFF for i in vertex]
@@ -116,7 +131,8 @@ if COLOR > 255:
     exit(1)
 
 # Apply model, then view, then perspective
-MVP_MATRIX = perspective_matrix(CAMERA_FOV, CAMERA_ZNEAR, CAMERA_ZFAR, OUTPUT_WIDTH, OUTPUT_HEIGHT) \
+MVP_MATRIX = screen_matrix(OUTPUT_WIDTH, OUTPUT_HEIGHT) \
+           @ perspective_matrix(CAMERA_FOV, CAMERA_ZNEAR, CAMERA_ZFAR) \
            @ view_matrix(CAMERA_POS, CAMERA_ROTATION) \
            @ MODEL_MATRIX
 
@@ -128,6 +144,8 @@ size_x = max(vertices[:, 0]) - min(vertices[:, 0])
 size_y = max(vertices[:, 1]) - min(vertices[:, 1])
 size_z = max(vertices[:, 2]) - min(vertices[:, 2])
 print(f"Object processed, found {len(triangles)} triangles. Dimensions: {size_x:.3f} x {size_y:.3f} x {size_z:.3f}")
+
+print(f"MVP matrix:\n{MVP_MATRIX}")
 
 with open(outfile, 'w') as out:
     out.write(f"""\

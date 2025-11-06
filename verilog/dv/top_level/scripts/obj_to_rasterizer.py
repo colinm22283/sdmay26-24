@@ -81,12 +81,14 @@ def view_matrix(position, rotation) -> np.ndarray:
 
 def perspective_matrix(fov_degrees, z_near, z_far) -> np.ndarray:
     s = 1 / math.tan(0.5 * fov_degrees * math.pi / 180)
+    m33 = z_far * (z_far - z_near) / (z_near - z_far)
+    m34 = z_far * z_near * (z_far - z_near) / (z_near - z_far)
 
     return np.array(
-        [[s, 0,                       0,                                0],
-         [0, s,                       0,                                0],
-         [0, 0, -z_far/(z_far - z_near), -z_far * z_near/(z_far - z_near)],
-         [0, 0,                      -1,                                0]]
+        [[s, 0,   0,   0],
+         [0, s,   0,   0],
+         [0, 0, m33, m34],
+         [0, 0,  -1,   0]]
     )
 
 def screen_matrix(display_width, display_height) -> np.ndarray:
@@ -149,25 +151,22 @@ print(f"MVP matrix:\n{MVP_MATRIX}")
 
 with open(outfile, 'w') as out:
     out.write(f"""\
-        for (x = 0; x < 320; x = x + 1) begin
-            for (y = 0; y < 240; y = y + 1) begin : DB_FILL
-                reg [31:0] value;
-                value = 32'd{CAMERA_ZFAR};
-
-                spi_chip.mem[`ADDR_DEPTH_BUFFER + (y * 320 + x) * 4 + 0] = value[7:0];
-                spi_chip.mem[`ADDR_DEPTH_BUFFER + (y * 320 + x) * 4 + 1] = value[15:8];
-                spi_chip.mem[`ADDR_DEPTH_BUFFER + (y * 320 + x) * 4 + 2] = value[23:16];
-                spi_chip.mem[`ADDR_DEPTH_BUFFER + (y * 320 + x) * 4 + 3] = value[31:24];
-            end
-        end
-
-        for (x = 0; x < 320; x = x + 1) begin
-            for (y = 0; y < 240; y = y + 1) begin
-                spi_chip.mem[y * 320 + x] = 0;
-            end
-        end
-
-        run = 0;\n\n""")
+for (x = 0; x < 320; x = x + 1) begin
+    for (y = 0; y < 240; y = y + 1) begin : DB_FILL
+    reg [31:0] value;
+    value = 32'd{CAMERA_ZFAR};
+    spi_chip.mem[`ADDR_DEPTH_BUFFER + (y * 320 + x) * 4 + 0] = value[7:0];
+    spi_chip.mem[`ADDR_DEPTH_BUFFER + (y * 320 + x) * 4 + 1] = value[15:8];
+    spi_chip.mem[`ADDR_DEPTH_BUFFER + (y * 320 + x) * 4 + 2] = value[23:16];
+    spi_chip.mem[`ADDR_DEPTH_BUFFER + (y * 320 + x) * 4 + 3] = value[31:24];
+    end
+end
+for (x = 0; x < 320; x = x + 1) begin
+    for (y = 0; y < 240; y = y + 1) begin
+    spi_chip.mem[y * 320 + x] = 0;
+    end
+end
+run = 0;\n\n""")
 
     for n, t in enumerate(triangles):
         vertices_transformed = [homogeneous_to_3vec(MVP_MATRIX @ vec_to_homogeneous(vertices[i])) for i in t]
@@ -175,26 +174,26 @@ with open(outfile, 'w') as out:
         triangle_fixed = [vertex_to_fixed_point(vt) for vt in vertices_transformed]
 
         out.write(f"""\
-        color = 8'd{COLOR if COLOR != -1 else random.randint(0, 255)};
-        v0x = {triangle_fixed[0][0]};
-        v0y = {triangle_fixed[0][1]};
-        v0z = {triangle_fixed[0][2]};
-        t0x = 0;
-        t0y = 0;
-        v1x = {triangle_fixed[1][0]};
-        v1y = {triangle_fixed[1][1]};
-        v1z = {triangle_fixed[1][2]};
-        t1x = 0;
-        t1y = 0;
-        v2x = {triangle_fixed[2][0]};
-        v2y = {triangle_fixed[2][1]};
-        v2z = {triangle_fixed[2][2]};
-        t2x = 0;
-        t2y = 0;
-        wait(!clk);
-        run = 1;
-        wait(busy);
-        wait(!busy);
-        run = 0;
-        clk_rst.WAIT_CYCLES(10);
-        $display("Triangle %d", {n});\n\n""")
+color = 8'd{COLOR if COLOR != -1 else random.randint(0, 255)};
+v0x = {triangle_fixed[0][0]};
+v0y = {triangle_fixed[0][1]};
+v0z = {triangle_fixed[0][2]};
+t0x = 0;
+t0y = 0;
+v1x = {triangle_fixed[1][0]};
+v1y = {triangle_fixed[1][1]};
+v1z = {triangle_fixed[1][2]};
+t1x = 0;
+t1y = 0;
+v2x = {triangle_fixed[2][0]};
+v2y = {triangle_fixed[2][1]};
+v2z = {triangle_fixed[2][2]};
+t2x = 0;
+t2y = 0;
+wait(!clk);
+run = 1;
+wait(busy);
+wait(!busy);
+run = 0;
+clk_rst.WAIT_CYCLES(10);
+$display("Triangle %d", {n});\n\n""")

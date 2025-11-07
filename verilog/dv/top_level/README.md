@@ -11,7 +11,11 @@ To flash the FPGA or taped out chip during bringup: `make verify-top_level-flash
   - `stub.h, stub.c`: Provided utility functions
 - `../firmware/`: uGPU common defs
 - `assets/`: Test models to render with
-  - `teapot.obj`: Utah Teapot, 6320 triangles. [Source](https://graphics.stanford.edu/courses/cs148-10-summer/as3/code/as3/teapot.obj)
+  - `bunny.obj`: Stanford bunny, converted to OBJ using `ply_to_obj.py`. 69451 triangles. [Source](http://graphics.stanford.edu/pub/3Dscanrep/bunny.tar.gz)
+  - `cube.obj`: 10x10x10 cube. 12 triangles. Source: Created by Michael Drobot in Autodesk Inventor.
+  - `dragon.obj`: Stanford dragon, converted to OBJ using `ply_to_obj.py`. 871414 triangles. [Source](http://graphics.stanford.edu/pub/3Dscanrep/dragon/dragon_recon.tar.gz)
+  - `teapot.obj`: Utah Teapot. 6320 triangles. [Source](https://graphics.stanford.edu/courses/cs148-10-summer/as3/code/as3/teapot.obj)
+  - `suzanne.obj`: Suzanne, the Blender mascot. 500 triangles. [Source](https://projects.blender.org/blender/blender/src/branch/main/tests/files/io_tests/obj/suzanne_all_data.obj)
 - `lib/`: C libraries
 - `scripts/`: Python utilities
 - `src/`: C sources
@@ -24,3 +28,6 @@ Pip packages can be installed normally using `pip` after the venv has been activ
 - `obj_to_rasterizer.py`: Convert an OBJ 3D model file to verilog code for the rasterizer testbench.
   - Usage: `obj_to_rasterizer.py [model.obj] [output.txt]`
   - Dependencies: `open3d, numpy`
+- `ply_to_obj.py`: Convert a PLY polygon file model to OBJ format.
+  - Usage: `ply_to_obj.py [infile.ply] [outfile.obj]
+  - Dependencies: `open3d`

@@ -5,7 +5,7 @@ import random
 import math
 from typing import List
 
-# Usage: python obj_to_rasterizer.v [model.obj] [output.txt]
+# Usage: python obj_to_rasterizer.py [model.obj] [output.txt]
 # NOTE: See design document Vertex Shader section for an explanation of the math
 
 # Clip space absolute limits: The x, y, z range of the rasterizer inputs. Lower bound is 0.

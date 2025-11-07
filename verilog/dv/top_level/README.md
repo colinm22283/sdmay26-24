@@ -12,6 +12,8 @@ To flash the FPGA or taped out chip during bringup: `make verify-top_level-flash
 - `../firmware/`: uGPU common defs
 - `assets/`: Test models to render with
   - `bunny.obj`: Stanford bunny, converted to OBJ using `ply_to_obj.py`. 69451 triangles. [Source](http://graphics.stanford.edu/pub/3Dscanrep/bunny.tar.gz)
+  - `cheburashka.obj`: Cheburashka. 13334 triangles. Created by Ilya Baran and Jovan Popovic for their paper [here](https://dblp.org/rec/journals/tog/BaranP07.html?view=bibtex). [Source](https://github.com/alecjacobson/common-3d-test-models/blob/master/data/cheburashka.obj)
+  - `cow.obj`: Cow. 5804 triangles. Created by DeCarlo et. al. for their paper [here](https://dblp.uni-trier.de/rec/journals/tog/DeCarloFRS03.html?view=bibtex). [Source](https://github.com/alecjacobson/common-3d-test-models/blob/master/data/cow.obj)
   - `cube.obj`: 10x10x10 cube. 12 triangles. Source: Created by Michael Drobot in Autodesk Inventor.
   - `dragon.obj`: Stanford dragon, converted to OBJ using `ply_to_obj.py`. 871414 triangles. [Source](http://graphics.stanford.edu/pub/3Dscanrep/dragon/dragon_recon.tar.gz)
   - `teapot.obj`: Utah Teapot. 6320 triangles. [Source](https://graphics.stanford.edu/courses/cs148-10-summer/as3/code/as3/teapot.obj)

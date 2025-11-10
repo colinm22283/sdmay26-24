@@ -37,3 +37,18 @@ include $(LIBRARY_DIR)/firmware_vexriscv/verilog/dv/make/lib-overrides.makefile
 # ---- Include Firmware Files ----
 
 include $(PWDD)/../firmware/Makefile
+
+SRC_DIR = $(PWDD)/src
+
+SOURCE_FILES += $(shell find $(SRC_DIR) -name "*.c")
+
+# ---- Include ASM Sources ----
+
+CUSTOMASM_SOURCES = $(shell find $(SRC_DIR) -name "*.s" -not -name "programs.s")
+
+INCLUDE_DIRS += -I$(SRC_DIR)/asm
+SOURCE_FILES += $(SRC_DIR)/asm/programs.s
+
+$(BLOCKS).elf: $(BLOCKS).c $(LINKER_SCRIPT) $(VEX_STARTUP) $(SOURCE_FILES) assemble-customasm
+
+include $(PWDD)/../../../customasm/Makefile

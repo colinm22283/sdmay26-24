@@ -38,6 +38,15 @@ SECTIONS
 		_erodata = .;
 	} > flash
 
+	.shader_programs :
+	{
+		. = ALIGN(4); /* Word-align, makes copying easier */
+		_sshader_programs = .;
+		*(.shader_programs .shader_programs.*)
+		. = ALIGN(4);
+		_eshader_programs = .;
+	} > flash
+
 	.data :
 	{
 		. = ALIGN(256);

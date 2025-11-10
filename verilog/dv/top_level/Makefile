@@ -28,6 +28,9 @@ include $(MCW_ROOT)/verilog/dv/make/sim.makefile
 
 # ---- Include RISC-V Deps ----
 
+# Override the caravel linker script and the ChipForge library linker script
+CUSTOM_LINKER_SCRIPT = $(PWDD)/sections.lds
+
 LIBRARY_DIR := $(PWDD)/../../../library
 include $(LIBRARY_DIR)/firmware_vexriscv/verilog/dv/make/lib-overrides.makefile
 

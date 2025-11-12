@@ -194,3 +194,7 @@
 `define VGA_BASE_V_FPORCH (3)
 `define VGA_BASE_V_SYNC   (4)
 `define VGA_BASE_V_BPORCH (13)
+
+// ISA
+`define ALU_CTL_SIZE (4)
+

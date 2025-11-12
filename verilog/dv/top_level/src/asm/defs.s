@@ -4,30 +4,30 @@ OPCODE_ADDI     = 0x1`6
 OPCODE_SUB      = 0x2`6
 OPCODE_MUL      = 0x3`6
 OPCODE_MULI     = 0x4`6
-OPCODE_DIV      = 0x5`6
-OPCODE_DIVI     = 0x6`6
-OPCODE_AND      = 0x7`6
-OPCODE_ANDI     = 0x8`6
-OPCODE_OR       = 0x9`6
-OPCODE_ORI      = 0xA`6
-OPCODE_XOR      = 0xB`6
-OPCODE_XORI     = 0xC`6
-OPCODE_MAC      = 0xE`6
-OPCODE_MACCL    = 0xF`6
-OPCODE_MACRD    = 0x10`6
-OPCODE_SPEQ     = 0x11`6
-OPCODE_SPLT     = 0x12`6
-OPCODE_CLRP     = 0x13`6
-OPCODE_SPR      = 0x14`6
-OPCODE_SREQ     = 0x15`6
-OPCODE_SRLT     = 0x16`6
-OPCODE_LW       = 0x17`6
-OPCODE_SW       = 0x18`6
-OPCODE_SB       = 0x19`6
-OPCODE_LWV      = 0x1A`6
-OPCODE_SWV      = 0x1B`6
-OPCODE_SBV      = 0x1C`6
-OPCODE_JUMP     = 0x1D`6
+OPCODE_AND      = 0x5`6
+OPCODE_ANDI     = 0x6`6
+OPCODE_OR       = 0x7`6
+OPCODE_ORI      = 0x8`6
+OPCODE_XOR      = 0x9`6
+OPCODE_XORI     = 0xA`6
+OPCODE_OUT      = 0xB`6
+OPCODE_MAC      = 0xC`6
+OPCODE_MACCL    = 0xD`6
+OPCODE_MACRD    = 0xE`6
+OPCODE_SPEQ     = 0xF`6
+OPCODE_SPLT     = 0x10`6
+OPCODE_CLRP     = 0x11`6
+OPCODE_SPR      = 0x12`6
+OPCODE_SREQ     = 0x13`6
+OPCODE_SRLT     = 0x14`6
+OPCODE_LW       = 0x15`6
+OPCODE_SW       = 0x16`6
+OPCODE_SB       = 0x17`6
+OPCODE_LWV      = 0x18`6
+OPCODE_SWV      = 0x19`6
+OPCODE_SBV      = 0x1A`6
+OPCODE_JUMP     = 0x1B`6
+OPCODE_HALT     = 0x1C`6
 
 
 ; Registers and Immediates
@@ -55,33 +55,47 @@ OPCODE_JUMP     = 0x1D`6
     $tid => 0`4
 }
 
-; Predicate bits, can be used for predication
-; or as arguments to speq, splt, clrp
-#subruledef predicate {
-    ($p{n: u2}) => {
-      assert(n < 2)
+; Predicate bits, used as arguments to speq, splt, clrp
+#subruledef predicate_bit {
+    $p{n: u2} => {
+      assert(n < 3)
       (1 << n)`3
     }
+}
+
+; Instruction predicate rule
+#subruledef predicate {
+    ; Hack: Having the 0b (0b[pred]) before every
+    ; instruction is a little messy, and bashing three
+    ; one-bit params next to each other results in (0 0 0)
+    ; (also ugly). Just enumerate everything.
     () => 0`3
+    (000) => 0`3
+    (001) => 1`3
+    (010) => 2`3
+    (011) => 3`3
+    (100) => 4`3
+    (101) => 5`3
+    (110) => 6`3
+    (111) => 7`3
 }
 
 
 ; Base Instructions
-#ruledef {
+#ruledef instructions {
     ; Basic math
     {pred: predicate} add     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}   => OPCODE_ADD   @ pred @ rd @ rs1 @ rs2 @ 0`7
     {pred: predicate} addi    {rd: destreg}, {rs1: srcreg}, {imm: s13}      => OPCODE_ADDI  @ pred @ rd @ rs1 @ imm
     {pred: predicate} sub     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}   => OPCODE_SUB   @ pred @ rd @ rs1 @ rs2 @ 0`7
     {pred: predicate} mul     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}   => OPCODE_MUL   @ pred @ rd @ rs1 @ rs2 @ 0`7
     {pred: predicate} muli    {rd: destreg}, {rs1: srcreg}, {imm: s13}      => OPCODE_MULI  @ pred @ rd @ rs1 @ imm
-    {pred: predicate} div     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}   => OPCODE_DIV   @ pred @ rd @ rs1 @ rs2 @ 0`7
-    {pred: predicate} divi    {rd: destreg}, {rs1: srcreg}, {imm: s13}      => OPCODE_DIVI  @ pred @ rd @ rs1 @ imm
     {pred: predicate} and     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}   => OPCODE_AND   @ pred @ rd @ rs1 @ rs2 @ 0`7
     {pred: predicate} andi    {rd: destreg}, {rs1: srcreg}, {imm: s13}      => OPCODE_ANDI  @ pred @ rd @ rs1 @ imm
     {pred: predicate} or      {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}   => OPCODE_OR    @ pred @ rd @ rs1 @ rs2 @ 0`7
     {pred: predicate} ori     {rd: destreg}, {rs1: srcreg}, {imm: s13}      => OPCODE_ORI   @ pred @ rd @ rs1 @ imm
     {pred: predicate} xor     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}   => OPCODE_XOR   @ pred @ rd @ rs1 @ rs2 @ 0`7
     {pred: predicate} xori    {rd: destreg}, {rs1: srcreg}, {imm: s13}      => OPCODE_XORI  @ pred @ rd @ rs1 @ imm
+    {pred: predicate} out     {rs: srcreg}                                  => OPCODE_OUT   @ pred @ 0`4 @ rs @ 0`13
 
     ; MAC
     {pred: predicate} mac     {rs1: srcreg}, {rs2: srcreg}  => OPCODE_MAC   @ pred @ 0`6 @ rs1 @ rs2 @ 0`7
@@ -89,12 +103,12 @@ OPCODE_JUMP     = 0x1D`6
     {pred: predicate} macrd   {rd: destreg}                 => OPCODE_MACRD @ pred @ rd @ 0`19
 
     ; Branching and Predication
-    {pred: predicate} speq    {pred_data: predicate}, {rs1: srcreg}, {rs2: srcreg}  => OPCODE_SPEQ  @ pred @ pred_data @ rs1 @ rs2 @ 0`7
-    {pred: predicate} splt    {pred_data: predicate}, {rs1: srcreg}, {rs2: srcreg}  => OPCODE_SPLT  @ pred @ pred_data @ rs1 @ rs2 @ 0`7
-    {pred: predicate} clrp    {pred_data: predicate}                                => OPCODE_CLRP  @ pred @ pred_data @ 0`19
-    {pred: predicate} spr     {rd: destreg}                                         => OPCODE_SPR   @ pred @ rd @ 0`19
-    {pred: predicate} sreq    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}           => OPCODE_SREQ  @ pred @ rd @ rs1 @ rs2 @ 0`7
-    {pred: predicate} srlt    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}           => OPCODE_SRLT  @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} speq    {pred_data: predicate_bit}, {rs1: srcreg}, {rs2: srcreg}  => OPCODE_SPEQ  @ pred @ pred_data @ rs1 @ rs2 @ 0`7
+    {pred: predicate} splt    {pred_data: predicate_bit}, {rs1: srcreg}, {rs2: srcreg}  => OPCODE_SPLT  @ pred @ pred_data @ rs1 @ rs2 @ 0`7
+    {pred: predicate} clrp    {pred_data: predicate_bit}                                => OPCODE_CLRP  @ pred @ pred_data @ 0`19
+    {pred: predicate} spr     {rd: destreg}                                             => OPCODE_SPR   @ pred @ rd @ 0`19
+    {pred: predicate} sreq    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SREQ  @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} srlt    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SRLT  @ pred @ rd @ rs1 @ rs2 @ 0`7
 
     ; Memory
     {pred: predicate} lw      {rd: destreg}, {imm: s13}[{rs1: srcreg}] => OPCODE_LW    @ pred @ rd @ rs1 @ imm
@@ -105,12 +119,15 @@ OPCODE_JUMP     = 0x1D`6
     {pred: predicate} sbv     {rd: destreg}, {imm: s13}[{rs1: srcreg}] => OPCODE_SBV   @ pred @ rd @ rs1 @ imm
 
     ; Jump
-    j {offset: s26} => OPCODE_JUMP @ offset
+    {pred: predicate} j       {offset: s23} => OPCODE_JUMP @ pred @ offset
+
+    ; Halt
+    halt => OPCODE_HALT @ 0`26
 }
 
 
 ; Pseudoinstructions
-#ruledef {
+#ruledef pseudoinstructions {
     {pred: predicate} li {rd: destreg}, {imm: s32} => asm {
         {pred} andi {rd}, {rd}, 0`13
         {pred} ori  {rd}, {rd}, ({imm} >> 19)

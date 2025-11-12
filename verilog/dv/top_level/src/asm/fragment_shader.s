@@ -4,7 +4,7 @@
 ; by the rasterizer using Direct Illumination. The
 ; following global registers need to be preloaded
 ; by the management core:
-; g42 -> g45: light source normal vector
+; g42 -> g44: light source normal vector
 ; g45: &framebuffer[0][0] (framebuffer being rendered)
 
 ; Fragments are loaded directly into registers by the rasterizer.

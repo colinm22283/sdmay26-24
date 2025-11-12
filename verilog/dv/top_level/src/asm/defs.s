@@ -142,12 +142,12 @@ OPCODE_HALT     = 0x1C`6
     {pred: predicate} srlt    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SRLT  @ pred @ rd @ rs1 @ rs2 @ 0`7
 
     ; Memory
-    {pred: predicate} lw      {rd: destreg}, {imm: immediate}[{rs1: srcreg}] => OPCODE_LW    @ pred @ rd @ rs1 @ imm
-    {pred: predicate} sw      {rd: destreg}, {imm: immediate}[{rs1: srcreg}] => OPCODE_SW    @ pred @ rd @ rs1 @ imm
-    {pred: predicate} sb      {rd: destreg}, {imm: immediate}[{rs1: srcreg}] => OPCODE_SB    @ pred @ rd @ rs1 @ imm
-    {pred: predicate} lwv     {rd: destreg}, {imm: immediate}[{rs1: srcreg}] => OPCODE_LWV   @ pred @ rd @ rs1 @ imm
-    {pred: predicate} swv     {rd: destreg}, {imm: immediate}[{rs1: srcreg}] => OPCODE_SWV   @ pred @ rd @ rs1 @ imm
-    {pred: predicate} sbv     {rd: destreg}, {imm: immediate}[{rs1: srcreg}] => OPCODE_SBV   @ pred @ rd @ rs1 @ imm
+    {pred: predicate} lw      {rd: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_LW    @ pred @ rd  @ roff @ 0`6 @ imm
+    {pred: predicate} sw      {rs: srcreg},  {imm: immediate}[{roff: srcreg}] => OPCODE_SW    @ pred @ 0`4 @ roff @ rs  @ imm
+    {pred: predicate} sb      {rs: srcreg},  {imm: immediate}[{roff: srcreg}] => OPCODE_SB    @ pred @ 0`4 @ roff @ rs  @ imm
+    {pred: predicate} lwv     {rd: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_LWV   @ pred @ rd  @ roff @ 0`6 @ imm
+    {pred: predicate} swv     {rs: srcreg},  {imm: immediate}[{roff: srcreg}] => OPCODE_SWV   @ pred @ 0`4 @ roff @ rs  @ imm
+    {pred: predicate} sbv     {rs: srcreg},  {imm: immediate}[{roff: srcreg}] => OPCODE_SBV   @ pred @ 0`4 @ roff @ rs  @ imm
 
     ; Jump
     {pred: predicate} j       {offset: s23} => OPCODE_JUMP @ pred @ offset

@@ -82,22 +82,51 @@ OPCODE_HALT     = 0x1C`6
     (111) => 7`3
 }
 
+; Immediates
+#subruledef immediate {
+    ; Autodetect integer or fixed point:
+    ; 1 -> integer, 1. or 1.0 or 1.11123 -> fixed point.
+    {n: s13}         => n
+    {i: s3}.         => i @ 0`10
+
+    ; customasm doesn't have if conditions, floats, or string processing
+    ; so we can't get leading/trailing zeros on the fractional portion.
+    ; Instead, just force the user to pad decimals to 6 places.
+    {i: s3}.{f: i32} => {
+        assert(f < 1000000)
+        frac = (f * (1 << 10)) / 1000000
+        i @ frac`10
+    }
+}
+
+#subruledef immediate32 {
+    ; Same as above but with the full integer part.
+    {n: s32}         => n
+    {i: s22}.         => i @ 0`10
+
+    {i: s22}.{f: i32} => {
+        assert(f < 1000000)
+        frac = (f * (1 << 10)) / 1000000
+        i @ frac`10
+    }
+}
+
 
 ; Base Instructions
 #ruledef instructions {
     ; Basic math
-    {pred: predicate} add     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}   => OPCODE_ADD   @ pred @ rd @ rs1 @ rs2 @ 0`7
-    {pred: predicate} addi    {rd: destreg}, {rs1: srcreg}, {imm: s13}      => OPCODE_ADDI  @ pred @ rd @ rs1 @ imm
-    {pred: predicate} sub     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}   => OPCODE_SUB   @ pred @ rd @ rs1 @ rs2 @ 0`7
-    {pred: predicate} mul     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}   => OPCODE_MUL   @ pred @ rd @ rs1 @ rs2 @ 0`7
-    {pred: predicate} muli    {rd: destreg}, {rs1: srcreg}, {imm: s13}      => OPCODE_MULI  @ pred @ rd @ rs1 @ imm
-    {pred: predicate} and     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}   => OPCODE_AND   @ pred @ rd @ rs1 @ rs2 @ 0`7
-    {pred: predicate} andi    {rd: destreg}, {rs1: srcreg}, {imm: s13}      => OPCODE_ANDI  @ pred @ rd @ rs1 @ imm
-    {pred: predicate} or      {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}   => OPCODE_OR    @ pred @ rd @ rs1 @ rs2 @ 0`7
-    {pred: predicate} ori     {rd: destreg}, {rs1: srcreg}, {imm: s13}      => OPCODE_ORI   @ pred @ rd @ rs1 @ imm
-    {pred: predicate} xor     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}   => OPCODE_XOR   @ pred @ rd @ rs1 @ rs2 @ 0`7
-    {pred: predicate} xori    {rd: destreg}, {rs1: srcreg}, {imm: s13}      => OPCODE_XORI  @ pred @ rd @ rs1 @ imm
-    {pred: predicate} out     {rs: srcreg}                                  => OPCODE_OUT   @ pred @ 0`4 @ rs @ 0`13
+    {pred: predicate} add     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_ADD   @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} addi    {rd: destreg}, {rs1: srcreg}, {imm: immediate}    => OPCODE_ADDI  @ pred @ rd @ rs1 @ imm
+    {pred: predicate} sub     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_SUB   @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} mul     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_MUL   @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} muli    {rd: destreg}, {rs1: srcreg}, {imm: immediate}    => OPCODE_MULI  @ pred @ rd @ rs1 @ imm
+    {pred: predicate} and     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_AND   @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} andi    {rd: destreg}, {rs1: srcreg}, {imm: immediate}    => OPCODE_ANDI  @ pred @ rd @ rs1 @ imm
+    {pred: predicate} or      {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_OR    @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} ori     {rd: destreg}, {rs1: srcreg}, {imm: immediate}    => OPCODE_ORI   @ pred @ rd @ rs1 @ imm
+    {pred: predicate} xor     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_XOR   @ pred @ rd @ rs1 @ rs2 @ 0`7
+    {pred: predicate} xori    {rd: destreg}, {rs1: srcreg}, {imm: immediate}    => OPCODE_XORI  @ pred @ rd @ rs1 @ imm
+    {pred: predicate} out     {rs: srcreg}                                      => OPCODE_OUT   @ pred @ 0`4 @ rs @ 0`13
 
     ; MAC
     {pred: predicate} mac     {rs1: srcreg}, {rs2: srcreg}  => OPCODE_MAC   @ pred @ 0`6 @ rs1 @ rs2 @ 0`7
@@ -113,12 +142,12 @@ OPCODE_HALT     = 0x1C`6
     {pred: predicate} srlt    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SRLT  @ pred @ rd @ rs1 @ rs2 @ 0`7
 
     ; Memory
-    {pred: predicate} lw      {rd: destreg}, {imm: s13}[{rs1: srcreg}] => OPCODE_LW    @ pred @ rd @ rs1 @ imm
-    {pred: predicate} sw      {rd: destreg}, {imm: s13}[{rs1: srcreg}] => OPCODE_SW    @ pred @ rd @ rs1 @ imm
-    {pred: predicate} sb      {rd: destreg}, {imm: s13}[{rs1: srcreg}] => OPCODE_SB    @ pred @ rd @ rs1 @ imm
-    {pred: predicate} lwv     {rd: destreg}, {imm: s13}[{rs1: srcreg}] => OPCODE_LWV   @ pred @ rd @ rs1 @ imm
-    {pred: predicate} swv     {rd: destreg}, {imm: s13}[{rs1: srcreg}] => OPCODE_SWV   @ pred @ rd @ rs1 @ imm
-    {pred: predicate} sbv     {rd: destreg}, {imm: s13}[{rs1: srcreg}] => OPCODE_SBV   @ pred @ rd @ rs1 @ imm
+    {pred: predicate} lw      {rd: destreg}, {imm: immediate}[{rs1: srcreg}] => OPCODE_LW    @ pred @ rd @ rs1 @ imm
+    {pred: predicate} sw      {rd: destreg}, {imm: immediate}[{rs1: srcreg}] => OPCODE_SW    @ pred @ rd @ rs1 @ imm
+    {pred: predicate} sb      {rd: destreg}, {imm: immediate}[{rs1: srcreg}] => OPCODE_SB    @ pred @ rd @ rs1 @ imm
+    {pred: predicate} lwv     {rd: destreg}, {imm: immediate}[{rs1: srcreg}] => OPCODE_LWV   @ pred @ rd @ rs1 @ imm
+    {pred: predicate} swv     {rd: destreg}, {imm: immediate}[{rs1: srcreg}] => OPCODE_SWV   @ pred @ rd @ rs1 @ imm
+    {pred: predicate} sbv     {rd: destreg}, {imm: immediate}[{rs1: srcreg}] => OPCODE_SBV   @ pred @ rd @ rs1 @ imm
 
     ; Jump
     {pred: predicate} j       {offset: s23} => OPCODE_JUMP @ pred @ offset
@@ -189,7 +218,7 @@ OPCODE_HALT     = 0x1C`6
     }
 
     ; Miscellaneous
-    {pred: predicate} li {rd: destreg}, {imm: s32} => asm {
+    {pred: predicate} li {rd: destreg}, {imm: immediate32} => asm {
         {pred} andi {rd}, {rd}, 0`13
         {pred} ori  {rd}, {rd}, ({imm} >> 19)
         {pred} muli {rd}, {rd}, (1 << 12)

@@ -83,9 +83,15 @@ OPCODE_HALT     = 0x1C`6
 }
 
 ; Immediates
+#fn decimal_to_fixed(int, frac) => {
+    assert(frac < 1000000)
+    frac = (frac * (1 << 10)) / 1000000
+    int`22 @ frac`10
+}
+
 #subruledef immediate {
     ; Autodetect integer or fixed point:
-    ; 1 -> integer, 1. or 1.0 or 1.11123 -> fixed point.
+    ; 1 -> integer, 1. or 1.0 or 1.11123 or 2/135 -> fixed point.
     {n: s13}         => n
     {i: s3}.         => i @ 0`10
 
@@ -96,6 +102,12 @@ OPCODE_HALT     = 0x1C`6
         assert(f < 1000000)
         frac = (f * (1 << 10)) / 1000000
         i @ frac`10
+    }
+
+    {n: s32}/{d: s32} => {
+        int = n / d
+        frac = ((n * (1 << 10)) / d) - (int * (1 << 10))
+        int`3 @ frac`10
     }
 }
 
@@ -108,6 +120,12 @@ OPCODE_HALT     = 0x1C`6
         assert(f < 1000000)
         frac = (f * (1 << 10)) / 1000000
         i @ frac`10
+    }
+
+    {n: s32}/{d: s32} => {
+        int = n / d
+        frac = ((n * (1 << 10)) / d) - (int * (1 << 10))
+        int`22 @ frac`10
     }
 }
 

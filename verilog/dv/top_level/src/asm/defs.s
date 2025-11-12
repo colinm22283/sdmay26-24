@@ -43,6 +43,7 @@ OPCODE_HALT     = 0x1C`6
 
     ; Special register names
     $tid => 0`6
+    $at  => 15`6
 }
 
 #subruledef destreg {
@@ -53,6 +54,7 @@ OPCODE_HALT     = 0x1C`6
 
     ; Special register names
     $tid => 0`4
+    $at  => 15`4
 }
 
 ; Predicate bits, used as arguments to speq, splt, clrp
@@ -128,6 +130,65 @@ OPCODE_HALT     = 0x1C`6
 
 ; Pseudoinstructions
 #ruledef pseudoinstructions {
+    ; Linalg
+    {pred: predicate} dot4 {vector1: srcreg}, {vector2: srcreg} => asm{
+        {pred} maccl
+        {pred} mac {vector1} + 0, {vector2} + 0
+        {pred} mac {vector1} + 1, {vector2} + 1
+        {pred} mac {vector1} + 2, {vector2} + 2
+        {pred} mac {vector1} + 3, {vector2} + 3
+    }
+    {pred: predicate} dot3 {vector1: srcreg}, {vector2: srcreg} => asm{
+        {pred} maccl
+        {pred} mac {vector1} + 0, {vector2} + 0
+        {pred} mac {vector1} + 1, {vector2} + 1
+        {pred} mac {vector1} + 2, {vector2} + 2
+    }
+    {pred: predicate} cross3 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm{
+        ; v[0] = a[1] * b[2] - a[2] * b[1];
+        {pred} mul {vecdest} + 0, {vector1} + 1, {vector2} + 2
+        {pred} mul           $at, {vector1} + 2, {vector2} + 1
+        {pred} sub {vecdest} + 0, {vecdest} + 0, $at
+
+        ; v[1] = a[2] * b[0] - a[0] * b[2];
+        {pred} mul {vecdest} + 1, {vector1} + 2, {vector2} + 0
+        {pred} mul           $at, {vector1} + 0, {vector2} + 2
+        {pred} sub {vecdest} + 1, {vecdest} + 1, $at
+
+        ; v[2] = a[0] * b[1] - a[1] * b[0];
+        {pred} mul {vecdest} + 2, {vector1} + 0, {vector2} + 1
+        {pred} mul           $at, {vector1} + 1, {vector2} + 0
+        {pred} sub {vecdest} + 2, {vecdest} + 2, $at
+    }
+    {pred: predicate} addv4 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm{
+        {pred} add {vecdest} + 0, {vector1} + 0, {vector2} + 0
+        {pred} add {vecdest} + 1, {vector1} + 1, {vector2} + 1
+        {pred} add {vecdest} + 2, {vector1} + 2, {vector2} + 2
+        {pred} add {vecdest} + 3, {vector1} + 3, {vector2} + 3
+    }
+    {pred: predicate} subv4 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm{
+        {pred} sub {vecdest} + 0, {vector1} + 0, {vector2} + 0
+        {pred} sub {vecdest} + 1, {vector1} + 1, {vector2} + 1
+        {pred} sub {vecdest} + 2, {vector1} + 2, {vector2} + 2
+        {pred} sub {vecdest} + 3, {vector1} + 3, {vector2} + 3
+    }
+    {pred: predicate} addv3 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm{
+        {pred} add {vecdest} + 0, {vector1} + 0, {vector2} + 0
+        {pred} add {vecdest} + 1, {vector1} + 1, {vector2} + 1
+        {pred} add {vecdest} + 2, {vector1} + 2, {vector2} + 2
+    }
+    {pred: predicate} subv3 {vecdest: destreg}, {vector1: srcreg}, {vector2: srcreg} => asm{
+        {pred} sub {vecdest} + 0, {vector1} + 0, {vector2} + 0
+        {pred} sub {vecdest} + 1, {vector1} + 1, {vector2} + 1
+        {pred} sub {vecdest} + 2, {vector1} + 2, {vector2} + 2
+    }
+    {pred: predicate} scalev3 {vecdest: destreg}, {vector: srcreg}, {scalar: srcreg} => asm{
+        {pred} mul {vecdest} + 0, {vector} + 0, {scalar}
+        {pred} mul {vecdest} + 1, {vector} + 1, {scalar}
+        {pred} mul {vecdest} + 2, {vector} + 2, {scalar}
+    }
+
+    ; Miscellaneous
     {pred: predicate} li {rd: destreg}, {imm: s32} => asm {
         {pred} andi {rd}, {rd}, 0`13
         {pred} ori  {rd}, {rd}, ({imm} >> 19)
@@ -136,12 +197,7 @@ OPCODE_HALT     = 0x1C`6
         {pred} muli {rd}, {rd}, (1 << 12)
         {pred} ori  {rd}, {rd}, ({imm} & 0xFFF)
     }
-
-    {pred: predicate} dot4 {vector1: srcreg}, {vector2: srcreg} => asm{
-        {pred} maccl
-        {pred} mac {vector1} + 0, {vector2} + 0
-        {pred} mac {vector1} + 1, {vector2} + 1
-        {pred} mac {vector1} + 2, {vector2} + 2
-        {pred} mac {vector1} + 3, {vector2} + 3
+    {pred: predicate} mov {rd: destreg}, {rs: srcreg} => asm {
+        {pred} addi {rd}, {rs}, 0`13
     }
 }

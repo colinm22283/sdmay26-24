@@ -15,22 +15,22 @@ OPCODE_SRL      = 0xC`6
 OPCODE_SRA      = 0xD`6
 OPCODE_OUT      = 0xE`6
 OPCODE_MAC      = 0xF`6
-OPCODE_MACCL    = 0x1`60
-OPCODE_MACRD    = 0x1`61
-OPCODE_SPEQ     = 0x1`62
-OPCODE_SPLT     = 0x1`63
-OPCODE_CLRP     = 0x1`64
-OPCODE_SPR      = 0x1`65
-OPCODE_SREQ     = 0x1`66
-OPCODE_SRLT     = 0x1`67
-OPCODE_LW       = 0x1`68
-OPCODE_SW       = 0x1`69
-OPCODE_SB       = 0x1`6A
-OPCODE_LWV      = 0x1`6B
-OPCODE_SWV      = 0x1`6C
-OPCODE_SBV      = 0x1`6D
-OPCODE_JUMP     = 0x1`6E
-OPCODE_HALT     = 0x1`6F
+OPCODE_MACCL    = 0x10`6
+OPCODE_MACRD    = 0x11`6
+OPCODE_SPEQ     = 0x12`6
+OPCODE_SPLT     = 0x13`6
+OPCODE_CLRP     = 0x14`6
+OPCODE_SPR      = 0x15`6
+OPCODE_SREQ     = 0x16`6
+OPCODE_SRLT     = 0x17`6
+OPCODE_LW       = 0x18`6
+OPCODE_SW       = 0x19`6
+OPCODE_SB       = 0x1A`6
+OPCODE_LWV      = 0x1B`6
+OPCODE_SWV      = 0x1C`6
+OPCODE_SBV      = 0x1D`6
+OPCODE_JUMP     = 0x1E`6
+OPCODE_HALT     = 0x1F`6
 
 
 ; Registers and Immediates
@@ -64,7 +64,7 @@ OPCODE_HALT     = 0x1`6F
 #subruledef predicate_bit {
     $p{n: u2} => {
       assert(n < 3)
-      (1 << n)`3
+      (1 << n)`4 ; Pad to 4-bit field
     }
 }
 
@@ -132,6 +132,15 @@ OPCODE_HALT     = 0x1`6F
     }
 }
 
+#subruledef jumpoffset {
+    ; customasm uses absolute label addresses,
+    ; turn them into PC-relative addresses.
+    {absolute: s23} => {
+        relative = absolute - $ - 4
+        relative`23
+    }
+}
+
 
 ; Base Instructions
 #ruledef instructions {
@@ -160,7 +169,7 @@ OPCODE_HALT     = 0x1`6F
     ; Branching and Predication
     {pred: predicate} speq    {pred_data: predicate_bit}, {rs1: srcreg}, {rs2: srcreg}  => OPCODE_SPEQ  @ pred @ pred_data @ rs1 @ rs2 @ 0`7
     {pred: predicate} splt    {pred_data: predicate_bit}, {rs1: srcreg}, {rs2: srcreg}  => OPCODE_SPLT  @ pred @ pred_data @ rs1 @ rs2 @ 0`7
-    {pred: predicate} clrp    {pred_data: predicate_bit}                                => OPCODE_CLRP  @ pred @ pred_data @ 0`19
+    {pred: predicate} clrp    {pred_data: predicate}                                    => OPCODE_CLRP  @ pred @ 0`1 @ pred_data @ 0`19
     {pred: predicate} spr     {rd: destreg}                                             => OPCODE_SPR   @ pred @ rd @ 0`19
     {pred: predicate} sreq    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SREQ  @ pred @ rd @ rs1 @ rs2 @ 0`7
     {pred: predicate} srlt    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SRLT  @ pred @ rd @ rs1 @ rs2 @ 0`7
@@ -174,7 +183,7 @@ OPCODE_HALT     = 0x1`6F
     {pred: predicate} sbv     {rs: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_SBV  @ pred @ rs @ roff @ imm
 
     ; Jump
-    {pred: predicate} j       {offset: s23} => OPCODE_JUMP @ pred @ offset
+    {pred: predicate} jump    {offset: jumpoffset} => OPCODE_JUMP @ pred @ offset
 
     ; Halt
     halt => OPCODE_HALT @ 0`26

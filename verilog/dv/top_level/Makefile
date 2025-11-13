@@ -29,7 +29,6 @@ include $(MCW_ROOT)/verilog/dv/make/sim.makefile
 # ---- Include RISC-V Deps ----
 
 # Override the caravel linker script and the ChipForge library linker script
-# CUSTOM_LINKER_SCRIPT = $(PWDD)/sections.lds
 export override LINKER_SCRIPT = $(PWDD)/sections.lds
 
 LIBRARY_DIR := $(PWDD)/../../../library
@@ -46,8 +45,10 @@ SOURCE_FILES += $(shell find $(SRC_DIR) -name "*.c")
 # ---- Include ASM Sources ----
 
 ASM_DIR = $(SRC_DIR)/asm
-CUSTOMASM_SOURCES = $(ASM_DIR)/fragment_shader.s \
+CUSTOMASM_SOURCES = $(ASM_DIR)/coretest.s \
+					$(ASM_DIR)/fragment_shader.s \
 					$(ASM_DIR)/ray_tracer.s \
+					$(ASM_DIR)/vertex_shader_cached.s \
 					$(ASM_DIR)/vertex_shader.s
 
 INCLUDE_DIRS += -I$(ASM_DIR)

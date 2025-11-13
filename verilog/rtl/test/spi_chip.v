@@ -154,8 +154,8 @@ module spi_chip_m #(
                 integer addr;
                 reg [7:0] write_data;
 
-                // wait(!clk_i);
-                // wait(clk_i);
+                wait(!clk_i);
+                wait(clk_i);
 
                 addr = address;
 

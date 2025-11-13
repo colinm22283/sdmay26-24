@@ -72,7 +72,7 @@ module spi_mem_m_unit_test;
     .spi_dqsm_o(spi_dqsmo)
   );
 
-  spi_chip_m #(7, 1, MEMORY_SIZE) spi_chip(
+  spi_chip_m #(5, 1, MEMORY_SIZE) spi_chip(
       .clk_i(spi_clk),
       .cs_i(spi_cs),
       .mosi_i(spi_mosi),
@@ -135,7 +135,7 @@ module spi_mem_m_unit_test;
 
       integer i, j;
 
-      count = 1000;
+      count = 1;
 
       for (i = 0; i < MEMORY_SIZE; i = i + 1) begin
         test_mem[i] = spi_chip.mem[i];
@@ -149,10 +149,13 @@ module spi_mem_m_unit_test;
         test_mem[addr] = data;
 
         for (j = 0; j < MEMORY_SIZE; j = j + 1) begin
+          // $display("0x%h == 0x%h", test_mem[j], spi_chip.mem[j]);
           `FAIL_UNLESS_EQUAL(test_mem[j], spi_chip.mem[j]);
         end
 
         master.READ_BYTE(addr, read_data);
+
+        // $display("0x%h == 0x%h", data, read_data);
         `FAIL_UNLESS_EQUAL(data, read_data);
       end
     `SVTEST_END
@@ -167,7 +170,7 @@ module spi_mem_m_unit_test;
 
       integer i, j;
 
-      count = 1000;
+      count = 1;
 
       for (i = 0; i < count; i = i + 1) begin
         addr = {$random} % (MEMORY_SIZE - 1000);

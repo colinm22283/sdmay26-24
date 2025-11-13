@@ -74,6 +74,13 @@
 () lw $r8, 4[$r2]
 () sw $r8, 0[$r0]
 () sb $r8, 5[$r0]
+() addi $r10, $r10, 1000
+() sw $r11, 0[$r0]
+() lw $r11, 0[$r0]
+() sw $r10, 1[$r0]
+() sw $r10, 3[$r0]
+() lw $r12, 2[$r0]
+() lw $r13, 0[$r0]
 ; () lwv ; TODO: Later, we need to think about these a little more
 ; () swv
 ; () sbv

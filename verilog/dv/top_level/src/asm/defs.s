@@ -162,7 +162,7 @@ OPCODE_HALT     = 0x1F`6
     {pred: predicate} out     {rs: srcreg}                                      => OPCODE_OUT   @ pred @ 0`4 @ rs @ 0`13
 
     ; MAC
-    {pred: predicate} mac     {rs1: srcreg}, {rs2: srcreg}  => OPCODE_MAC   @ pred @ 0`6 @ rs1 @ rs2 @ 0`7
+    {pred: predicate} mac     {rs1: srcreg}, {rs2: srcreg}  => OPCODE_MAC   @ pred @ 0`4 @ rs1 @ rs2 @ 0`7
     {pred: predicate} maccl                                 => OPCODE_MACCL @ pred @ 0`23
     {pred: predicate} macrd   {rd: destreg}                 => OPCODE_MACRD @ pred @ rd @ 0`19
 

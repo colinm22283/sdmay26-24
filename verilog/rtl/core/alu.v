@@ -6,10 +6,9 @@
 */
 
 `include "user_defines.v"
-`include "math/add.v"
+`include "math/full_adder.v"
 `include "math/div.v"
 `include "math/mul.v"
-`include "math/sub.v"
 
 module alu_m (
     input  wire clk_i,
@@ -36,25 +35,22 @@ module alu_m (
     localparam SEQ =        4'b1010;
     localparam SLT =        4'b1011;
 
-    wire[`WORD_WIDTH-1:0] sum_adder;
-    wire[`WORD_WIDTH-1:0] sum_subtractor;
-    wire adder_c_in;
-    wire adder_c_out;
+    wire[`WORD_WIDTH-1:0] sum;
     wire[`WORD_WIDTH-1:0] product;
     wire[`WORD_WIDTH-1:0] quotient;
 
-    reg [`WORD_WIDTH-1:0] result_reg;
+    wire[`WORD_WIDTH-1:0] adder_b_port;
+    wire adder_c_out;
+    wire nadd_sub;
 
-    add_m #(`WORD_WIDTH) adder (
+    assign nadd_sub = (alu_ctl_i == SUB);
+    assign adder_b_port = (nadd_sub) ? ~b_i : b_i;
+    full_adder_m #(`WORD_WIDTH) full_adder (
         .a_i(a_i),
-        .b_i(b_i),
-        .y_o(sum_adder)
-    );
-
-    sub_m #(`WORD_WIDTH) subtractor (
-        .a_i(a_i),
-        .b_i(b_i),
-        .y_o(sum_subtractor)
+        .b_i(adder_b_port),
+        .carry_i(nadd_sub),
+        .y_o(sum),
+        .carry_o(adder_c_out)
     );
 
     mul_m #(`WORD_WIDTH) multiplier (
@@ -69,32 +65,8 @@ module alu_m (
         .y_o(quotient)
     );
 
-    // always @(*) begin OUTPUT:
-    //     case (alu_ctl_i)
-    //         ADD:    result_reg = sum_adder;
-    //         SUB:    result_reg = sum_subtractor;
-    //         MULT:   result_reg = product;
-    //         DIV:    result_reg = quotient;
-    //         AND:    result_reg = a_i & b_i;
-    //         OR:     result_reg = a_i | b_i;
-    //         XOR:    result_reg = a_i ^ b_i;
-    //         MAC: begin
-    //             //TODO
-    //         end
-    //         MAC_CLR: begin
-    //             //TODO
-    //         end
-    //         MAC_READ: begin
-    //             //TODO
-    //         end
-    //         SEQ:    result_reg = (a_i == b_i);
-    //         SLT:    result_reg = (a_i < b_i);
-    //         default: result_reg = 0;
-    //     endcase
-    // end
-
-    assign result_o =   (alu_ctl_i == ADD)      ? sum_adder :
-                        (alu_ctl_i == SUB)      ? sum_subtractor :
+    assign result_o =   (alu_ctl_i == ADD)      ? sum :
+                        (alu_ctl_i == SUB)      ? sum :
                         (alu_ctl_i == MULT)     ? product :
                         (alu_ctl_i == DIV)      ? quotient :
                         (alu_ctl_i == AND)      ? (a_i & b_i) :

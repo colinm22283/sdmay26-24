@@ -96,11 +96,95 @@ module alu_unit_test;
       a = 0;
       b = 0;
       #1
-      $display("result %d, a: %d", result, a);
-      `FAIL_UNLESS_EQUAL(result, a);
+      $display("result %h, a: %h", result, a);
+      `FAIL_UNLESS_EQUAL(result, 0);
 
+      #1;
+      a = 32'hFFFFFFFF;
+      b = 1;
+      #1
+      `FAIL_UNLESS_EQUAL(result, 0);
     `SVTEST_END
 
+    `SVTEST(sub)
+      alu_ctl = SUB;
+      a = 32'h0000FFFF;
+      b = 32'h0000FFFE;
+      #1
+      `FAIL_UNLESS_EQUAL(result, 1);
+    `SVTEST_END
+
+    `SVTEST(mult)
+      a = 'h00012345;
+      b = 'h321;
+      #1
+      $display("res 0x%h", result);
+      `FAIL_UNLESS_EQUAL(result, 'h12024);
+    `SVTEST_END
+
+
+  `SVTEST(div)
+    alu_ctl = DIV;
+    a = 'h8000;
+    b = 'h1000;
+    #1
+    `FAIL_UNLESS_EQUAL(result, 'h2000);
+  `SVTEST_END
+
+  `SVTEST(and_op)
+    alu_ctl = AND;
+    a = 'hFFFFF000;
+    b = 'h000FFFFF;
+    #1;
+    `FAIL_UNLESS_EQUAL(result, 'h000FF000);
+  `SVTEST_END
+
+  `SVTEST(or_op)
+    alu_ctl = OR;
+    a = 'hFFF00000;
+    b = 'h00000FFF;
+    #1;
+    `FAIL_UNLESS_EQUAL(result, 'hFFF00FFF);
+  `SVTEST_END
+
+  `SVTEST(xor_op)
+    alu_ctl = XOR;
+    a = 'h77778888;
+    b = 'hFFFF0000;
+    #1;
+    `FAIL_UNLESS_EQUAL(result, 'h88888888);
+  `SVTEST_END
+
+  `SVTEST(mac)
+    alu_ctl = MAC;
+    //TODO
+  `SVTEST_END
+
+  `SVTEST(mac_clr)
+    alu_ctl = MAC_CLR;
+    //TODO
+  `SVTEST_END
+
+  `SVTEST(mac_read)
+    alu_ctl = MAC_READ;
+    //TODO
+  `SVTEST_END
+
+  `SVTEST(seq)
+    alu_ctl = SEQ;
+    a = 0;
+    b = 0;
+    #1
+    `FAIL_UNLESS(result);
+    a = 1;
+    #1
+    `FAIL_IF(result);
+  `SVTEST_END
+
+  `SVTEST(slt)
+    alu_ctl = SLT;
+
+  `SVTEST_END
 
   `SVUNIT_TESTS_END
 

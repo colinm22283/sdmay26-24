@@ -47,22 +47,22 @@ height = 240
 ; Loop through triangles to find collision
 () andi $r15, $r15, 0   ; r15: Bounce loop counter
 () splt $p0, $r15, $r15 ; Unconditional predicate set so loop_compare runs
-(001) j loop_compare
+(001) jump loop_compare
 loop:
     (001) andi $r14, $r14, 0 ; r14: Triangle loop counter
     triangle_loop:
-        (011) j load_and_check_triangle
+        (011) jump load_and_check_triangle
 
         (011) addi $r14, $r14, 1
     triangle_loop_compare:
         (011) splt $p1, $r14, $g45
-        (011) j triangle_loop
+        (011) jump triangle_loop
     triangle_loop_exit:
 
     (001) addi $r15, $r15, 1
 loop_compare:
     (001) splt $p0, $r15, $g43
-    (001) j loop
+    (001) jump loop
 
 loop_end:
     halt

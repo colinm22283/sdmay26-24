@@ -10,24 +10,27 @@ OPCODE_OR       = 0x7`6
 OPCODE_ORI      = 0x8`6
 OPCODE_XOR      = 0x9`6
 OPCODE_XORI     = 0xA`6
-OPCODE_OUT      = 0xB`6
-OPCODE_MAC      = 0xC`6
-OPCODE_MACCL    = 0xD`6
-OPCODE_MACRD    = 0xE`6
-OPCODE_SPEQ     = 0xF`6
-OPCODE_SPLT     = 0x10`6
-OPCODE_CLRP     = 0x11`6
-OPCODE_SPR      = 0x12`6
-OPCODE_SREQ     = 0x13`6
-OPCODE_SRLT     = 0x14`6
-OPCODE_LW       = 0x15`6
-OPCODE_SW       = 0x16`6
-OPCODE_SB       = 0x17`6
-OPCODE_LWV      = 0x18`6
-OPCODE_SWV      = 0x19`6
-OPCODE_SBV      = 0x1A`6
-OPCODE_JUMP     = 0x1B`6
-OPCODE_HALT     = 0x1C`6
+OPCODE_SLL      = 0xB`6
+OPCODE_SRL      = 0xC`6
+OPCODE_SRA      = 0xD`6
+OPCODE_OUT      = 0xE`6
+OPCODE_MAC      = 0xF`6
+OPCODE_MACCL    = 0x1`60
+OPCODE_MACRD    = 0x1`61
+OPCODE_SPEQ     = 0x1`62
+OPCODE_SPLT     = 0x1`63
+OPCODE_CLRP     = 0x1`64
+OPCODE_SPR      = 0x1`65
+OPCODE_SREQ     = 0x1`66
+OPCODE_SRLT     = 0x1`67
+OPCODE_LW       = 0x1`68
+OPCODE_SW       = 0x1`69
+OPCODE_SB       = 0x1`6A
+OPCODE_LWV      = 0x1`6B
+OPCODE_SWV      = 0x1`6C
+OPCODE_SBV      = 0x1`6D
+OPCODE_JUMP     = 0x1`6E
+OPCODE_HALT     = 0x1`6F
 
 
 ; Registers and Immediates
@@ -144,6 +147,9 @@ OPCODE_HALT     = 0x1C`6
     {pred: predicate} ori     {rd: destreg}, {rs1: srcreg}, {imm: immediate}    => OPCODE_ORI   @ pred @ rd @ rs1 @ imm
     {pred: predicate} xor     {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}       => OPCODE_XOR   @ pred @ rd @ rs1 @ rs2 @ 0`7
     {pred: predicate} xori    {rd: destreg}, {rs1: srcreg}, {imm: immediate}    => OPCODE_XORI  @ pred @ rd @ rs1 @ imm
+    {pred: predicate} sll     {rd: destreg}, {rs1: srcreg}, {shift: u5}         => OPCODE_SLL   @ pred @ rd @ rs1 @ 0`8 @ shift
+    {pred: predicate} srl     {rd: destreg}, {rs1: srcreg}, {shift: u5}         => OPCODE_SRL   @ pred @ rd @ rs1 @ 0`8 @ shift
+    {pred: predicate} sra     {rd: destreg}, {rs1: srcreg}, {shift: u5}         => OPCODE_SRA   @ pred @ rd @ rs1 @ 0`8 @ shift
     {pred: predicate} out     {rs: srcreg}                                      => OPCODE_OUT   @ pred @ 0`4 @ rs @ 0`13
 
     ; MAC
@@ -160,12 +166,12 @@ OPCODE_HALT     = 0x1C`6
     {pred: predicate} srlt    {rd: destreg}, {rs1: srcreg}, {rs2: srcreg}               => OPCODE_SRLT  @ pred @ rd @ rs1 @ rs2 @ 0`7
 
     ; Memory
-    {pred: predicate} lw      {rd: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_LW    @ pred @ rd  @ roff @ 0`6 @ imm
-    {pred: predicate} sw      {rs: srcreg},  {imm: immediate}[{roff: srcreg}] => OPCODE_SW    @ pred @ 0`4 @ roff @ rs  @ imm
-    {pred: predicate} sb      {rs: srcreg},  {imm: immediate}[{roff: srcreg}] => OPCODE_SB    @ pred @ 0`4 @ roff @ rs  @ imm
-    {pred: predicate} lwv     {rd: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_LWV   @ pred @ rd  @ roff @ 0`6 @ imm
-    {pred: predicate} swv     {rs: srcreg},  {imm: immediate}[{roff: srcreg}] => OPCODE_SWV   @ pred @ 0`4 @ roff @ rs  @ imm
-    {pred: predicate} sbv     {rs: srcreg},  {imm: immediate}[{roff: srcreg}] => OPCODE_SBV   @ pred @ 0`4 @ roff @ rs  @ imm
+    {pred: predicate} lw      {rd: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_LW   @ pred @ rd @ roff @ imm
+    {pred: predicate} sw      {rs: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_SW   @ pred @ rs @ roff @ imm
+    {pred: predicate} sb      {rs: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_SB   @ pred @ rs @ roff @ imm
+    {pred: predicate} lwv     {rd: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_LWV  @ pred @ rd @ roff @ imm
+    {pred: predicate} swv     {rs: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_SWV  @ pred @ rs @ roff @ imm
+    {pred: predicate} sbv     {rs: destreg}, {imm: immediate}[{roff: srcreg}] => OPCODE_SBV  @ pred @ rs @ roff @ imm
 
     ; Jump
     {pred: predicate} j       {offset: s23} => OPCODE_JUMP @ pred @ offset
@@ -239,12 +245,16 @@ OPCODE_HALT     = 0x1C`6
     {pred: predicate} li {rd: destreg}, {imm: immediate32} => asm {
         {pred} andi {rd}, {rd}, 0`13
         {pred} ori  {rd}, {rd}, ({imm} >> 19)
-        {pred} muli {rd}, {rd}, (1 << 12)
+        {pred} sll  {rd}, {rd}, 12
         {pred} ori  {rd}, {rd}, (({imm} >> 7) & 0xFFF)
-        {pred} muli {rd}, {rd}, (1 << 12)
+        {pred} sll  {rd}, {rd}, 12
         {pred} ori  {rd}, {rd}, ({imm} & 0xFFF)
     }
     {pred: predicate} mov {rd: destreg}, {rs: srcreg} => asm {
         {pred} addi {rd}, {rs}, 0`13
+    }
+    {pred: predicate} trunc {rd: destreg}, {rs: srcreg} => asm {
+        {pred} srl {rd}, {rs}, 10
+        {pred} sll {rd}, {rd}, 10
     }
 }

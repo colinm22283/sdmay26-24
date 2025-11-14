@@ -266,4 +266,7 @@ OPCODE_HALT     = 0x1F`6
         {pred} srl {rd}, {rs}, 10
         {pred} sll {rd}, {rd}, 10
     }
+    {pred: predicate} nop => asm {
+        {pred} addi $r0, $r0, 0
+    }
 }

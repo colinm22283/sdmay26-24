@@ -11,7 +11,7 @@ module mult_pipe #(parameter BUS_DATA_SIZE = 32) (
     generate
         for (i = 0; i < BUS_DATA_SIZE; i = i + 1)
             for(j= 0; j < BUS_DATA_SIZE; j = j + 1)
-                assign pp[i][j] = a_i[j] & b_i[j];
+                assign partialp[i][j] = a_i[j] & b_i[j];
     endgenerate
 
     //Reduction
@@ -21,7 +21,7 @@ module mult_pipe #(parameter BUS_DATA_SIZE = 32) (
     begin
         sum = 0;
         for (k = 0; k < BUS_DATA_SIZE; k = k + 1)
-            sum = sum + (pp[k] << k);
+            sum = sum + (partialp[k] << k);
     end
-    assign P = sum;
+    assign y_o = sum;
 endmodule

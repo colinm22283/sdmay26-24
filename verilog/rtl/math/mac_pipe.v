@@ -2,18 +2,19 @@
 
 module mac_piped #(parameter DATA_WIDTH = 32) (
     input clk, nrst,
-    input [BUS_DATA_SIZE-1:0] a_i, b_i,
-    output [BUS_DATA_SIZE-1:0] y_o
+    input [31:0] a_i, b_i,
+    output [31:0] y_o
 );
-    wire [BUS_DATA_SIZE-1:0] ab, absum;
-    reg [BUS_DATA_SIZE-1:0] abprod, sum;
+    wire [31:0] ab, absum;
+    reg [31:0] abprod, sum;
 
     //mult to add section
     always @ (posedge clk or negedge nrst)
     begin
         if(nrst == 0)
         begin
-            abprod <= 0;
+            //synth was finding length unclear
+            abprod <= 32'b0;
         end
         else
         begin

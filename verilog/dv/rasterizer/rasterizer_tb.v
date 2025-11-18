@@ -23,33 +23,33 @@ module rasterizer_tb();
     wire [`BUS_SIPORT] sportai;
     wire [`BUS_SOPORT] sportao;
 
-    // assign mportbo = mportao;
-    // assign mportai = mportbi;
+    assign mportbo = mportao;
+    assign mportai = mportbi;
 
-    word_stripe_cache_m #(20, 20) word_cache(
-        .clk_i(clk),
-        .nrst_i(nrst),
+    // word_stripe_cache_m #(20, 20) word_cache(
+    //     .clk_i(clk),
+    //     .nrst_i(nrst),
 
-        .cached_mport_i(mportao),
-        .cached_mport_o(mportai),
+    //     .cached_mport_i(mportao),
+    //     .cached_mport_o(mportai),
 
-        .mport_i(mportbi),
-        .mport_o(mportbo)
-    );
+    //     .mport_i(mportbi),
+    //     .mport_o(mportbo)
+    // );
 
-    // assign mportco = mportbo;
-    // assign mportbi = mportci;
+    assign mportco = mportbo;
+    assign mportbi = mportci;
 
-    byte_write_stripe_cache_m #(40) byte_cache(
-        .clk_i(clk),
-        .nrst_i(nrst),
+    // byte_write_stripe_cache_m #(40) byte_cache(
+    //     .clk_i(clk),
+    //     .nrst_i(nrst),
 
-        .cached_mport_i(mportbo),
-        .cached_mport_o(mportbi),
+    //     .cached_mport_i(mportbo),
+    //     .cached_mport_o(mportbi),
 
-        .mport_i(mportci),
-        .mport_o(mportco)
-    );
+    //     .mport_i(mportci),
+    //     .mport_o(mportco)
+    // );
 
     busarb_m #(1, 1, 1) arbiter(
         .clk_i(clk),

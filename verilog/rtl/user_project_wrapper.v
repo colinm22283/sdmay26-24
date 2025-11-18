@@ -87,20 +87,29 @@ module user_project_wrapper #(
 
     wire clk, nrst;
     assign clk = wb_clk_i;
-    assign nrst = !wb_rst_i;
+    assign nrst = la_data_in[0];
+
+    wire [3:0] debug;
+    wire [2:0] debug2;
 
     wire [`BUS_MIPORT] mportai;
-    reg  [`BUS_MOPORT] mportao;
+    wire [`BUS_MOPORT] mportao;
+
+    wire [`BUS_MIPORT] mportbi;
+    wire [`BUS_MOPORT] mportbo;
+
+    wire [`BUS_MIPORT] mportci;
+    reg  [`BUS_MOPORT] mportco;
 
     wire [`BUS_SIPORT] sportai;
     wire [`BUS_SOPORT] sportao;
 
-    busarb_m #(1, 1, 1) arbiter(
+    busarb_m #(3, 1, 1) arbiter(
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .mports_i({ mportao }),
-        .mports_o({ mportai }),
+        .mports_i({ mportco, mportbo, mportao }),
+        .mports_o({ mportci, mportbi, mportai }),
 
         .sports_i({ sportao }),
         .sports_o({ sportai })
@@ -115,14 +124,12 @@ module user_project_wrapper #(
     wire [3:0] spi_sio_en;
     wire spi_dqsm_en;
 
-    wire debug;
-
-    spi_mem_m #(0, 1024) spi_mem(
+    spi_mem_m #(0, 4000000) spi_mem(
         .clk_i(clk),
         .nrst_i(nrst),
 
-        .sport_i({ sportai }),
-        .sport_o({ sportao }),
+        .sport_i(sportai),
+        .sport_o(sportao),
 
         .spi_clk_o(spi_clk),
         .spi_cs_o(spi_cs),
@@ -135,59 +142,225 @@ module user_project_wrapper #(
         .spi_dqsm_en_o(spi_dqsm_en)
     );
 
+    wire [2:0] red;
+    wire [2:0] green;
+    wire [1:0] blue;
+    wire hsync;
+    wire vsync;
+
+    reg enable;
+
+    vga_m #(0, 0) my_vga (
+        .clk_i(clk),
+        .nrst_i(nrst),
+        .enable_i(enable),
+        .prescaler_i(4'b0010),
+        .resolution_i(`VGA_RES_320x240),
+        .base_h_active_i(`VGA_BASE_H_ACTIVE),
+        .base_h_fporch_i(`VGA_BASE_H_FPORCH),
+        .base_h_sync_i(`VGA_BASE_H_SYNC),
+        .base_h_bporch_i(`VGA_BASE_H_BPORCH),
+        .base_v_active_i(`VGA_BASE_V_ACTIVE),
+        .base_v_fporch_i(`VGA_BASE_V_FPORCH),
+        .base_v_sync_i(`VGA_BASE_V_SYNC),
+        .base_v_bporch_i(`VGA_BASE_V_BPORCH),
+        .mport_i(mportai),
+        .mport_o(mportao),
+        .fb_i(0),
+        .pixel_o({ red, green, blue }), // Remap standard 8 bit color to the correct IO
+        .hsync_o(hsync),
+        .vsync_o(vsync)
+    );
+
+    // assign debug[1:0] = arbiter.state[0];
+    // assign debug[2] = arbiter.master_handled[0];
+    // assign debug[3] = arbiter.master_handled[1];
+
+    reg  run;
+    wire busy;
+    wire output_ready;
+    reg [7:0] color;
+
+    reg [31:0] t0x;
+    reg [31:0] t0y;
+    reg [31:0] t1x;
+    reg [31:0] t1y;
+    reg [31:0] t2x;
+    reg [31:0] t2y;
+
+    reg [31:0] v0x;
+    reg [31:0] v0y;
+    reg [31:0] v0z;
+    reg [31:0] v1x;
+    reg [31:0] v1y;
+    reg [31:0] v1z;
+    reg [31:0] v2x;
+    reg [31:0] v2y;
+    reg [31:0] v2z;
+
+    rasterizer_m rasterizer(
+        .clk_i(clk),
+        .nrst_i(nrst),
+
+        .mport_i(mportbi),
+        .mport_o(mportbo),
+
+        .run_i(run),
+        .busy_o(busy),
+        .output_ready_o(output_ready),
+
+        .color_i(color),
+
+        .t0x(t0x),
+        .t0y(t0y),
+        .t1x(t1x),
+        .t1y(t1y),
+        .t2x(t2x),
+        .t2y(t2y),
+
+        .v0x(v0x),
+        .v0y(v0y),
+        .v0z(v0z),
+        .v1x(v1x),
+        .v1y(v1y),
+        .v1z(v1z),
+        .v2x(v2x),
+        .v2y(v2y),
+        .v2z(v2z)
+    );
+
+    assign debug = clk;
+    assign debug2 = clk;
+
     reg [7:0] state;
 
-    assign debug = state[0];
+    reg [31:0] timer;
+
+    reg [31:0] addr;
 
     always @(posedge clk, negedge nrst) begin
         if (!nrst) begin
             state <= 100;
 
-            mportao <= 0;
+            mportco <= 0;
+
+            timer <= 0;
+            addr  <= 0;
+
+            enable <= 0;
         end
         else if (clk) begin
             case (state)
                 100: begin
-                    if (la_data_in[0]) state <= 0;
+                    state <= 10;
+
+                    timer <= 0;
                 end
 
                 0: begin
-                    if (mportai[`BUS_MI_ACK]) state <= 1;
+                    mportco[`BUS_MO_ADDR] <= addr;
+                    mportco[`BUS_MO_DATA] <= 0;
+                    mportco[`BUS_MO_SIZE] <= `BUS_SIZE_WORD;
+                    mportco[`BUS_MO_RW]   <= `BUS_WRITE;
+                    mportco[`BUS_MO_REQ]  <= 1;
 
-                    mportao[`BUS_MO_ADDR] <= 10;
-                    mportao[`BUS_MO_DATA] <= 1;
-                    mportao[`BUS_MO_SIZE] <= `BUS_SIZE_BYTE;
-                    mportao[`BUS_MO_RW]   <= `BUS_WRITE;
-                    mportao[`BUS_MO_REQ]  <= 1;
+                    if (mportci[`BUS_MI_ACK]) state <= 1;
                 end
-
                 1: begin
-                    if (!mportai[`BUS_MI_ACK]) begin
-                        state <= 2;
+                    if (mportci[`BUS_MI_ACK]) begin
+                        if (addr == 320 * 240 - 4) begin
+                            state <= 2;
 
-                        mportao[`BUS_MO_REQ]  <= 0;
+                            mportco[`BUS_MO_REQ]  <= 0;
+
+                            addr <= `ADDR_DEPTH_BUFFER;
+                        end
+                        else begin
+                            state <= 0;
+                            
+                            mportco[`BUS_MO_REQ]  <= 0;
+
+                            addr <= addr + 4;
+                        end
                     end
                 end
 
                 2: begin
-                    if (mportai[`BUS_MI_ACK]) state <= 3;
+                    mportco[`BUS_MO_ADDR] <= addr;
+                    mportco[`BUS_MO_DATA] <= 32'hFFFFFFFF;
+                    mportco[`BUS_MO_SIZE] <= `BUS_SIZE_WORD;
+                    mportco[`BUS_MO_RW]   <= `BUS_WRITE;
+                    mportco[`BUS_MO_REQ]  <= 1;
 
-                    mportao[`BUS_MO_ADDR] <= 10;
-                    mportao[`BUS_MO_SIZE] <= `BUS_SIZE_BYTE;
-                    mportao[`BUS_MO_RW]   <= `BUS_READ;
-                    mportao[`BUS_MO_REQ]  <= 1;
+                    if (mportci[`BUS_MI_ACK]) state <= 3;
                 end
-
                 3: begin
-                    if (!mportai[`BUS_MI_ACK]) begin
-                        state <= 4;
+                    if (mportci[`BUS_MI_ACK]) begin
+                        if (addr == `ADDR_DEPTH_BUFFER + 320 * 240 * 4 - 4) begin
+                            state <= 4;
 
-                        mportao[`BUS_MO_REQ]  <= 0;
+                            mportco[`BUS_MO_REQ]  <= 0;
+
+                            addr <= 0;
+                        end
+                        else begin
+                            state <= 2;
+                            
+                            mportco[`BUS_MO_REQ]  <= 0;
+
+                            addr <= addr + 4;
+                        end
                     end
                 end
 
                 4: begin
-                    state <= 0;
+                    color <= 8'b00000111;
+
+                    v0x = 20 << `DECIMAL_POS;
+                    v0y = 20 << `DECIMAL_POS;
+                    v0z = 2 * 64'h80000000 / 3;
+                    t0x = 0;
+                    t0y = 0;
+
+                    v1x = 140 << `DECIMAL_POS;
+                    v1y = 50 << `DECIMAL_POS;
+                    v1z = 1 * 64'h80000000 / 3;
+                    t1x = 10;
+                    t1y = 0;
+
+                    v2x = 50 << `DECIMAL_POS;
+                    v2y = 140 << `DECIMAL_POS;
+                    v2z = 1 * 64'h80000000 / 3;
+                    t2x = 0;
+                    t2y = 10;
+
+                    run <= 1;
+
+                    if (busy) state <= 5;
+                end
+
+                5: begin
+                    if (!busy) begin
+                        state <= 10;
+
+                        timer <= 0;
+
+                        run <= 0;
+                    end
+                end
+
+                10: begin
+                    if (timer == 25000000) begin
+                        state <= 0;
+
+                        addr <= 0;
+                    end
+
+                    if (timer == 500) begin
+                        enable <= 1;
+                    end
+
+                    timer <= timer + 1;
                 end
             endcase
         end
@@ -202,10 +375,19 @@ module user_project_wrapper #(
 
         io_out[11:8] <= spi_mosi;
         io_out[7]    <= spi_cs;
-        io_out[12]    <= spi_clk;
-        io_out[13]    <= spi_dqsmo;
+        io_out[12]   <= spi_clk;
+        io_out[13]   <= spi_dqsmo;
+        
+        io_out[19:16]   <= debug;
+        
+        io_out[22:20]   <= debug2;
 
-        io_out[15]    <= debug;
+        io_out[26:24] <= red;
+        io_out[30:28] <= green;
+        { io_out[31], io_out[27] } <= blue;
+
+        io_out[23] <= hsync;
+        io_out[22] <= vsync;
 
         spi_miso  <= io_in[11:8];
         spi_dqsmi <= io_in[13];

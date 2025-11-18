@@ -32,6 +32,8 @@
 -v $(USER_PROJECT_VERILOG)/rtl/bus/byte_stripe_cache.v
 -v $(USER_PROJECT_VERILOG)/rtl/bus/virtual_master.v
 
+-v $(USER_PROJECT_VERILOG)/rtl/core/core.v
+
 -v $(USER_PROJECT_VERILOG)/rtl/stream/stream_fifo.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/math/add.v

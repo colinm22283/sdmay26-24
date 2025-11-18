@@ -64,6 +64,17 @@ static inline void init_io() {
 #define MEM_IO_CTRL_SIO2  (reg_mprj_io_10)
 #define MEM_IO_CTRL_SIO3  (reg_mprj_io_11)
 
+#define VGA_IO_R0 (reg_mprj_io_24)
+#define VGA_IO_R1 (reg_mprj_io_25)
+#define VGA_IO_R2 (reg_mprj_io_26)
+#define VGA_IO_G0 (reg_mprj_io_27)
+#define VGA_IO_G1 (reg_mprj_io_28)
+#define VGA_IO_G2 (reg_mprj_io_29)
+#define VGA_IO_B0 (reg_mprj_io_30)
+#define VGA_IO_B1 (reg_mprj_io_31)
+#define VGA_IO_HSYNC (reg_mprj_io_22)
+#define VGA_IO_VSYNC (reg_mprj_io_23)
+
 void main() {
     reg_gpio_mode1 = 1;
     reg_gpio_mode0 = 0;
@@ -73,6 +84,10 @@ void main() {
     reg_wb_enable = 1;
 
     init_io();
+
+    set_la_dir(0, true);
+
+    set_la_data(0, false);
 
     reg_uart_enable = 1;
 
@@ -88,10 +103,31 @@ void main() {
     
     MEM_IO_CTRL_DEBUG = GPIO_MODE_USER_STD_BIDIRECTIONAL;
 
+    VGA_IO_R0 = GPIO_MODE_USER_STD_OUTPUT;
+    VGA_IO_R1 = GPIO_MODE_USER_STD_OUTPUT;
+    VGA_IO_R2 = GPIO_MODE_USER_STD_OUTPUT;
+    VGA_IO_G0 = GPIO_MODE_USER_STD_OUTPUT;
+    VGA_IO_G1 = GPIO_MODE_USER_STD_OUTPUT;
+    VGA_IO_G2 = GPIO_MODE_USER_STD_OUTPUT;
+    VGA_IO_B0 = GPIO_MODE_USER_STD_OUTPUT;
+    VGA_IO_B1 = GPIO_MODE_USER_STD_OUTPUT;
+    VGA_IO_HSYNC = GPIO_MODE_USER_STD_OUTPUT;
+    VGA_IO_VSYNC = GPIO_MODE_USER_STD_OUTPUT;
+
+    reg_mprj_io_16 = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_17 = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_18 = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_19 = GPIO_MODE_USER_STD_OUTPUT;
+
+    reg_mprj_io_20 = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_21 = GPIO_MODE_USER_STD_OUTPUT;
+    reg_mprj_io_22 = GPIO_MODE_USER_STD_OUTPUT;
+
     reg_mprj_xfer = 1;
     while (reg_mprj_xfer == 1);
 
-    set_la_dir(0, true);
+    delay_ms(1000);
+
     set_la_data(0, true);
 
     delay_ms(1000);

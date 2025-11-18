@@ -111,6 +111,29 @@ module virtual_master_m(
     end
     endtask
 
+    task READ_WORD;
+        input [`BUS_ADDR_PORT] addr;
+        output [31:0] data;
+    begin
+        wait(!clk_i);
+
+        mport_o[`BUS_MO_ADDR] = addr;
+        mport_o[`BUS_MO_SIZE] = `BUS_SIZE_WORD;
+        mport_o[`BUS_MO_RW]   = `BUS_READ;
+        mport_o[`BUS_MO_REQ]  = 1;
+
+        wait(mport_i[`BUS_MI_ACK]);
+        wait(!mport_i[`BUS_MI_ACK]);
+
+        data = mport_i[`BUS_MI_DATA];
+
+        mport_o[`BUS_MO_REQ]  = 0;
+
+        wait(!clk_i);
+        wait(clk_i);
+    end
+    endtask
+
     task READ_STREAM;
         input [`BUS_ADDR_PORT] addr;
         input [`BUS_ADDR_PORT] size;

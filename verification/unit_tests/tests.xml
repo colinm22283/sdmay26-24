@@ -2,9 +2,9 @@
   <testsuite name="__ts">
     <testcase classname="spi_mem_m_ut" name="bytes">
     </testcase>
+    <testcase classname="spi_mem_m_ut" name="words">
+    </testcase>
     <testcase classname="spi_mem_m_ut" name="single_stream">
-      <failure message="fail_if: 1 (at /local/colinm22/sdmay26-24/verification/unit_tests/./spi_mem_unit_test.sv line:181)" type="failure">
-      </failure>
     </testcase>
   </testsuite>
 </testsuites>

@@ -135,7 +135,7 @@ module spi_mem_m_unit_test;
 
       integer i, j;
 
-      count = 1;
+      count = 100;
 
       for (i = 0; i < MEMORY_SIZE; i = i + 1) begin
         test_mem[i] = spi_chip.mem[i];
@@ -160,7 +160,7 @@ module spi_mem_m_unit_test;
       end
     `SVTEST_END
 
-    `SVTEST(single_stream)
+    `SVTEST(words)
       integer count;
       reg [7:0] test_mem[MEMORY_SIZE - 1:0];
 
@@ -170,7 +170,84 @@ module spi_mem_m_unit_test;
 
       integer i, j;
 
+      count = 100;
+
+      for (i = 0; i < MEMORY_SIZE; i = i + 1) begin
+        test_mem[i] = spi_chip.mem[i];
+      end
+
+      for (i = 0; i < count; i = i + 1) begin
+        addr = {$random} % (MEMORY_SIZE - 3);
+        data = {$random};
+
+        master.WRITE_WORD(addr, data);
+        test_mem[addr + 0] = data[7:0];
+        test_mem[addr + 1] = data[15:8];
+        test_mem[addr + 2] = data[23:16];
+        test_mem[addr + 3] = data[31:24];
+
+        for (j = 0; j < MEMORY_SIZE; j = j + 1) begin
+          // $display("%d: 0x%h == 0x%h, %d", j, test_mem[j], spi_chip.mem[j], addr);
+          `FAIL_UNLESS_EQUAL(test_mem[j], spi_chip.mem[j]);
+        end
+
+        master.READ_WORD(addr, read_data);
+
+        // $display("0x%h == 0x%h", data, read_data);
+        `FAIL_UNLESS_EQUAL(data, read_data);
+      end
+    `SVTEST_END
+
+    `SVTEST(triple_words)
+      integer count;
+      reg [7:0] test_mem[MEMORY_SIZE - 1:0];
+
+      reg [`BUS_ADDR_PORT] addr;
+      reg [95:0] data;
+      reg [95:0] read_data;
+
+      integer i, j;
+
+      count = 100;
+
+      for (i = 0; i < MEMORY_SIZE; i = i + 1) begin
+        test_mem[i] = spi_chip.mem[i];
+      end
+
+      for (i = 0; i < count; i = i + 1) begin
+        addr = {$random} % (MEMORY_SIZE - 3);
+        data = {$random};
+
+        master.WRITE_WORD(addr, data);
+        test_mem[addr + 0] = data[7:0];
+        test_mem[addr + 1] = data[15:8];
+        test_mem[addr + 2] = data[23:16];
+        test_mem[addr + 3] = data[31:24];
+
+        for (j = 0; j < MEMORY_SIZE; j = j + 1) begin
+          // $display("%d: 0x%h == 0x%h, %d", j, test_mem[j], spi_chip.mem[j], addr);
+          `FAIL_UNLESS_EQUAL(test_mem[j], spi_chip.mem[j]);
+        end
+
+        master.READ_WORD(addr, read_data);
+
+        // $display("0x%h == 0x%h", data, read_data);
+        `FAIL_UNLESS_EQUAL(data, read_data);
+      end
+    `SVTEST_END
+
+    `SVTEST(single_stream)
+      integer count;
+
+      reg [`BUS_ADDR_PORT] addr;
+      reg [31:0] data;
+      reg [31:0] read_data;
+
+      integer i, j;
+
       count = 1;
+
+      `FAIL_IF(1);
 
       for (i = 0; i < count; i = i + 1) begin
         addr = {$random} % (MEMORY_SIZE - 1000);
@@ -178,7 +255,12 @@ module spi_mem_m_unit_test;
 
         master.WRITE_STREAM(addr, 1000, data);
 
-        `FAIL_IF(1);
+        for (j = 0; j < 1000 - 4; j = j + 4) begin
+          `FAIL_UNLESS_EQUAL(data[7:0], spi_chip.mem[addr + j + 0]);
+          `FAIL_UNLESS_EQUAL(data[15:8], spi_chip.mem[addr + j + 1]);
+          `FAIL_UNLESS_EQUAL(data[23:16], spi_chip.mem[addr + j + 2]);
+          `FAIL_UNLESS_EQUAL(data[31:24], spi_chip.mem[addr + j + 3]);
+        end
       end
     `SVTEST_END
   `SVUNIT_TESTS_END

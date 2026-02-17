@@ -30,6 +30,7 @@ module tex_sample_m(
 
     assign mstream_o[`STREAM_MO_VALID(`RAST_TS_OUT_WIDTH)] = out_ready;
     assign mstream_o[`STREAM_MO_DATA(`RAST_TS_OUT_WIDTH)]  = { color, posx, posy, tx, ty, depth };
+    assign mstream_o[`STREAM_MO_LAST(`RAST_TS_OUT_WIDTH)]  = 0;
 
     reg [7:0] state;
 
@@ -50,7 +51,7 @@ module tex_sample_m(
                     if (sstream_i[`STREAM_SI_VALID(`RAST_DT_OUT_WIDTH)]) begin
                         state <= 1;
 
-                        { posx, posy, tx, ty, depth } = sstream_i[`STREAM_SI_DATA(`RAST_DT_OUT_WIDTH)];
+                        { posx, posy, _tx, _ty, depth } = sstream_i[`STREAM_SI_DATA(`RAST_DT_OUT_WIDTH)];
 
                         if (_tx > tex_width_i) tx = tex_width_i - 1;
                         if (_tx < 0) tx = 0;

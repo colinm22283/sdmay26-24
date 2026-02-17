@@ -8,7 +8,10 @@
         "dir::../../verilog/rtl/math/add.v",
         "dir::../../verilog/rtl/math/mul.v",
 
-        "dir::../../verilog/rtl/rasterizer/wavg_pipe.v"
+        "dir::../../verilog/rtl/rasterizer/wavg_pipe.v",
+        "dir::../../verilog/rtl/rasterizer/wavg_pipe0.v",
+        "dir::../../verilog/rtl/rasterizer/wavg_pipe1.v",
+        "dir::../../verilog/rtl/rasterizer/wavg_pipe2.v"
     ],
     "ROUTING_CORES": 4,
     "CLOCK_PERIOD": 33,
@@ -16,7 +19,7 @@
     "CLOCK_PORT": "clk_i",
     "CLOCK_NET": "clk_i",
     "FP_SIZING": "absolute",
-    "DIE_AREA": "0 0 600 450",
+    "DIE_AREA": "0 0 600 400",
     "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
     "MAX_TRANSITION_CONSTRAINT": 1.0,
     "MAX_FANOUT_CONSTRAINT": 16,

@@ -1,6 +1,6 @@
 ###############################################################################
 # Created by write_sdc
-# Tue Jan  6 03:25:15 2026
+# Sun Feb 15 23:51:53 2026
 ###############################################################################
 current_design div_pipe_rasterizer_m
 ###############################################################################
@@ -16,6 +16,12 @@ set_clock_latency -source -max 5.5700 [get_clocks {clk}]
 # Environment
 ###############################################################################
 set_load -pin_load 0.1900 [get_ports {sstream_o}]
+set_load -pin_load 0.1900 [get_ports {mstream_o[49]}]
+set_load -pin_load 0.1900 [get_ports {mstream_o[48]}]
+set_load -pin_load 0.1900 [get_ports {mstream_o[47]}]
+set_load -pin_load 0.1900 [get_ports {mstream_o[46]}]
+set_load -pin_load 0.1900 [get_ports {mstream_o[45]}]
+set_load -pin_load 0.1900 [get_ports {mstream_o[44]}]
 set_load -pin_load 0.1900 [get_ports {mstream_o[43]}]
 set_load -pin_load 0.1900 [get_ports {mstream_o[42]}]
 set_load -pin_load 0.1900 [get_ports {mstream_o[41]}]

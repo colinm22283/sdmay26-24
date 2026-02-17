@@ -26,6 +26,7 @@ module depth_test_m(
 
     assign mstream_o[`STREAM_MO_VALID(`RAST_DT_OUT_WIDTH)] = out_ready;
     assign mstream_o[`STREAM_MO_DATA(`RAST_DT_OUT_WIDTH)]  = { posx, posy, tx, ty, depth };
+    assign mstream_o[`STREAM_MO_LAST(`RAST_DT_OUT_WIDTH)]  = 0;
 
     always @(posedge clk_i, negedge nrst_i) begin
         if (!nrst_i) begin

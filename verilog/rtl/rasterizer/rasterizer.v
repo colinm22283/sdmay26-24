@@ -351,16 +351,19 @@ module rasterizer_m #(
         .div1_sstream_o(wavg1_div_mi)
     );
 
-    stream_fifo_m #(`RAST_WAVG_OUT_WIDTH) wavg_fifo_pipe(
-        .clk_i(clk_i),
-        .nrst_i(nrst_i),
+    // stream_fifo_m #(`RAST_WAVG_OUT_WIDTH) wavg_fifo_pipe(
+    //     .clk_i(clk_i),
+    //     .nrst_i(nrst_i),
 
-        .sstream_i(wavg_streamo),
-        .sstream_o(wavg_streami),
+    //     .sstream_i(wavg_streamo),
+    //     .sstream_o(wavg_streami),
 
-        .mstream_i(wavg_fifo_streami),
-        .mstream_o(wavg_fifo_streamo)
-    );
+    //     .mstream_i(wavg_fifo_streami),
+    //     .mstream_o(wavg_fifo_streamo)
+    // );
+
+    assign wavg_fifo_streamo = wavg_streamo;
+    assign wavg_streami = wavg_fifo_streami;
 
     depth_test_m depth_test(
         .clk_i(clk_i),

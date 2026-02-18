@@ -4,6 +4,11 @@
     "VERILOG_FILES": [
         "dir::../../verilog/rtl/defines.v",
         "dir::../../verilog/rtl/user_defines.v",
+        "dir::../../verilog/rtl/user_defines/bus_stream.v",
+        "dir::../../verilog/rtl/user_defines/common_misc.v",
+        "dir::../../verilog/rtl/user_defines/core.v",
+        "dir::../../verilog/rtl/user_defines/rasterizer.v",
+        "dir::../../verilog/rtl/user_defines/vga.v",
 
         "dir::../../verilog/rtl/math/add.v",
         "dir::../../verilog/rtl/math/sub.v",
@@ -13,7 +18,7 @@
         "dir::../../verilog/rtl/rasterizer/bary_pipe.v"
     ],
     "ROUTING_CORES": 4,
-    "CLOCK_PERIOD": 33,
+    "CLOCK_PERIOD": 20,
     "RUN_LINTER": 0,
     "CLOCK_PORT": "clk_i",
     "CLOCK_NET": "clk_i",

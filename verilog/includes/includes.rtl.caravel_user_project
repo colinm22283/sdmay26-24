@@ -60,6 +60,7 @@
 
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/rasterizer.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/bary_pipe.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/bary_calc_pipe.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/bary_check_pipe.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/wavg_pipe.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/wavg_pipe0.v
@@ -68,6 +69,7 @@
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/depth_test.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/tex_sample.v
 -v $(USER_PROJECT_VERILOG)/rtl/rasterizer/mem_write.v
+-v $(USER_PROJECT_VERILOG)/rtl/rasterizer/end_pipe.v
 
 -v $(USER_PROJECT_VERILOG)/rtl/spi_mem.v
 -v $(USER_PROJECT_VERILOG)/rtl/vertex_order_buffer.v

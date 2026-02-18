@@ -4,6 +4,12 @@
     "VERILOG_FILES": [
         "dir::../../verilog/rtl/defines.v",
         "dir::../../verilog/rtl/user_defines.v",
+        "dir::../../verilog/rtl/user_defines/bus_stream.v",
+        "dir::../../verilog/rtl/user_defines/common_misc.v",
+        "dir::../../verilog/rtl/user_defines/core.v",
+        "dir::../../verilog/rtl/user_defines/rasterizer.v",
+        "dir::../../verilog/rtl/user_defines/vga.v",
+
         "dir::../../verilog/rtl/test/debug_log.v",
 
         "dir::../../verilog/rtl/stream/stream_fifo.v",
@@ -51,6 +57,8 @@
         "dir::../../spef/multicorner/shared_div_rasterizer_m.max.spef"
     ],
     "FP_PDN_MACRO_HOOKS": "bary_pipe vccd1 vssd1 vccd1 vssd1,wavg_pipe vccd1 vssd1 vccd1 vssd1,divider vccd1 vssd1 vccd1 vssd1",
+    "SYNTH_POWER_DEFINE": "USE_POWER_PINS",
+    "FP_PDN_CHECK_NODES": false,
     "ROUTING_CORES": 4,
     "CLOCK_PERIOD": 33,
     "RUN_LINTER": 0,
@@ -58,7 +66,7 @@
     "CLOCK_NET": "clk_i",
     "MACRO_PLACEMENT_CFG": "dir::macro.cfg",
     "FP_SIZING": "absolute",
-    "DIE_AREA": "0 0 1600 1300",
+    "DIE_AREA": "0 0 1600 1200",
     "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
     "MAX_TRANSITION_CONSTRAINT": 1.0,
     "MAX_FANOUT_CONSTRAINT": 16,
@@ -73,7 +81,7 @@
     "GLB_RESIZER_TIMING_OPTIMIZATIONS": 1,
     "MAGIC_DEF_LABELS": 0,
     "SYNTH_BUFFERING": 0,
-    "SYNTH_STRATEGY": "DELAY 0",
+    "SYNTH_STRATEGY": "AREA 0",
     "RUN_HEURISTIC_DIODE_INSERTION": 1,
     "HEURISTIC_ANTENNA_THRESHOLD": 110,    
     "GRT_REPAIR_ANTENNAS": 1,

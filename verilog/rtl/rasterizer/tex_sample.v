@@ -21,7 +21,6 @@ module tex_sample_m(
     reg out_ready;
     reg [`COLOR] color;
     reg [`SC_WIDTH - 1:0] posx, posy;
-    reg [`WORD_WIDTH - 1:0] _tx, _ty;
     reg [`WORD_WIDTH - 1:0] tx, ty;
     reg [`WORD_WIDTH - 1:0] depth;
 
@@ -51,13 +50,13 @@ module tex_sample_m(
                     if (sstream_i[`STREAM_SI_VALID(`RAST_DT_OUT_WIDTH)]) begin
                         state <= 1;
 
-                        { posx, posy, _tx, _ty, depth } = sstream_i[`STREAM_SI_DATA(`RAST_DT_OUT_WIDTH)];
+                        { posx, posy, tx, ty, depth } = sstream_i[`STREAM_SI_DATA(`RAST_DT_OUT_WIDTH)];
 
-                        if (_tx > tex_width_i) tx = tex_width_i - 1;
-                        if (_tx < 0) tx = 0;
+                        if (tx > tex_width_i) tx = tex_width_i - 1;
+                        if (tx < 0) tx = 0;
 
-                        if (_ty > tex_height_i) ty = tex_height_i - 1;
-                        if (_ty < 0) tx = 0;
+                        if (ty > tex_height_i) ty = tex_height_i - 1;
+                        if (ty < 0) tx = 0;
 
                         addr <= tex_addr_i + tx;
                     end

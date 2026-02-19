@@ -4,6 +4,12 @@
     "VERILOG_FILES": [
         "dir::../../verilog/rtl/defines.v",
         "dir::../../verilog/rtl/user_defines.v",
+        "dir::../../verilog/rtl/user_defines/bus_stream.v",
+        "dir::../../verilog/rtl/user_defines/common_misc.v",
+        "dir::../../verilog/rtl/user_defines/core.v",
+        "dir::../../verilog/rtl/user_defines/rasterizer.v",
+        "dir::../../verilog/rtl/user_defines/vga.v",
+
         "dir::../../verilog/rtl/spi_mem.v"
     ],
     "CLOCK_PERIOD": 25,
@@ -11,7 +17,7 @@
     "CLOCK_PORT": "clk_i",
     "CLOCK_NET": "clk_i",
     "FP_SIZING": "absolute",
-    "DIE_AREA": "0 0 300 300",
+    "DIE_AREA": "0 0 150 150",
     "FP_PIN_ORDER_CFG": "dir::pin_order.cfg",
     "MAX_TRANSITION_CONSTRAINT": 1.0,
     "MAX_FANOUT_CONSTRAINT": 16,

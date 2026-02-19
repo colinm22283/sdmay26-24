@@ -100,7 +100,6 @@ module rasterizer_m #(
     wire bary_discard;
 
     wire bary_busy;
-    wire bary_check_busy;
     wire end_busy;
 
     reg [15:0] frags_in_flight; // TODO: perhaps smaller
@@ -118,9 +117,6 @@ module rasterizer_m #(
     wire [`STREAM_MOPORT(SC_WIDTH * 2)] pos_streamo;
     wire [SC_WIDTH * 2 - 1:0] pos_stream_data;
 
-    wire [`STREAM_MIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] bary_streami;
-    wire [`STREAM_MOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] bary_streamo;
-
     wire [`STREAM_MIPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] filt_bary_streami;
     wire [`STREAM_MOPORT(SC_WIDTH * 2 + WORD_WIDTH * 3)] filt_bary_streamo;
 
@@ -130,6 +126,7 @@ module rasterizer_m #(
     wire [`STREAM_MIPORT(`RAST_WAVG_OUT_WIDTH)] wavg_fifo_streami;
     wire [`STREAM_MOPORT(`RAST_WAVG_OUT_WIDTH)] wavg_fifo_streamo;
 
+    wire bary_check_fly;
     wire filt_depth_fly, tex_fly;
 
     wire [`STREAM_SIPORT(2 * `DIVIDER_WIDTH)] bary_div_si;
@@ -222,10 +219,7 @@ module rasterizer_m #(
                 end
             endcase
 
-            if (
-                filt_bary_streamo[`STREAM_MO_VALID(`SC_WIDTH * 2 + `WORD_WIDTH * 3)] &&
-                filt_bary_streami[`STREAM_MI_READY(`SC_WIDTH * 2 + `WORD_WIDTH * 3)]
-            ) begin
+            if (bary_check_fly) begin
                 frags_in_flight = frags_in_flight + 1;
             end
 
@@ -256,7 +250,6 @@ module rasterizer_m #(
     assign busy_o =
         (state != STATE_READY && state != STATE_DONE) ||
         bary_busy ||
-        bary_check_busy ||
         end_busy ||
         (frags_in_flight != 0); // TODO: make an busy and flushed different
 
@@ -272,8 +265,10 @@ module rasterizer_m #(
         .sstream_i(pos_streamo),
         .sstream_o(pos_streami),
 
-        .mstream_i(bary_streami),
-        .mstream_o(bary_streamo),
+        .mstream_i(filt_bary_streami),
+        .mstream_o(filt_bary_streamo),
+
+        .bary_check_fly_o(bary_check_fly),
 
         .v0x(v0x),
         .v0y(v0y),
@@ -290,19 +285,6 @@ module rasterizer_m #(
 
         .div_sstream_i(bary_div_mo),
         .div_sstream_o(bary_div_mi)
-    );
-
-    bary_check_pipe_m bary_check_pipe(
-        .clk_i(clk_i),
-        .nrst_i(nrst_i),
-
-        .sstream_i(bary_streamo),
-        .sstream_o(bary_streami),
-
-        .mstream_i(filt_bary_streami),
-        .mstream_o(filt_bary_streamo),
-
-        .busy_o(bary_check_busy)
     );
 
     wavg_pipe_m wavg_pipe(

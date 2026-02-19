@@ -6,23 +6,23 @@ MACRO spi_mem_m
   CLASS BLOCK ;
   FOREIGN spi_mem_m ;
   ORIGIN 0.000 0.000 ;
-  SIZE 300.000 BY 300.000 ;
+  SIZE 150.000 BY 150.000 ;
   PIN clk_i
     DIRECTION INPUT ;
     USE SIGNAL ;
     ANTENNAGATEAREA 0.852000 ;
     PORT
       LAYER met2 ;
-        RECT 74.610 296.000 74.890 300.000 ;
+        RECT 37.350 0.000 37.630 4.000 ;
     END
   END clk_i
   PIN nrst_i
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.426000 ;
+    ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met2 ;
-        RECT 224.570 296.000 224.850 300.000 ;
+        RECT 112.330 0.000 112.610 4.000 ;
     END
   END nrst_i
   PIN spi_clk_o
@@ -30,8 +30,8 @@ MACRO spi_mem_m
     USE SIGNAL ;
     ANTENNADIFFAREA 2.673000 ;
     PORT
-      LAYER met2 ;
-        RECT 12.970 0.000 13.250 4.000 ;
+      LAYER met3 ;
+        RECT 146.000 8.200 150.000 8.800 ;
     END
   END spi_clk_o
   PIN spi_cs_o
@@ -39,61 +39,71 @@ MACRO spi_mem_m
     USE SIGNAL ;
     ANTENNADIFFAREA 2.673000 ;
     PORT
-      LAYER met2 ;
-        RECT 37.810 0.000 38.090 4.000 ;
+      LAYER met3 ;
+        RECT 146.000 16.360 150.000 16.960 ;
     END
   END spi_cs_o
+  PIN spi_dqsm_en_o
+    DIRECTION OUTPUT TRISTATE ;
+    USE SIGNAL ;
+    ANTENNADIFFAREA 2.673000 ;
+    PORT
+      LAYER met3 ;
+        RECT 146.000 24.520 150.000 25.120 ;
+    END
+  END spi_dqsm_en_o
   PIN spi_dqsm_i
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.159000 ;
+    ANTENNAGATEAREA 0.196500 ;
     PORT
-      LAYER met2 ;
-        RECT 62.650 0.000 62.930 4.000 ;
+      LAYER met3 ;
+        RECT 146.000 32.680 150.000 33.280 ;
     END
   END spi_dqsm_i
   PIN spi_dqsm_o
     DIRECTION OUTPUT TRISTATE ;
     USE SIGNAL ;
+    ANTENNADIFFAREA 2.673000 ;
     PORT
-      LAYER met2 ;
-        RECT 87.490 0.000 87.770 4.000 ;
+      LAYER met3 ;
+        RECT 146.000 40.840 150.000 41.440 ;
     END
   END spi_dqsm_o
   PIN spi_miso_i[0]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.126000 ;
+    ANTENNAGATEAREA 0.196500 ;
     PORT
-      LAYER met2 ;
-        RECT 112.330 0.000 112.610 4.000 ;
+      LAYER met3 ;
+        RECT 146.000 49.000 150.000 49.600 ;
     END
   END spi_miso_i[0]
   PIN spi_miso_i[1]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.213000 ;
+    ANTENNAGATEAREA 0.196500 ;
     PORT
-      LAYER met2 ;
-        RECT 162.010 0.000 162.290 4.000 ;
+      LAYER met3 ;
+        RECT 146.000 73.480 150.000 74.080 ;
     END
   END spi_miso_i[1]
   PIN spi_miso_i[2]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.159000 ;
+    ANTENNAGATEAREA 0.196500 ;
     PORT
-      LAYER met2 ;
-        RECT 211.690 0.000 211.970 4.000 ;
+      LAYER met3 ;
+        RECT 146.000 97.960 150.000 98.560 ;
     END
   END spi_miso_i[2]
   PIN spi_miso_i[3]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.159000 ;
+    ANTENNAGATEAREA 0.196500 ;
     PORT
-      LAYER met2 ;
-        RECT 261.370 0.000 261.650 4.000 ;
+      LAYER met3 ;
+        RECT 146.000 122.440 150.000 123.040 ;
     END
   END spi_miso_i[3]
   PIN spi_mosi_o[0]
@@ -101,8 +111,8 @@ MACRO spi_mem_m
     USE SIGNAL ;
     ANTENNADIFFAREA 2.673000 ;
     PORT
-      LAYER met2 ;
-        RECT 137.170 0.000 137.450 4.000 ;
+      LAYER met3 ;
+        RECT 146.000 57.160 150.000 57.760 ;
     END
   END spi_mosi_o[0]
   PIN spi_mosi_o[1]
@@ -110,8 +120,8 @@ MACRO spi_mem_m
     USE SIGNAL ;
     ANTENNADIFFAREA 2.673000 ;
     PORT
-      LAYER met2 ;
-        RECT 186.850 0.000 187.130 4.000 ;
+      LAYER met3 ;
+        RECT 146.000 81.640 150.000 82.240 ;
     END
   END spi_mosi_o[1]
   PIN spi_mosi_o[2]
@@ -119,8 +129,8 @@ MACRO spi_mem_m
     USE SIGNAL ;
     ANTENNADIFFAREA 2.673000 ;
     PORT
-      LAYER met2 ;
-        RECT 236.530 0.000 236.810 4.000 ;
+      LAYER met3 ;
+        RECT 146.000 106.120 150.000 106.720 ;
     END
   END spi_mosi_o[2]
   PIN spi_mosi_o[3]
@@ -128,17 +138,53 @@ MACRO spi_mem_m
     USE SIGNAL ;
     ANTENNADIFFAREA 2.673000 ;
     PORT
-      LAYER met2 ;
-        RECT 286.210 0.000 286.490 4.000 ;
+      LAYER met3 ;
+        RECT 146.000 130.600 150.000 131.200 ;
     END
   END spi_mosi_o[3]
+  PIN spi_sio_en_o[0]
+    DIRECTION OUTPUT TRISTATE ;
+    USE SIGNAL ;
+    ANTENNADIFFAREA 2.673000 ;
+    PORT
+      LAYER met3 ;
+        RECT 146.000 65.320 150.000 65.920 ;
+    END
+  END spi_sio_en_o[0]
+  PIN spi_sio_en_o[1]
+    DIRECTION OUTPUT TRISTATE ;
+    USE SIGNAL ;
+    ANTENNADIFFAREA 2.673000 ;
+    PORT
+      LAYER met3 ;
+        RECT 146.000 89.800 150.000 90.400 ;
+    END
+  END spi_sio_en_o[1]
+  PIN spi_sio_en_o[2]
+    DIRECTION OUTPUT TRISTATE ;
+    USE SIGNAL ;
+    ANTENNADIFFAREA 2.673000 ;
+    PORT
+      LAYER met3 ;
+        RECT 146.000 114.280 150.000 114.880 ;
+    END
+  END spi_sio_en_o[2]
+  PIN spi_sio_en_o[3]
+    DIRECTION OUTPUT TRISTATE ;
+    USE SIGNAL ;
+    ANTENNADIFFAREA 2.673000 ;
+    PORT
+      LAYER met3 ;
+        RECT 146.000 138.760 150.000 139.360 ;
+    END
+  END spi_sio_en_o[3]
   PIN sport_i[0]
     DIRECTION INPUT ;
     USE SIGNAL ;
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 35.400 300.000 36.000 ;
+        RECT 0.000 4.120 4.000 4.720 ;
     END
   END sport_i[0]
   PIN sport_i[10]
@@ -147,7 +193,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 76.200 300.000 76.800 ;
+        RECT 0.000 17.720 4.000 18.320 ;
     END
   END sport_i[10]
   PIN sport_i[11]
@@ -156,7 +202,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 80.280 300.000 80.880 ;
+        RECT 0.000 19.080 4.000 19.680 ;
     END
   END sport_i[11]
   PIN sport_i[12]
@@ -165,7 +211,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 84.360 300.000 84.960 ;
+        RECT 0.000 20.440 4.000 21.040 ;
     END
   END sport_i[12]
   PIN sport_i[13]
@@ -174,7 +220,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 88.440 300.000 89.040 ;
+        RECT 0.000 21.800 4.000 22.400 ;
     END
   END sport_i[13]
   PIN sport_i[14]
@@ -183,7 +229,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 92.520 300.000 93.120 ;
+        RECT 0.000 23.160 4.000 23.760 ;
     END
   END sport_i[14]
   PIN sport_i[15]
@@ -192,7 +238,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 96.600 300.000 97.200 ;
+        RECT 0.000 24.520 4.000 25.120 ;
     END
   END sport_i[15]
   PIN sport_i[16]
@@ -201,7 +247,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 100.680 300.000 101.280 ;
+        RECT 0.000 25.880 4.000 26.480 ;
     END
   END sport_i[16]
   PIN sport_i[17]
@@ -210,7 +256,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 104.760 300.000 105.360 ;
+        RECT 0.000 27.240 4.000 27.840 ;
     END
   END sport_i[17]
   PIN sport_i[18]
@@ -219,7 +265,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 108.840 300.000 109.440 ;
+        RECT 0.000 28.600 4.000 29.200 ;
     END
   END sport_i[18]
   PIN sport_i[19]
@@ -228,7 +274,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 112.920 300.000 113.520 ;
+        RECT 0.000 29.960 4.000 30.560 ;
     END
   END sport_i[19]
   PIN sport_i[1]
@@ -237,7 +283,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 39.480 300.000 40.080 ;
+        RECT 0.000 5.480 4.000 6.080 ;
     END
   END sport_i[1]
   PIN sport_i[20]
@@ -246,7 +292,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 117.000 300.000 117.600 ;
+        RECT 0.000 31.320 4.000 31.920 ;
     END
   END sport_i[20]
   PIN sport_i[21]
@@ -255,7 +301,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 121.080 300.000 121.680 ;
+        RECT 0.000 32.680 4.000 33.280 ;
     END
   END sport_i[21]
   PIN sport_i[22]
@@ -264,7 +310,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 125.160 300.000 125.760 ;
+        RECT 0.000 34.040 4.000 34.640 ;
     END
   END sport_i[22]
   PIN sport_i[23]
@@ -273,7 +319,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 129.240 300.000 129.840 ;
+        RECT 0.000 35.400 4.000 36.000 ;
     END
   END sport_i[23]
   PIN sport_i[24]
@@ -282,7 +328,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 133.320 300.000 133.920 ;
+        RECT 0.000 36.760 4.000 37.360 ;
     END
   END sport_i[24]
   PIN sport_i[25]
@@ -291,7 +337,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 137.400 300.000 138.000 ;
+        RECT 0.000 38.120 4.000 38.720 ;
     END
   END sport_i[25]
   PIN sport_i[26]
@@ -300,7 +346,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 141.480 300.000 142.080 ;
+        RECT 0.000 39.480 4.000 40.080 ;
     END
   END sport_i[26]
   PIN sport_i[27]
@@ -309,7 +355,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 145.560 300.000 146.160 ;
+        RECT 0.000 40.840 4.000 41.440 ;
     END
   END sport_i[27]
   PIN sport_i[28]
@@ -318,7 +364,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 149.640 300.000 150.240 ;
+        RECT 0.000 42.200 4.000 42.800 ;
     END
   END sport_i[28]
   PIN sport_i[29]
@@ -327,7 +373,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 153.720 300.000 154.320 ;
+        RECT 0.000 43.560 4.000 44.160 ;
     END
   END sport_i[29]
   PIN sport_i[2]
@@ -336,7 +382,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 43.560 300.000 44.160 ;
+        RECT 0.000 6.840 4.000 7.440 ;
     END
   END sport_i[2]
   PIN sport_i[30]
@@ -345,7 +391,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 157.800 300.000 158.400 ;
+        RECT 0.000 44.920 4.000 45.520 ;
     END
   END sport_i[30]
   PIN sport_i[31]
@@ -354,7 +400,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 161.880 300.000 162.480 ;
+        RECT 0.000 46.280 4.000 46.880 ;
     END
   END sport_i[31]
   PIN sport_i[32]
@@ -363,7 +409,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 165.960 300.000 166.560 ;
+        RECT 0.000 47.640 4.000 48.240 ;
     END
   END sport_i[32]
   PIN sport_i[33]
@@ -372,7 +418,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 170.040 300.000 170.640 ;
+        RECT 0.000 49.000 4.000 49.600 ;
     END
   END sport_i[33]
   PIN sport_i[34]
@@ -381,7 +427,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 174.120 300.000 174.720 ;
+        RECT 0.000 50.360 4.000 50.960 ;
     END
   END sport_i[34]
   PIN sport_i[35]
@@ -390,7 +436,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 178.200 300.000 178.800 ;
+        RECT 0.000 51.720 4.000 52.320 ;
     END
   END sport_i[35]
   PIN sport_i[36]
@@ -399,7 +445,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 182.280 300.000 182.880 ;
+        RECT 0.000 53.080 4.000 53.680 ;
     END
   END sport_i[36]
   PIN sport_i[37]
@@ -408,7 +454,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 186.360 300.000 186.960 ;
+        RECT 0.000 54.440 4.000 55.040 ;
     END
   END sport_i[37]
   PIN sport_i[38]
@@ -417,7 +463,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 190.440 300.000 191.040 ;
+        RECT 0.000 55.800 4.000 56.400 ;
     END
   END sport_i[38]
   PIN sport_i[39]
@@ -426,7 +472,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 194.520 300.000 195.120 ;
+        RECT 0.000 57.160 4.000 57.760 ;
     END
   END sport_i[39]
   PIN sport_i[3]
@@ -435,7 +481,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 47.640 300.000 48.240 ;
+        RECT 0.000 8.200 4.000 8.800 ;
     END
   END sport_i[3]
   PIN sport_i[40]
@@ -444,7 +490,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 198.600 300.000 199.200 ;
+        RECT 0.000 58.520 4.000 59.120 ;
     END
   END sport_i[40]
   PIN sport_i[41]
@@ -453,7 +499,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 202.680 300.000 203.280 ;
+        RECT 0.000 59.880 4.000 60.480 ;
     END
   END sport_i[41]
   PIN sport_i[42]
@@ -462,7 +508,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 206.760 300.000 207.360 ;
+        RECT 0.000 61.240 4.000 61.840 ;
     END
   END sport_i[42]
   PIN sport_i[43]
@@ -471,7 +517,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 210.840 300.000 211.440 ;
+        RECT 0.000 62.600 4.000 63.200 ;
     END
   END sport_i[43]
   PIN sport_i[44]
@@ -480,7 +526,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 214.920 300.000 215.520 ;
+        RECT 0.000 63.960 4.000 64.560 ;
     END
   END sport_i[44]
   PIN sport_i[45]
@@ -489,7 +535,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 219.000 300.000 219.600 ;
+        RECT 0.000 65.320 4.000 65.920 ;
     END
   END sport_i[45]
   PIN sport_i[46]
@@ -498,7 +544,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 223.080 300.000 223.680 ;
+        RECT 0.000 66.680 4.000 67.280 ;
     END
   END sport_i[46]
   PIN sport_i[47]
@@ -507,7 +553,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 227.160 300.000 227.760 ;
+        RECT 0.000 68.040 4.000 68.640 ;
     END
   END sport_i[47]
   PIN sport_i[48]
@@ -516,7 +562,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 231.240 300.000 231.840 ;
+        RECT 0.000 69.400 4.000 70.000 ;
     END
   END sport_i[48]
   PIN sport_i[49]
@@ -525,7 +571,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 235.320 300.000 235.920 ;
+        RECT 0.000 70.760 4.000 71.360 ;
     END
   END sport_i[49]
   PIN sport_i[4]
@@ -534,7 +580,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 51.720 300.000 52.320 ;
+        RECT 0.000 9.560 4.000 10.160 ;
     END
   END sport_i[4]
   PIN sport_i[50]
@@ -543,7 +589,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 239.400 300.000 240.000 ;
+        RECT 0.000 72.120 4.000 72.720 ;
     END
   END sport_i[50]
   PIN sport_i[51]
@@ -552,69 +598,178 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 243.480 300.000 244.080 ;
+        RECT 0.000 73.480 4.000 74.080 ;
     END
   END sport_i[51]
   PIN sport_i[52]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.213000 ;
+    ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 247.560 300.000 248.160 ;
+        RECT 0.000 74.840 4.000 75.440 ;
     END
   END sport_i[52]
   PIN sport_i[53]
     DIRECTION INPUT ;
     USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 251.640 300.000 252.240 ;
+        RECT 0.000 76.200 4.000 76.800 ;
     END
   END sport_i[53]
   PIN sport_i[54]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.213000 ;
+    ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 255.720 300.000 256.320 ;
+        RECT 0.000 77.560 4.000 78.160 ;
     END
   END sport_i[54]
   PIN sport_i[55]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.213000 ;
+    ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 259.800 300.000 260.400 ;
+        RECT 0.000 78.920 4.000 79.520 ;
     END
   END sport_i[55]
   PIN sport_i[56]
     DIRECTION INPUT ;
     USE SIGNAL ;
-    ANTENNAGATEAREA 0.159000 ;
+    ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 263.880 300.000 264.480 ;
+        RECT 0.000 80.280 4.000 80.880 ;
     END
   END sport_i[56]
+  PIN sport_i[57]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 81.640 4.000 82.240 ;
+    END
+  END sport_i[57]
+  PIN sport_i[58]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 83.000 4.000 83.600 ;
+    END
+  END sport_i[58]
+  PIN sport_i[59]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 84.360 4.000 84.960 ;
+    END
+  END sport_i[59]
   PIN sport_i[5]
     DIRECTION INPUT ;
     USE SIGNAL ;
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 55.800 300.000 56.400 ;
+        RECT 0.000 10.920 4.000 11.520 ;
     END
   END sport_i[5]
+  PIN sport_i[60]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 85.720 4.000 86.320 ;
+    END
+  END sport_i[60]
+  PIN sport_i[61]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 87.080 4.000 87.680 ;
+    END
+  END sport_i[61]
+  PIN sport_i[62]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 88.440 4.000 89.040 ;
+    END
+  END sport_i[62]
+  PIN sport_i[63]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 89.800 4.000 90.400 ;
+    END
+  END sport_i[63]
+  PIN sport_i[64]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 91.160 4.000 91.760 ;
+    END
+  END sport_i[64]
+  PIN sport_i[65]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.196500 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 92.520 4.000 93.120 ;
+    END
+  END sport_i[65]
+  PIN sport_i[66]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.126000 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 93.880 4.000 94.480 ;
+    END
+  END sport_i[66]
+  PIN sport_i[67]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.213000 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 95.240 4.000 95.840 ;
+    END
+  END sport_i[67]
+  PIN sport_i[68]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAGATEAREA 0.213000 ;
+    PORT
+      LAYER met3 ;
+        RECT 0.000 96.600 4.000 97.200 ;
+    END
+  END sport_i[68]
   PIN sport_i[6]
     DIRECTION INPUT ;
     USE SIGNAL ;
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 59.880 300.000 60.480 ;
+        RECT 0.000 12.280 4.000 12.880 ;
     END
   END sport_i[6]
   PIN sport_i[7]
@@ -623,7 +778,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 63.960 300.000 64.560 ;
+        RECT 0.000 13.640 4.000 14.240 ;
     END
   END sport_i[7]
   PIN sport_i[8]
@@ -632,7 +787,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 68.040 300.000 68.640 ;
+        RECT 0.000 15.000 4.000 15.600 ;
     END
   END sport_i[8]
   PIN sport_i[9]
@@ -641,7 +796,7 @@ MACRO spi_mem_m
     ANTENNAGATEAREA 0.196500 ;
     PORT
       LAYER met3 ;
-        RECT 296.000 72.120 300.000 72.720 ;
+        RECT 0.000 16.360 4.000 16.960 ;
     END
   END sport_i[9]
   PIN sport_o[0]
@@ -650,7 +805,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 15.000 4.000 15.600 ;
+        RECT 0.000 97.960 4.000 98.560 ;
     END
   END sport_o[0]
   PIN sport_o[10]
@@ -659,7 +814,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 96.600 4.000 97.200 ;
+        RECT 0.000 111.560 4.000 112.160 ;
     END
   END sport_o[10]
   PIN sport_o[11]
@@ -668,7 +823,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 104.760 4.000 105.360 ;
+        RECT 0.000 112.920 4.000 113.520 ;
     END
   END sport_o[11]
   PIN sport_o[12]
@@ -677,7 +832,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 112.920 4.000 113.520 ;
+        RECT 0.000 114.280 4.000 114.880 ;
     END
   END sport_o[12]
   PIN sport_o[13]
@@ -686,7 +841,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 121.080 4.000 121.680 ;
+        RECT 0.000 115.640 4.000 116.240 ;
     END
   END sport_o[13]
   PIN sport_o[14]
@@ -695,7 +850,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 129.240 4.000 129.840 ;
+        RECT 0.000 117.000 4.000 117.600 ;
     END
   END sport_o[14]
   PIN sport_o[15]
@@ -704,7 +859,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 137.400 4.000 138.000 ;
+        RECT 0.000 118.360 4.000 118.960 ;
     END
   END sport_o[15]
   PIN sport_o[16]
@@ -713,7 +868,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 145.560 4.000 146.160 ;
+        RECT 0.000 119.720 4.000 120.320 ;
     END
   END sport_o[16]
   PIN sport_o[17]
@@ -722,7 +877,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 153.720 4.000 154.320 ;
+        RECT 0.000 121.080 4.000 121.680 ;
     END
   END sport_o[17]
   PIN sport_o[18]
@@ -731,7 +886,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 161.880 4.000 162.480 ;
+        RECT 0.000 122.440 4.000 123.040 ;
     END
   END sport_o[18]
   PIN sport_o[19]
@@ -740,7 +895,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 170.040 4.000 170.640 ;
+        RECT 0.000 123.800 4.000 124.400 ;
     END
   END sport_o[19]
   PIN sport_o[1]
@@ -749,7 +904,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 23.160 4.000 23.760 ;
+        RECT 0.000 99.320 4.000 99.920 ;
     END
   END sport_o[1]
   PIN sport_o[20]
@@ -758,7 +913,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 178.200 4.000 178.800 ;
+        RECT 0.000 125.160 4.000 125.760 ;
     END
   END sport_o[20]
   PIN sport_o[21]
@@ -767,7 +922,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 186.360 4.000 186.960 ;
+        RECT 0.000 126.520 4.000 127.120 ;
     END
   END sport_o[21]
   PIN sport_o[22]
@@ -776,7 +931,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 194.520 4.000 195.120 ;
+        RECT 0.000 127.880 4.000 128.480 ;
     END
   END sport_o[22]
   PIN sport_o[23]
@@ -785,7 +940,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 202.680 4.000 203.280 ;
+        RECT 0.000 129.240 4.000 129.840 ;
     END
   END sport_o[23]
   PIN sport_o[24]
@@ -794,7 +949,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 210.840 4.000 211.440 ;
+        RECT 0.000 130.600 4.000 131.200 ;
     END
   END sport_o[24]
   PIN sport_o[25]
@@ -803,7 +958,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 219.000 4.000 219.600 ;
+        RECT 0.000 131.960 4.000 132.560 ;
     END
   END sport_o[25]
   PIN sport_o[26]
@@ -812,7 +967,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 227.160 4.000 227.760 ;
+        RECT 0.000 133.320 4.000 133.920 ;
     END
   END sport_o[26]
   PIN sport_o[27]
@@ -821,7 +976,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 235.320 4.000 235.920 ;
+        RECT 0.000 134.680 4.000 135.280 ;
     END
   END sport_o[27]
   PIN sport_o[28]
@@ -830,7 +985,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 243.480 4.000 244.080 ;
+        RECT 0.000 136.040 4.000 136.640 ;
     END
   END sport_o[28]
   PIN sport_o[29]
@@ -839,7 +994,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 251.640 4.000 252.240 ;
+        RECT 0.000 137.400 4.000 138.000 ;
     END
   END sport_o[29]
   PIN sport_o[2]
@@ -848,7 +1003,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 31.320 4.000 31.920 ;
+        RECT 0.000 100.680 4.000 101.280 ;
     END
   END sport_o[2]
   PIN sport_o[30]
@@ -857,7 +1012,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 259.800 4.000 260.400 ;
+        RECT 0.000 138.760 4.000 139.360 ;
     END
   END sport_o[30]
   PIN sport_o[31]
@@ -866,7 +1021,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 267.960 4.000 268.560 ;
+        RECT 0.000 140.120 4.000 140.720 ;
     END
   END sport_o[31]
   PIN sport_o[32]
@@ -875,7 +1030,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 276.120 4.000 276.720 ;
+        RECT 0.000 141.480 4.000 142.080 ;
     END
   END sport_o[32]
   PIN sport_o[33]
@@ -884,7 +1039,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 284.280 4.000 284.880 ;
+        RECT 0.000 142.840 4.000 143.440 ;
     END
   END sport_o[33]
   PIN sport_o[3]
@@ -893,7 +1048,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 39.480 4.000 40.080 ;
+        RECT 0.000 102.040 4.000 102.640 ;
     END
   END sport_o[3]
   PIN sport_o[4]
@@ -902,7 +1057,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 47.640 4.000 48.240 ;
+        RECT 0.000 103.400 4.000 104.000 ;
     END
   END sport_o[4]
   PIN sport_o[5]
@@ -911,7 +1066,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 55.800 4.000 56.400 ;
+        RECT 0.000 104.760 4.000 105.360 ;
     END
   END sport_o[5]
   PIN sport_o[6]
@@ -920,7 +1075,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 63.960 4.000 64.560 ;
+        RECT 0.000 106.120 4.000 106.720 ;
     END
   END sport_o[6]
   PIN sport_o[7]
@@ -929,7 +1084,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 72.120 4.000 72.720 ;
+        RECT 0.000 107.480 4.000 108.080 ;
     END
   END sport_o[7]
   PIN sport_o[8]
@@ -938,7 +1093,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 80.280 4.000 80.880 ;
+        RECT 0.000 108.840 4.000 109.440 ;
     END
   END sport_o[8]
   PIN sport_o[9]
@@ -947,7 +1102,7 @@ MACRO spi_mem_m
     ANTENNADIFFAREA 2.673000 ;
     PORT
       LAYER met3 ;
-        RECT 0.000 88.440 4.000 89.040 ;
+        RECT 0.000 110.200 4.000 110.800 ;
     END
   END sport_o[9]
   PIN vccd1
@@ -955,11 +1110,19 @@ MACRO spi_mem_m
     USE POWER ;
     PORT
       LAYER met4 ;
-        RECT 21.040 10.640 22.640 288.560 ;
+        RECT 22.085 10.640 23.685 138.960 ;
     END
     PORT
       LAYER met4 ;
-        RECT 174.640 10.640 176.240 288.560 ;
+        RECT 56.815 10.640 58.415 138.960 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 91.545 10.640 93.145 138.960 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 126.275 10.640 127.875 138.960 ;
     END
   END vccd1
   PIN vssd1
@@ -967,167 +1130,74 @@ MACRO spi_mem_m
     USE GROUND ;
     PORT
       LAYER met4 ;
-        RECT 97.840 10.640 99.440 288.560 ;
+        RECT 39.450 10.640 41.050 138.960 ;
     END
     PORT
       LAYER met4 ;
-        RECT 251.440 10.640 253.040 288.560 ;
+        RECT 74.180 10.640 75.780 138.960 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 108.910 10.640 110.510 138.960 ;
+    END
+    PORT
+      LAYER met4 ;
+        RECT 143.640 10.640 145.240 138.960 ;
     END
   END vssd1
   OBS
       LAYER li1 ;
-        RECT 5.520 10.795 294.400 288.405 ;
+        RECT 5.520 10.795 144.440 138.805 ;
       LAYER met1 ;
-        RECT 4.670 9.900 296.170 288.560 ;
+        RECT 4.670 7.860 145.240 141.060 ;
       LAYER met2 ;
-        RECT 4.690 295.720 74.330 296.000 ;
-        RECT 75.170 295.720 224.290 296.000 ;
-        RECT 225.130 295.720 296.140 296.000 ;
-        RECT 4.690 4.280 296.140 295.720 ;
-        RECT 4.690 3.670 12.690 4.280 ;
-        RECT 13.530 3.670 37.530 4.280 ;
-        RECT 38.370 3.670 62.370 4.280 ;
-        RECT 63.210 3.670 87.210 4.280 ;
-        RECT 88.050 3.670 112.050 4.280 ;
-        RECT 112.890 3.670 136.890 4.280 ;
-        RECT 137.730 3.670 161.730 4.280 ;
-        RECT 162.570 3.670 186.570 4.280 ;
-        RECT 187.410 3.670 211.410 4.280 ;
-        RECT 212.250 3.670 236.250 4.280 ;
-        RECT 237.090 3.670 261.090 4.280 ;
-        RECT 261.930 3.670 285.930 4.280 ;
-        RECT 286.770 3.670 296.140 4.280 ;
+        RECT 4.690 4.280 145.210 143.325 ;
+        RECT 4.690 4.000 37.070 4.280 ;
+        RECT 37.910 4.000 112.050 4.280 ;
+        RECT 112.890 4.000 145.210 4.280 ;
       LAYER met3 ;
-        RECT 3.990 285.280 296.000 288.485 ;
-        RECT 4.400 283.880 296.000 285.280 ;
-        RECT 3.990 277.120 296.000 283.880 ;
-        RECT 4.400 275.720 296.000 277.120 ;
-        RECT 3.990 268.960 296.000 275.720 ;
-        RECT 4.400 267.560 296.000 268.960 ;
-        RECT 3.990 264.880 296.000 267.560 ;
-        RECT 3.990 263.480 295.600 264.880 ;
-        RECT 3.990 260.800 296.000 263.480 ;
-        RECT 4.400 259.400 295.600 260.800 ;
-        RECT 3.990 256.720 296.000 259.400 ;
-        RECT 3.990 255.320 295.600 256.720 ;
-        RECT 3.990 252.640 296.000 255.320 ;
-        RECT 4.400 251.240 295.600 252.640 ;
-        RECT 3.990 248.560 296.000 251.240 ;
-        RECT 3.990 247.160 295.600 248.560 ;
-        RECT 3.990 244.480 296.000 247.160 ;
-        RECT 4.400 243.080 295.600 244.480 ;
-        RECT 3.990 240.400 296.000 243.080 ;
-        RECT 3.990 239.000 295.600 240.400 ;
-        RECT 3.990 236.320 296.000 239.000 ;
-        RECT 4.400 234.920 295.600 236.320 ;
-        RECT 3.990 232.240 296.000 234.920 ;
-        RECT 3.990 230.840 295.600 232.240 ;
-        RECT 3.990 228.160 296.000 230.840 ;
-        RECT 4.400 226.760 295.600 228.160 ;
-        RECT 3.990 224.080 296.000 226.760 ;
-        RECT 3.990 222.680 295.600 224.080 ;
-        RECT 3.990 220.000 296.000 222.680 ;
-        RECT 4.400 218.600 295.600 220.000 ;
-        RECT 3.990 215.920 296.000 218.600 ;
-        RECT 3.990 214.520 295.600 215.920 ;
-        RECT 3.990 211.840 296.000 214.520 ;
-        RECT 4.400 210.440 295.600 211.840 ;
-        RECT 3.990 207.760 296.000 210.440 ;
-        RECT 3.990 206.360 295.600 207.760 ;
-        RECT 3.990 203.680 296.000 206.360 ;
-        RECT 4.400 202.280 295.600 203.680 ;
-        RECT 3.990 199.600 296.000 202.280 ;
-        RECT 3.990 198.200 295.600 199.600 ;
-        RECT 3.990 195.520 296.000 198.200 ;
-        RECT 4.400 194.120 295.600 195.520 ;
-        RECT 3.990 191.440 296.000 194.120 ;
-        RECT 3.990 190.040 295.600 191.440 ;
-        RECT 3.990 187.360 296.000 190.040 ;
-        RECT 4.400 185.960 295.600 187.360 ;
-        RECT 3.990 183.280 296.000 185.960 ;
-        RECT 3.990 181.880 295.600 183.280 ;
-        RECT 3.990 179.200 296.000 181.880 ;
-        RECT 4.400 177.800 295.600 179.200 ;
-        RECT 3.990 175.120 296.000 177.800 ;
-        RECT 3.990 173.720 295.600 175.120 ;
-        RECT 3.990 171.040 296.000 173.720 ;
-        RECT 4.400 169.640 295.600 171.040 ;
-        RECT 3.990 166.960 296.000 169.640 ;
-        RECT 3.990 165.560 295.600 166.960 ;
-        RECT 3.990 162.880 296.000 165.560 ;
-        RECT 4.400 161.480 295.600 162.880 ;
-        RECT 3.990 158.800 296.000 161.480 ;
-        RECT 3.990 157.400 295.600 158.800 ;
-        RECT 3.990 154.720 296.000 157.400 ;
-        RECT 4.400 153.320 295.600 154.720 ;
-        RECT 3.990 150.640 296.000 153.320 ;
-        RECT 3.990 149.240 295.600 150.640 ;
-        RECT 3.990 146.560 296.000 149.240 ;
-        RECT 4.400 145.160 295.600 146.560 ;
-        RECT 3.990 142.480 296.000 145.160 ;
-        RECT 3.990 141.080 295.600 142.480 ;
-        RECT 3.990 138.400 296.000 141.080 ;
-        RECT 4.400 137.000 295.600 138.400 ;
-        RECT 3.990 134.320 296.000 137.000 ;
-        RECT 3.990 132.920 295.600 134.320 ;
-        RECT 3.990 130.240 296.000 132.920 ;
-        RECT 4.400 128.840 295.600 130.240 ;
-        RECT 3.990 126.160 296.000 128.840 ;
-        RECT 3.990 124.760 295.600 126.160 ;
-        RECT 3.990 122.080 296.000 124.760 ;
-        RECT 4.400 120.680 295.600 122.080 ;
-        RECT 3.990 118.000 296.000 120.680 ;
-        RECT 3.990 116.600 295.600 118.000 ;
-        RECT 3.990 113.920 296.000 116.600 ;
-        RECT 4.400 112.520 295.600 113.920 ;
-        RECT 3.990 109.840 296.000 112.520 ;
-        RECT 3.990 108.440 295.600 109.840 ;
-        RECT 3.990 105.760 296.000 108.440 ;
-        RECT 4.400 104.360 295.600 105.760 ;
-        RECT 3.990 101.680 296.000 104.360 ;
-        RECT 3.990 100.280 295.600 101.680 ;
-        RECT 3.990 97.600 296.000 100.280 ;
-        RECT 4.400 96.200 295.600 97.600 ;
-        RECT 3.990 93.520 296.000 96.200 ;
-        RECT 3.990 92.120 295.600 93.520 ;
-        RECT 3.990 89.440 296.000 92.120 ;
-        RECT 4.400 88.040 295.600 89.440 ;
-        RECT 3.990 85.360 296.000 88.040 ;
-        RECT 3.990 83.960 295.600 85.360 ;
-        RECT 3.990 81.280 296.000 83.960 ;
-        RECT 4.400 79.880 295.600 81.280 ;
-        RECT 3.990 77.200 296.000 79.880 ;
-        RECT 3.990 75.800 295.600 77.200 ;
-        RECT 3.990 73.120 296.000 75.800 ;
-        RECT 4.400 71.720 295.600 73.120 ;
-        RECT 3.990 69.040 296.000 71.720 ;
-        RECT 3.990 67.640 295.600 69.040 ;
-        RECT 3.990 64.960 296.000 67.640 ;
-        RECT 4.400 63.560 295.600 64.960 ;
-        RECT 3.990 60.880 296.000 63.560 ;
-        RECT 3.990 59.480 295.600 60.880 ;
-        RECT 3.990 56.800 296.000 59.480 ;
-        RECT 4.400 55.400 295.600 56.800 ;
-        RECT 3.990 52.720 296.000 55.400 ;
-        RECT 3.990 51.320 295.600 52.720 ;
-        RECT 3.990 48.640 296.000 51.320 ;
-        RECT 4.400 47.240 295.600 48.640 ;
-        RECT 3.990 44.560 296.000 47.240 ;
-        RECT 3.990 43.160 295.600 44.560 ;
-        RECT 3.990 40.480 296.000 43.160 ;
-        RECT 4.400 39.080 295.600 40.480 ;
-        RECT 3.990 36.400 296.000 39.080 ;
-        RECT 3.990 35.000 295.600 36.400 ;
-        RECT 3.990 32.320 296.000 35.000 ;
-        RECT 4.400 30.920 296.000 32.320 ;
-        RECT 3.990 24.160 296.000 30.920 ;
-        RECT 4.400 22.760 296.000 24.160 ;
-        RECT 3.990 16.000 296.000 22.760 ;
-        RECT 4.400 14.600 296.000 16.000 ;
-        RECT 3.990 10.715 296.000 14.600 ;
+        RECT 4.400 139.760 147.810 143.305 ;
+        RECT 4.400 138.360 145.600 139.760 ;
+        RECT 4.400 131.600 147.810 138.360 ;
+        RECT 4.400 130.200 145.600 131.600 ;
+        RECT 4.400 123.440 147.810 130.200 ;
+        RECT 4.400 122.040 145.600 123.440 ;
+        RECT 4.400 115.280 147.810 122.040 ;
+        RECT 4.400 113.880 145.600 115.280 ;
+        RECT 4.400 107.120 147.810 113.880 ;
+        RECT 4.400 105.720 145.600 107.120 ;
+        RECT 4.400 98.960 147.810 105.720 ;
+        RECT 4.400 97.560 145.600 98.960 ;
+        RECT 4.400 90.800 147.810 97.560 ;
+        RECT 4.400 89.400 145.600 90.800 ;
+        RECT 4.400 82.640 147.810 89.400 ;
+        RECT 4.400 81.240 145.600 82.640 ;
+        RECT 4.400 74.480 147.810 81.240 ;
+        RECT 4.400 73.080 145.600 74.480 ;
+        RECT 4.400 66.320 147.810 73.080 ;
+        RECT 4.400 64.920 145.600 66.320 ;
+        RECT 4.400 58.160 147.810 64.920 ;
+        RECT 4.400 56.760 145.600 58.160 ;
+        RECT 4.400 50.000 147.810 56.760 ;
+        RECT 4.400 48.600 145.600 50.000 ;
+        RECT 4.400 41.840 147.810 48.600 ;
+        RECT 4.400 40.440 145.600 41.840 ;
+        RECT 4.400 33.680 147.810 40.440 ;
+        RECT 4.400 32.280 145.600 33.680 ;
+        RECT 4.400 25.520 147.810 32.280 ;
+        RECT 4.400 24.120 145.600 25.520 ;
+        RECT 4.400 17.360 147.810 24.120 ;
+        RECT 4.400 15.960 145.600 17.360 ;
+        RECT 4.400 9.200 147.810 15.960 ;
+        RECT 4.400 7.800 145.600 9.200 ;
+        RECT 4.400 4.255 147.810 7.800 ;
       LAYER met4 ;
-        RECT 248.695 91.975 251.040 146.025 ;
-        RECT 253.440 91.975 256.385 146.025 ;
+        RECT 8.575 17.175 21.685 134.465 ;
+        RECT 24.085 17.175 39.050 134.465 ;
+        RECT 41.450 17.175 56.415 134.465 ;
+        RECT 58.815 17.175 73.780 134.465 ;
+        RECT 76.180 17.175 91.145 134.465 ;
+        RECT 93.545 17.175 107.345 134.465 ;
   END
 END spi_mem_m
 END LIBRARY

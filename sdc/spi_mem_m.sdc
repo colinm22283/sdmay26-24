@@ -1,6 +1,6 @@
 ###############################################################################
 # Created by write_sdc
-# Thu Oct  2 19:39:18 2025
+# Wed Feb 18 21:12:57 2026
 ###############################################################################
 current_design spi_mem_m
 ###############################################################################
@@ -17,11 +17,16 @@ set_clock_latency -source -max 5.5700 [get_clocks {clk}]
 ###############################################################################
 set_load -pin_load 0.1900 [get_ports {spi_clk_o}]
 set_load -pin_load 0.1900 [get_ports {spi_cs_o}]
+set_load -pin_load 0.1900 [get_ports {spi_dqsm_en_o}]
 set_load -pin_load 0.1900 [get_ports {spi_dqsm_o}]
 set_load -pin_load 0.1900 [get_ports {spi_mosi_o[3]}]
 set_load -pin_load 0.1900 [get_ports {spi_mosi_o[2]}]
 set_load -pin_load 0.1900 [get_ports {spi_mosi_o[1]}]
 set_load -pin_load 0.1900 [get_ports {spi_mosi_o[0]}]
+set_load -pin_load 0.1900 [get_ports {spi_sio_en_o[3]}]
+set_load -pin_load 0.1900 [get_ports {spi_sio_en_o[2]}]
+set_load -pin_load 0.1900 [get_ports {spi_sio_en_o[1]}]
+set_load -pin_load 0.1900 [get_ports {spi_sio_en_o[0]}]
 set_load -pin_load 0.1900 [get_ports {sport_o[33]}]
 set_load -pin_load 0.1900 [get_ports {sport_o[32]}]
 set_load -pin_load 0.1900 [get_ports {sport_o[31]}]

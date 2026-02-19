@@ -203,8 +203,8 @@ module rasterizer_tb();
     stream_stat_m #(SC_WIDTH * 2 + WORD_WIDTH * 3) bary_stat(
         .clk_i(clk),
 
-        .mstreami_i(rasterizer.bary_streami),
-        .mstreamo_i(rasterizer.bary_streamo)
+        .mstreami_i(rasterizer.filt_bary_streami),
+        .mstreamo_i(rasterizer.filt_bary_streamo)
     );
 
     stream_stat_m #(SC_WIDTH * 2 + WORD_WIDTH * 3) filt_bary_stat(

@@ -10,7 +10,6 @@
 `include "test/stream_master.v"
 `include "test/stream_slave.v"
 `include "test/clk_rst.v"
-`include "test/fixed_point.v"
 
 module wavg_pipe_m_unit_test;
   import svunit_pkg::svunit_testcase;

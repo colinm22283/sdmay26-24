@@ -1,6 +1,7 @@
 `include "svunit_defines.svh"
 `include "user_defines.v"
 `include "test/clk_rst.v"
+`include "math/add.v"
 `include "core/accumulator.v"
 
 

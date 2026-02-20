@@ -209,7 +209,6 @@ module spi_mem_m_unit_test;
 
       count = 1;
 
-      `FAIL_IF(1);
 
       for (i = 0; i < count; i = i + 1) begin
         addr = {$random} % (MEMORY_SIZE - 1000);

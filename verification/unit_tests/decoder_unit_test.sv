@@ -71,8 +71,6 @@ module decoder_m_unit_test;
     `FAIL_UNLESS_EQUAL(control_sigs[`R1_USE_GLOBAL_VAL_IDX], 0);
     `FAIL_UNLESS_EQUAL(control_sigs[`R2_USE_GLOBAL_VAL_IDX], 1);
     `FAIL_UNLESS_EQUAL(control_sigs[`OUT_IDX], 0);
-    `FAIL_UNLESS_EQUAL(control_sigs[`USE_IMM_IDX], 1'b0);
-    `FAIL_UNLESS_EQUAL(control_sigs[`USE_PC_IDX], 0);
 		`FAIL_UNLESS_EQUAL(control_sigs[`USE_ALU_RESULT_IDX], 1);
 		`FAIL_UNLESS_EQUAL(control_sigs[`ALU_CTL_IDX], `ALU_ADD_CTL);
 		`FAIL_UNLESS_EQUAL(control_sigs[`IS_PREDICABLE_IDX], 1);

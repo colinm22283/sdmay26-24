@@ -12,7 +12,6 @@
 `include "test/clk_rst.v"
 `include "test/stream_master.v"
 `include "test/stream_slave.v"
-`include "test/fixed_point.v"
 
 module bary_pipe_m_unit_test;
   import svunit_pkg::svunit_testcase;

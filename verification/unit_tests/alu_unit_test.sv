@@ -2,7 +2,6 @@
 `include "user_defines.v"
 `include "core/alu.v"
 `include "test/clk_rst.v"
-`include "test/fixed_point.v"
 `include "math/mul.v"
 `include "math/full_adder.v"
 

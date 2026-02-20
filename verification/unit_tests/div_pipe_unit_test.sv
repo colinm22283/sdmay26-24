@@ -6,6 +6,8 @@
 `include "test/stream_master.v"
 `include "test/stream_slave.v"
 
+`include "stream/stream_fifo.v"
+
 `include "math/div_pipe.v"
 
 module div_pipe_m_unit_test;

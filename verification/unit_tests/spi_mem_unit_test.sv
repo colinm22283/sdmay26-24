@@ -1,6 +1,6 @@
-`include "svunit_defines.svh"
-
 `include "user_defines.v"
+
+`include "svunit_defines.svh"
 
 `include "spi_mem.v"
 

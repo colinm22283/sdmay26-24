@@ -2,19 +2,36 @@
   `include "test/debug_log.v"
 `endif
 
+`timescale 1ns/1ps
 module spi_chip_m #(
     parameter LATENCY_COUNT = 7,
     parameter PRE_CYCLES = 1,
-    parameter SIZE = 1024
+    parameter SIZE = 1024,
+
+    parameter tDQSCK_MIN = 2,
+    parameter tDQSCK_MAX = 7
 ) (
     input  wire       clk_i,
-
+    
     input  wire       cs_i,
     input  wire [3:0] mosi_i,
     output reg  [3:0] miso_o,
     output reg        dqsm_o,
     input  wire       dqsm_i
 );
+
+    //delay from clock transition to dqsm valid for reads and writes, commented out atm
+    function integer tDQSCK;
+        begin
+            tDQSCK = ($random % (tDQSCK_MAX - tDQSCK_MIN)) + tDQSCK_MIN;
+        end
+    endfunction
+
+    function integer LCRAND;
+        begin
+            LCRAND = $random % 2;
+        end
+    endfunction
 
     `DL_DEFINE(logger, "spi_chip_m", `DL_BLUE, 1);
 
@@ -43,6 +60,7 @@ module spi_chip_m #(
 
         forever begin : MAIN
             integer i;
+                                integer h;
             integer clock_per, half_clk, quarter_clk;
 
             i = $random;
@@ -81,7 +99,7 @@ module spi_chip_m #(
             begin : LATENCY
                 integer latency;
                 reg collision;
-
+                
                 collision = {$random} % 2;
 
                 latency = LATENCY_COUNT - 3;
@@ -105,37 +123,41 @@ module spi_chip_m #(
             if (command == CMD_READ) begin : READ
                 integer addr;
                 integer delay;
-                delay = {$random} % 6 + 1;
+                delay = {$random} % 6 + 1; //change to 5 + 2?
 
                 `DL(logger, ("Offset delay: %d ns", delay));
 
                 for (i = 0; i < PRE_CYCLES; i = i + 1) begin
                     wait(clk_i);
-                    #delay;
+                    //#tDQSCK;
                     dqsm_o = 1;
-
+                    
                     wait(!clk_i);
-                    #delay;
+                    //#tDQSCK;
                     dqsm_o = 0;
                 end
 
                 addr = address;
 
                 wait(clk_i);
-                #delay;
+                //#tDQSCK;
                 dqsm_o = 1;
 
                 miso_o = mem[addr][7:4];
 
                 while (!cs_i) begin
                     wait(!clk_i || cs_i);
-                    #delay;
+                    //#tDQSCK;
                     dqsm_o = 0;
 
                     miso_o = mem[addr][3:0];
+                    
 
-                    wait(clk_i || cs_i);
-                    #delay;
+                    for(h = 0; h <  LCRAND * LATENCY_COUNT; h = h + 1) begin
+                        wait(!clk_i);
+                        wait(clk_i);
+                    end
+                    //#tDQSCK;
                     dqsm_o = 1;
 
                     `DL(logger, ("Read 0x%h from 0x%h", mem[addr], addr));
@@ -156,6 +178,7 @@ module spi_chip_m #(
 
                 while (!cs_i) begin
                     wait(clk_i || cs_i);
+                    //#tDQSCK;
 
                     if (!cs_i) begin
                         if (!dqsm_i) begin
@@ -164,6 +187,7 @@ module spi_chip_m #(
                         end
 
                         wait(!clk_i);
+                        //#tDQSCK;
                         if (!dqsm_i) begin
                             mem[addr][3:0] = mosi_i;
                             write_data[3:0] = mosi_i;

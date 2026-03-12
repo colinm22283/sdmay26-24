@@ -20,7 +20,7 @@ module spi_chip_m #(
     input  wire       dqsm_i
 );
 
-    //delay from clock transition to dqsm valid for reads and writes, commented out atm
+    //delay from clock transition to dqsm valid for reads and writes
     function integer tDQSCK;
         begin
             tDQSCK = ($random % (tDQSCK_MAX - tDQSCK_MIN)) + tDQSCK_MIN;
@@ -111,8 +111,10 @@ module spi_chip_m #(
                 half_clk = clock_per / 2;
                 quarter_clk = half_clk / 2;
 
+                `DL(logger, ("Refresh Collision: %d", collision))
+                //Fix collision to 1/0 to ensure 2LC/LC
                 while (latency != 0) begin
-                    for (i = 0; i < latency; i = i + 1) begin
+                    for (i = 0; i < latency + (collision * LATENCY_COUNT); i = i + 1) begin
                         wait(!clk_i);
                         wait(clk_i);
                     end
@@ -122,42 +124,35 @@ module spi_chip_m #(
 
             if (command == CMD_READ) begin : READ
                 integer addr;
-                integer delay;
-                delay = {$random} % 6 + 1; //change to 5 + 2?
 
-                `DL(logger, ("Offset delay: %d ns", delay));
+                //`DL(logger, ("Offset delay: %d ns", delay));
 
                 for (i = 0; i < PRE_CYCLES; i = i + 1) begin
                     wait(clk_i);
-                    //#tDQSCK;
+                    #tDQSCK;
                     dqsm_o = 1;
                     
                     wait(!clk_i);
-                    //#tDQSCK;
+                    #tDQSCK;
                     dqsm_o = 0;
                 end
 
                 addr = address;
 
                 wait(clk_i);
-                //#tDQSCK;
+                #tDQSCK;
                 dqsm_o = 1;
 
                 miso_o = mem[addr][7:4];
 
                 while (!cs_i) begin
                     wait(!clk_i || cs_i);
-                    //#tDQSCK;
+                    #tDQSCK;
                     dqsm_o = 0;
 
                     miso_o = mem[addr][3:0];
                     
-
-                    for(h = 0; h <  LCRAND * LATENCY_COUNT; h = h + 1) begin
-                        wait(!clk_i);
-                        wait(clk_i);
-                    end
-                    //#tDQSCK;
+                    #tDQSCK;
                     dqsm_o = 1;
 
                     `DL(logger, ("Read 0x%h from 0x%h", mem[addr], addr));

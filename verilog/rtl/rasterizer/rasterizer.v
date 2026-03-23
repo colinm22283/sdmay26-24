@@ -316,7 +316,7 @@ module rasterizer_m(
         bary_busy ||
         bary_check_busy ||
         depth_busy ||
-        (frags_in_flight != 0); // TODO: make an busy and flushed different
+        (frags_in_flight != 0);
 
     bary_pipe_m bary_pipe(
         .clk_i(clk_i),

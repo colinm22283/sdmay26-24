@@ -60,7 +60,7 @@ module spi_chip_m #(
 
         forever begin : MAIN
             integer i;
-                                integer h;
+            integer h;
             integer clock_per, half_clk, quarter_clk;
 
             i = $random;
@@ -124,8 +124,6 @@ module spi_chip_m #(
 
             if (command == CMD_READ) begin : READ
                 integer addr;
-
-                //`DL(logger, ("Offset delay: %d ns", delay));
 
                 for (i = 0; i < PRE_CYCLES; i = i + 1) begin
                     wait(clk_i);

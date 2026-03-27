@@ -22,6 +22,8 @@ void main() {
 
     reg_wb_enable = 1;
 
+    reg_gpio_out = 0;
+
     init_io();
 
     reg_uart_enable = 1;
@@ -42,6 +44,10 @@ void main() {
 
     reg_mprj_xfer = 1;
     while (reg_mprj_xfer == 1);
+
+    uint32_t * vga = (uint32_t *) 0x30000000;
+
+    vga[0] = 0b1000101;
 
     // The VGA module isn't wishbone-compatible and we don't have a wishbone-to-PKBus
     // adapter yet. Just let it run for a while and let the verilog TB control everything

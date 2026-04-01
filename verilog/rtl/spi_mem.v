@@ -163,18 +163,8 @@ module spi_mem_m #(
                 end
 
                 STATE_READ_LATENCY: begin
-                    if (!spi_clk_o) begin
-                        if (latency == 0) begin
-                            state <= STATE_READ_WAIT;
-
-                            data_nibble <= 1;
-                            data_byte   <= 0;
-
-                            data_buf    <= 0;
-                            data_ready <= 0;
-                        end
-                        else begin
-                            latency <= latency - 1;
+                    if (spi_clk_o) begin
+                        if (spi_dqsm_i) begin
                         end
                     end
                 end

@@ -17,7 +17,7 @@ wire [`STREAM_MIPORT_SIZE(`DIVIDER_WIDTH) * `DIVIDER_USERS - 1:0] mstreamsi;
 wire [`STREAM_MOPORT_SIZE(`DIVIDER_WIDTH) * `DIVIDER_USERS - 1:0] mstreamso;
 
 `ifdef FPGA
-    shared_div_m #(`DIVIDER_WIDTH, 42'b00_00001000_10010010_01010010_10010101_01010101, `DIVIDER_USERS) shared_div(
+    shared_div_m #(`DIVIDER_WIDTH, 42'b10_10101010_10101010_01011111_11010111_11111111, `DIVIDER_USERS) shared_div(
         .clk_i(clk_i),
         .nrst_i(nrst_i),
 

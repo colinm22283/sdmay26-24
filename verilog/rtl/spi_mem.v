@@ -165,6 +165,7 @@ module spi_mem_m #(
                 STATE_READ_LATENCY: begin
                     if (spi_clk_o) begin
                         if (spi_dqsm_i) begin
+                            state <= STATE_READ;
                         end
                     end
                 end

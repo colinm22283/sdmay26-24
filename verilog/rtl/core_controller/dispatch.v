@@ -29,6 +29,10 @@ module dispatch_m #(
   output reg [`STREAM_MOPORT(`VERTEX_ORDER_WIDTH)] vertorder_mstream_o,
   input wire                                       vertorder_full_i,
 
+  // index buffer
+  input  wire [`STREAM_MIPORT(`WORD_WIDTH)] index_mstream_i,
+  output wire [`STREAM_MOPORT(`WORD_WIDTH)] index_mstream_o,
+
   // Index fetcher
   input  wire [`WORD] index_buffer_addr_i,
   input  wire         index_fetch_enable_i,
@@ -96,7 +100,7 @@ module dispatch_m #(
 
   reg [`WORD] thread_id;
 
-  reg [`NUM_CORES_WIDTH-1:0] core_idx;
+  reg [`NUM_CORES_WIDTH:0] core_idx;
 
   wire [`NUM_CORES-1:0] core_stall              = ~(1 << core_idx);
   wire [`NUM_CORES-1:0] core_stall_undispatched = {`NUM_CORES{1'b1}} << core_idx; // Handle partial dispatch by stalling cores without jobs
@@ -106,6 +110,10 @@ module dispatch_m #(
                                   : (thread_id == num_dispatches_i);
   assign vertcache_test_index_o = index_fetch_mstreamo[`STREAM_MO_DATA(`WORD_WIDTH)];
   assign vertcache_test_valid_o = (state == STATE_DISPATCHING_INDICES && !index_fetch_empty);
+
+  assign index_mstream_o[`STREAM_MO_DATA(`WORD_WIDTH)]  = vertcache_test_index_o;
+  assign index_mstream_o[`STREAM_MO_LAST(`WORD_WIDTH)]  = 0;
+  assign index_mstream_o[`STREAM_MO_VALID(`WORD_WIDTH)] = vertcache_test_valid_o;
 
   always @(posedge clk_i, negedge nrst_i) begin
     if (!nrst_i) begin
@@ -162,7 +170,6 @@ module dispatch_m #(
               // Grab from cache
               vertorder_mstream_o[`STREAM_SI_DATA(`VERTEX_ORDER_WIDTH)] <= `NUM_CORES;
               vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 1;
-              index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
             end
           end
 
@@ -171,6 +178,7 @@ module dispatch_m #(
             index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
           if (core_idx == `NUM_CORES || vertorder_full_i) begin
             index_fetch_mstreami[`STREAM_MI_READY(`WORD_WIDTH)] <= 0;
+            vertorder_mstream_o[`STREAM_MO_VALID(`VERTEX_ORDER_WIDTH)] <= 0;
             core_stall_o <= {`NUM_CORES{1'b1}};
             dispatch_done_o <= 1;
             state <= STATE_DISPATCH_DONE;

@@ -7,12 +7,12 @@
 #define VERTEX_BUFFER_PK_ADDR (QSPI0_MEM_ADDR_DEFAULT + 0x90000)
 #define INDEX_BUFFER_PK_ADDR  (QSPI0_MEM_ADDR_DEFAULT + 0x80000)
 
-#define NUM_VERTICES (4)
-#define NUM_INDICES  (6)
+#define NUM_VERTICES (6)
+#define NUM_INDICES  (12)
 static const uint32_t vertices[NUM_VERTICES] = {}; // TODO
 static const uint32_t indices[NUM_INDICES]   = {}; // TODO
 
-void duwe_cube() {
+void duwe_plane() {
   // memcpy(CC_IMEM, vertex_shader, vertex_shader_len);
   // memcpy(CC_IMEM + vertex_shader_len, fragment_shader, fragment_shader_len);
 
@@ -28,36 +28,35 @@ void duwe_cube() {
   CC->INDEXADDR.reg = INDEX_BUFFER_PK_ADDR;
   CC->JOBS.reg      = NUM_INDICES;
 
-  CC->GR[0].reg  = 0x00008000;
-  CC->GR[1].reg  = 0;
-  CC->GR[2].reg  = 0;
-  CC->GR[3].reg  = 0;
+#define PI_180_FIXED 1144
 
-  CC->GR[4].reg  = 0;
-  CC->GR[5].reg  = 0x00008000;
-  CC->GR[6].reg  = 0;
-  CC->GR[7].reg  = 0;
+  mat4_t mvp = { { 7864320, 0, -10485760, 36700160, }, { 0, 7864320, -7864320, 15728640, }, { 0, 0, -65544, 122896, }, { 0, 0, -65536, 131072, }, };
 
-  CC->GR[8].reg  = 0;
-  CC->GR[9].reg  = 0;
-  CC->GR[10].reg = 0x00008000;
-  CC->GR[11].reg = 0;
+  // mat4_t rot;
+  // mat4_rotated(rot, 0, UGPU_FIXED(20), 0);
 
-  CC->GR[12].reg = 0;
-  CC->GR[13].reg = 0;
-  CC->GR[14].reg = 0;
-  CC->GR[15].reg = 0x00010000;
+  // mat4_t trans;
+  // mat4_trans(trans, 0, 0, UGPU_FIXED(-1));
 
+  // mat4_t persp;
+  // mat4_perspective(persp, UGPU_FIXED_DIV(UGPU_FIXED(320), UGPU_FIXED(240)), UGPU_FIXED_MUL(UGPU_FIXED(90), PI_180_FIXED), UGPU_FIXED(1) / 16, UGPU_FIXED(1000));
+
+  // mat4_t screen;
+  // mat4_screen(screen, 320, 240);
+
+  // mat4_muld(mvp, rot, trans);
+  // mat4_muld(mvp, mvp, persp);
+  // mat4_muld(mvp, mvp, screen);
+
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) {
+      CC->GR[i * 4 + j].reg = mvp[i][j];
+    }
+  }
 
   CC->GR[46].reg = VERTEX_BUFFER_PK_ADDR;
 
   CC->CTRL.reg = CC_CTRL_DISPATCH_INDEX | CC_CTRL_CMD_RUN;
 
   while (!(CC->INTFLAG.reg & CC_INTFLAG_BATCHDONE)) {}
-}
-
-void duwe_cube_spin() {
-}
-
-void duwe_cube_light() {
 }

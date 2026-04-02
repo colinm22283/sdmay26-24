@@ -94,7 +94,7 @@ module rasterizer_tb();
         .spi_dqsm_o(spi_dqsmo1)
     );
 
-    spi_chip_m #(5, 1, 500000) spi_chip1(
+    spi_chip_m #(500000) spi_chip1(
         .clk_i(spi_clk1),
         .cs_i(spi_cs1),
         .mosi_i(spi_mosi1),
@@ -118,7 +118,7 @@ module rasterizer_tb();
         .spi_dqsm_o(spi_dqsmo2)
     );
 
-    spi_chip_m #(5, 1, 500000) spi_chip2(
+    spi_chip_m #(500000) spi_chip2(
         .clk_i(spi_clk2),
         .cs_i(spi_cs2),
         .mosi_i(spi_mosi2),

@@ -85,5 +85,5 @@ void init() {
   init_io();
   // init_qspi();
   init_cores();
-  // init_vga();
+  init_vga();
 }

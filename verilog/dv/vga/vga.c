@@ -14,6 +14,22 @@
 #define VGA_IO_HSYNC (reg_mprj_io_22)
 #define VGA_IO_VSYNC (reg_mprj_io_23)
 
+#define GPIO_QSPI0_SCK  (reg_mprj_io_12)
+#define GPIO_QSPI0_CS   (reg_mprj_io_7)
+#define GPIO_QSPI0_DQSM (reg_mprj_io_13)
+#define GPIO_QSPI0_SIO0 (reg_mprj_io_8)
+#define GPIO_QSPI0_SIO1 (reg_mprj_io_9)
+#define GPIO_QSPI0_SIO2 (reg_mprj_io_10)
+#define GPIO_QSPI0_SIO3 (reg_mprj_io_11)
+
+#define GPIO_QSPI1_SCK  (reg_mprj_io_20)
+#define GPIO_QSPI1_CS   (reg_mprj_io_15)
+#define GPIO_QSPI1_DQSM (reg_mprj_io_21)
+#define GPIO_QSPI1_SIO0 (reg_mprj_io_16)
+#define GPIO_QSPI1_SIO1 (reg_mprj_io_17)
+#define GPIO_QSPI1_SIO2 (reg_mprj_io_18)
+#define GPIO_QSPI1_SIO3 (reg_mprj_io_19)
+
 void main() {
     reg_gpio_mode1 = 1;
     reg_gpio_mode0 = 0;
@@ -41,6 +57,22 @@ void main() {
     VGA_IO_B1 = GPIO_MODE_USER_STD_OUTPUT;
     VGA_IO_HSYNC = GPIO_MODE_USER_STD_OUTPUT;
     VGA_IO_VSYNC = GPIO_MODE_USER_STD_OUTPUT;
+
+    GPIO_QSPI0_SCK  = GPIO_MODE_USER_STD_OUTPUT;
+    GPIO_QSPI0_CS   = GPIO_MODE_USER_STD_OUTPUT;
+    GPIO_QSPI0_DQSM = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+    GPIO_QSPI0_SIO0 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+    GPIO_QSPI0_SIO1 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+    GPIO_QSPI0_SIO2 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+    GPIO_QSPI0_SIO3 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+
+    GPIO_QSPI1_SCK  = GPIO_MODE_USER_STD_OUTPUT;
+    GPIO_QSPI1_CS   = GPIO_MODE_USER_STD_OUTPUT;
+    GPIO_QSPI1_DQSM = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+    GPIO_QSPI1_SIO0 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+    GPIO_QSPI1_SIO1 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+    GPIO_QSPI1_SIO2 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
+    GPIO_QSPI1_SIO3 = GPIO_MODE_USER_STD_BIDIRECTIONAL;
 
     reg_mprj_xfer = 1;
     while (reg_mprj_xfer == 1);

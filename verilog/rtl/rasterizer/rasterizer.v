@@ -190,6 +190,9 @@ module rasterizer_m(
     wire [`STREAM_MIPORT(`RAST_DT_OUT_WIDTH)] filt_depth_streami;
     wire [`STREAM_MOPORT(`RAST_DT_OUT_WIDTH)] filt_depth_streamo;
 
+    wire [`STREAM_MIPORT(`FRAGMENT_WIDTH)] tex_streami;
+    wire [`STREAM_MOPORT(`FRAGMENT_WIDTH)] tex_streamo;
+
     wire [`STREAM_SIPORT(2 * `DIVIDER_WIDTH)] bary_div_si;
     wire [`STREAM_SOPORT(2 * `DIVIDER_WIDTH)] bary_div_so;
     wire [`STREAM_MIPORT(`DIVIDER_WIDTH)] bary_div_mi;
@@ -431,8 +434,8 @@ module rasterizer_m(
         .sstream_i(filt_depth_streamo),
         .sstream_o(filt_depth_streami),
 
-        .mstream_i(tex_stream_i),
-        .mstream_o(tex_stream_o),
+        .mstream_i(tex_streami),
+        .mstream_o(tex_streamo),
 
         .mport_i(tex_mport_i),
         .mport_o(tex_mport_o),
@@ -444,6 +447,15 @@ module rasterizer_m(
         .tex_width_i(tex_width_i),
         .tex_height_i(tex_height_i)
     );
+
+    assign tex_stream_o[`STREAM_MO_DATA(`FRAGMENT_WIDTH)]  = tex_streamo[`STREAM_MO_DATA(`FRAGMENT_WIDTH)];
+    assign tex_stream_o[`STREAM_MO_VALID(`FRAGMENT_WIDTH)] = tex_streamo[`STREAM_MO_VALID(`FRAGMENT_WIDTH)];
+    assign tex_stream_o[`STREAM_MO_LAST(`FRAGMENT_WIDTH)] =
+        !bary_busy &&
+        !bary_check_busy &&
+        !depth_busy &&
+        frags_in_flight == 1;
+    assign tex_streami[`STREAM_MI_READY(`FRAGMENT_WIDTH)]  = tex_stream_i[`STREAM_MI_READY(`FRAGMENT_WIDTH)];
 
     shared_div_rasterizer_m divider(
         .clk_i(clk_i),

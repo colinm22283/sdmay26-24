@@ -8,7 +8,7 @@
 #define INDEX_BUFFER_PK_ADDR  (QSPI0_MEM_ADDR_DEFAULT + 0x80000)
 
 #define NUM_VERTICES (6)
-#define NUM_INDICES  (12)
+#define NUM_INDICES  (6)
 static const uint32_t vertices[NUM_VERTICES] = {}; // TODO
 static const uint32_t indices[NUM_INDICES]   = {}; // TODO
 

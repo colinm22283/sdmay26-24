@@ -13,6 +13,8 @@ module busarb_m #(
     output reg  [(`BUS_SIPORT_SIZE * SLAVE_COUNT) - 1:0] sports_o
 );
 
+    `DL_DEFINE(logger, "busarb_m", `DL_MAGENTA, 1);
+
     localparam STATE_READY = 2'b00;
     localparam STATE_REQ   = 2'b01;
     localparam STATE_ACK   = 2'b10;
@@ -61,7 +63,11 @@ module busarb_m #(
                                 end
                             end
 
-                            if (state[cb] == STATE_REQ) master_handled[master_sel[cb]] = 1;
+                            if (state[cb] == STATE_REQ) begin
+                                master_handled[master_sel[cb]] = 1;
+
+                                `DL(logger, ("Master handled on port %0d", master_sel[cb]));
+                            end
                         end
                     end
 
